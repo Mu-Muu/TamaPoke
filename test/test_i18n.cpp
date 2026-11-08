@@ -8,7 +8,7 @@
 #include <string.h>
 #include <vector>
 
-static const char *LANG_NAME[LANG_COUNT] = { "ES", "EN", "FR", "DE", "IT", "PT", "JA", "KO" };
+static const char *LANG_NAME[LANG_COUNT] = { "EN", "ZH" };
 
 // extrae la firma de los especificadores de printf de una cadena: "%lud" -> "lu"
 static std::vector<std::string> specs(const char *s) {
@@ -42,21 +42,34 @@ static const ExpectedFmt EXPECTED[] = {
   { S_POKEDEX_FMT,     "%u" },
   { S_NAME_FMT,        "%s,%s,%u" },
   { S_RELEASE_FMT,     "%s" },
-  { S_HITS_FMT,        "%u" },
-  { S_STR_GAIN_FMT,    "%u" },
-  { S_RECORD_FMT,      "%u" },
-  { S_SCORE_FMT,       "%u" },
   { S_STREAK_DAYS_FMT, "%u" },
   { S_STREAK_FMT,      "%u,%u" },
-  { S_INFO_FMT,        "%s,%lu" },
+  { S_INFO_FMT,        "%lu" },
   { S_MEDALS_FMT,      "%d,%d" },
-  { S_REC_FMT,         "%u" },
   { S_LVL_FMT,         "%u" },
   { S_NEXT_LVL_FMT,    "%u,%u" },
-  { S_EVO_IN_FMT,      "%u" },
+  { S_EVO_IN_FMT,      "%u,%u" },
   { S_MISTAKES_FMT,    "%u" },
   { S_FAREWELL_BTN,    "%s" },
   { S_RUNAWAY_BTN,     "%s" },
+  { S_FARM_FMT,        "%u" },
+  { S_SHOP_FMT,        "%ld" },
+  { S_REGION_DONE_FMT, "%s" },
+  { S_REGION_REWARD_FMT, "%d" },
+  { S_STEPS_FMT,       "%lu" },
+  { S_ALBUM_FMT,       "%d" },
+  { S_SAY_CHESS_WIN_FMT, "%u" },
+  { S_VISIT_FMT,       "%s" },
+  { S_HOL_BIRTHDAY,    "%s" },  // OWNER_NAME (config.h)
+  { S_SAY_LOVE,        "%s" },  // OWNER_NAME (config.h)
+  { S_RESTORE_FMT,     "%u,%u" },
+  { S_HARVEST_PTS_FMT, "%u" },
+  { S_FX_STA_FMT,      "%u" },
+  { S_FX_VIT_FMT,      "%u" },
+  { S_FX_RES_FMT,      "%u" },
+  { S_DATE_FMT,        "%u,%u" },
+  { S_REPORT_FMT,      "%u,%u" },
+  { S_REPORT_PTS_FMT,  "%ld" },
 };
 static const int NUM_EXPECTED = (int)(sizeof(EXPECTED) / sizeof(EXPECTED[0]));
 
@@ -185,17 +198,31 @@ TEST(i18n, las_medallas_no_llevan_acentos) {
 
 TEST(i18n, el_idioma_se_guarda_y_se_recupera) {
   mockNvsReset();
-  setLang(LANG_DE);
-  CHECK_EQ((int)gLang, (int)LANG_DE);
-  gLang = LANG_ES;
+  setLang(LANG_EN);
+  CHECK_EQ((int)gLang, (int)LANG_EN);
+  gLang = LANG_ZH;
   loadLang();
-  CHECK_EQ((int)gLang, (int)LANG_DE);
+  CHECK_EQ((int)gLang, (int)LANG_EN);
   gLang = LANG_DEFAULT;
 }
 
 TEST(i18n, sin_ajuste_guardado_arranca_en_el_idioma_por_defecto) {
   mockNvsReset();
-  gLang = LANG_IT;
+  gLang = LANG_EN;
+  loadLang();
+  CHECK_EQ((int)gLang, (int)LANG_DEFAULT);
+  gLang = LANG_DEFAULT;
+}
+
+// la clave vieja "lang" guardaba un indice de la tabla de 9 idiomas (8 = chino):
+// no se lee, asi que una placa que venia de esa version arranca en el defecto
+TEST(i18n, la_clave_vieja_de_9_idiomas_se_ignora) {
+  mockNvsReset();
+  Preferences p;
+  p.begin("tamapoke", false);
+  p.putUChar("lang", 1);  // era el ingles; hoy el 1 seria el chino
+  p.end();
+  gLang = LANG_EN;
   loadLang();
   CHECK_EQ((int)gLang, (int)LANG_DEFAULT);
   gLang = LANG_DEFAULT;
@@ -205,9 +232,9 @@ TEST(i18n, un_idioma_invalido_en_la_nvs_no_rompe_nada) {
   mockNvsReset();
   Preferences p;
   p.begin("tamapoke", false);
-  p.putUChar("lang", 200);  // valor corrupto
+  p.putUChar("lang2", 200);  // valor corrupto
   p.end();
-  gLang = LANG_ES;
+  gLang = LANG_EN;
   loadLang();
   CHECK_EQ((int)gLang, (int)LANG_DEFAULT);
   gLang = LANG_DEFAULT;
@@ -215,10 +242,10 @@ TEST(i18n, un_idioma_invalido_en_la_nvs_no_rompe_nada) {
 
 TEST(i18n, setLang_rechaza_valores_fuera_de_rango) {
   mockNvsReset();
-  setLang(LANG_FR);
+  setLang(LANG_EN);
   setLang((Lang)LANG_COUNT);
-  CHECK_EQ((int)gLang, (int)LANG_FR);
+  CHECK_EQ((int)gLang, (int)LANG_EN);
   setLang((Lang)250);
-  CHECK_EQ((int)gLang, (int)LANG_FR);
+  CHECK_EQ((int)gLang, (int)LANG_EN);
   gLang = LANG_DEFAULT;
 }

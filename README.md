@@ -20,6 +20,39 @@ and complete them all (shinies included).
 
 🔴 **3D-printed Pokéball case + print profiles → [on MakerWorld](https://makerworld.com/es/models/2937822-tamapoke-a-pokemon-pokeball-tamagotchi)** · flash it in your browser → **[web installer](https://socquique.github.io/TamaPoke/web/)**
 
+## This fork
+
+A personal fork of [socquique/TamaPoke](https://github.com/socquique/TamaPoke)
+(v1.18). What changed here:
+
+- **Pokédex of all 1025** (Gen 1-9, SpriteCollab sprites), one cover page per
+  region; regions unlock in order and eggs only bring species from open ones.
+- **English + Simplified Chinese** UI (trimmed WenQuanYi bitmap font).
+- **Life sim instead of battles**: evolution by age (care mistakes delay it),
+  natures, sickness and medicine, an autonomous behaviour planner, gestures,
+  self-care when plugged in and nobody is around, farm (residents keep growing
+  slowly), album of past companions, steps, accessories, medals.
+- **Points from chess.com** (public API, daily sync) spent in a shop.
+- Real **weather**, sunrise/sunset, seasons, holidays and a **standby clock**
+  when plugged in; time set by NTP.
+- Optional **Stack-chan / xiaozhi** control over MCP.
+- The sketch is split into tabs; host tests in `test/`.
+
+The rest of this README describes the upstream project; some parts (battles,
+minigame, the 151) don't apply to this fork.
+
+### Personal settings
+
+Owner name, chess.com username, weather coordinates and time zone live in
+`config_private.h`, which is git-ignored: copy `config_private.example.h` to
+`config_private.h` and fill it in. Without it the firmware builds with neutral
+example values (and no chess sync). Wi-Fi and the xiaozhi endpoint are entered
+on the board's setup page and stay in its NVS.
+
+`tools/privacy_check.py` scans what would be published for the values in that
+file (plus an optional local `.privacy_denylist`); it can run as a `pre-push`
+hook.
+
 ## Status
 
 Running on hardware. Implemented: the 151 + shinies animated from microSD, full
@@ -235,7 +268,7 @@ witness it), each opening a two-option dialog:
 - **PMD SpriteCollab** (everything — main screen, stat card, minigame **and the
   Pokédex grid + detail view**): behaviour sprites — `tools/pack_pmd.py` packs
   actions (Idle, Walk L/R, Sleep, Eat, Hurt, Attack, Pose, Nod, DeepBreath) into
-  the multi-action **TPK2** format (`/mons/pNNN.bin`). The engine in `TamaPoke.ino`
+  the multi-action **TPK2** format (`/mons/pNNN.bin`). The engine in `pet_anim.ino`
   makes the creature wander, gesture, curl up to sleep, chew and wince. Anchored by
   the feet (lowest content row), not the canvas. The Pokédex thumbnails
   (`thumbs.bin`, TPTH) are derived from these by `tools/make_thumbs.py`.
@@ -314,7 +347,8 @@ beach, forest, volcano, mountain, snow). Sleeping forces night.
 
 ## Layout
 
-- `TamaPoke.ino` — init, game loop, render of every screen, gestures, serial console, audio
+- `TamaPoke.ino` — init, game loop, power/brightness, globals shared by the tabs
+- sketch tabs (Arduino appends them to `TamaPoke.ino` in alphabetical order): `console.ino` (serial console), `touch.ino` (taps, swipes, gestures), `scene.ino` (background, weather, seasons, standby clock, holidays), `text.ino` (fonts), `render.ino` (screen dispatch, header, ceremonies), `screens.ino` (card, settings, stats, keyboard), `pokedex.ino`, `farm_ui.ino` (farm + album), `shop.ino`, `wifi_ui.ino` (portal, chess sync, Stack-chan), `pet_anim.ino` (bath, PMD sprites, autonomous behaviour, bars)
 - `pet.h` / `pet.cpp` — pet state and logic (stats, evolution, life cycle, streak/bond/medals, NVS)
 - `sdmon.h` / `sdmon.cpp` — TPK1 (animated) and TPK2 (PMD) sprites + thumbnails, and file reception over USB (PUT/LS)
 - `rtcbat.h` / `rtcbat.cpp` — PCF85063 RTC + AXP2101 PMU (battery, brightness, PWR button)

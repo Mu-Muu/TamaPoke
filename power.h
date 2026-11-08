@@ -19,7 +19,6 @@ struct PowerCtx {
   uint32_t idleMs;    // ms sin interaccion
   bool screenOff;     // apagada con el boton PWR
   bool sleeping;      // el bicho duerme
-  bool gameOpen;      // minijuego o saco: la fisica esta afinada a 85 ms por frame
   bool usb;           // alimentacion externa
   bool charging;
   int batPct;         // 0-100, -1 si no hay bateria
@@ -41,9 +40,16 @@ inline uint8_t dimStageFor(uint32_t idleMs) {
 inline bool batteryLow(const PowerCtx &c) { return c.batPct >= 0 && c.batPct < 20 && !c.charging && !c.usb; }
 inline bool batteryCritical(const PowerCtx &c) { return c.batPct >= 0 && c.batPct < 10 && !c.charging && !c.usb; }
 
+// reloj de espera: enchufado y sin tocar (90 s), la pantalla pasa a un reloj
+// grande en vez de atenuarse hasta casi apagarse
+inline bool standbyClock(const PowerCtx &c) {
+  return c.usb && !c.screenOff && dimStageFor(c.idleMs) >= DIM_LOW;
+}
+
 // brillo del panel (0-255): el de siempre, con un tope cuando queda poca bateria
 inline uint8_t brightnessFor(const PowerCtx &c) {
   if (c.screenOff) return 0;
+  if (standbyClock(c)) return c.sleeping ? 12 : 45;  // reloj: legible, y de noche muy suave
   uint8_t stage = dimStageFor(c.idleMs);
   uint8_t t = c.sleeping ? 25 : (c.usb ? 180 : 145);
   if (stage == DIM_LOW) t = c.sleeping ? 10 : 60;
@@ -57,7 +63,6 @@ inline uint8_t brightnessFor(const PowerCtx &c) {
 // completo y el volcado del lienzo por QSPI, y el panel solo cambia si se redibuja.
 inline uint32_t frameIntervalMs(const PowerCtx &c) {
   if (c.screenOff) return 0;
-  if (c.gameOpen) return 85;  // el juego manda: su fisica esta afinada a este periodo
   uint32_t ms;
   uint8_t stage = dimStageFor(c.idleMs);
   if (stage == DIM_OFF) ms = 1000;

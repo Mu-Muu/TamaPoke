@@ -12,7 +12,7 @@ struct SdMon {
   uint16_t pal[256];
   uint8_t *data = nullptr;  // frames * w * h indices (0xFF = transparente)
 
-  bool load(uint8_t dexNum, bool shiny = false);
+  bool load(uint16_t dexNum, bool shiny = false);
   void unload();
 };
 
@@ -38,7 +38,7 @@ struct PmdMon {
   uint8_t *blob = nullptr;
   PmdAct acts[PMD_NACTS];
 
-  bool load(uint8_t dexNum, bool shiny = false);
+  bool load(uint16_t dexNum, bool shiny = false);
   void unload();
   bool has(uint8_t a) const { return loaded && a < PMD_NACTS && acts[a].frames > 0; }
 };
@@ -54,6 +54,20 @@ struct SdThumbs {
   const uint8_t *get(int16_t dex) const;  // blob: w,h,palCount,pal[],idx[]
 };
 extern SdThumbs thumbs;
+
+// fondo de la pantalla principal segun la region del compañero (/mons/bgN.bin,
+// TPBG: "TPBG", u16 w, u16 h, RGB565). Entero en PSRAM; se guarda ya tenido
+// segun la luz (BG_DAY, BG_TWILIGHT calido, BG_NIGHT oscuro y azul). Solo se
+// relee de la SD al cambiar de region o de luz.
+enum : uint8_t { BG_DAY = 0, BG_TWILIGHT, BG_NIGHT };
+struct SdBg {
+  uint16_t *px = nullptr;
+  uint16_t w = 0, h = 0;
+  int8_t region = -1;  // region cargada (0-8), -1 = ninguna
+  uint8_t tint = BG_DAY;
+  bool load(int r, uint8_t tint);  // true si queda listo para dibujar
+};
+extern SdBg bg;
 
 bool sdBegin();                 // monta la SD (SDMMC 1-bit), true si hay tarjeta
 bool sdSerialCommand(const String &line);  // PUT/LS por USB; true si la maneja

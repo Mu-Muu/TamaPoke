@@ -6,8 +6,9 @@
 bool sdReady = false;
 bool sdDirty = false;
 SdThumbs thumbs;
+SdBg bg;
 
-bool PmdMon::load(uint8_t dexNum, bool shiny) {
+bool PmdMon::load(uint16_t dexNum, bool shiny) {
   unload();
   if (!sdReady) return false;
 
@@ -132,6 +133,8 @@ const uint8_t *SdThumbs::get(int16_t dex) const {
   if (!loaded || dex < 1 || dex > count) return nullptr;
   uint32_t off;
   memcpy(&off, data + 6 + 4 * (dex - 1), 4);
+  // 0 (o cualquier offset dentro de la cabecera) = especie sin miniatura
+  if (off < 6 + 4UL * count) return nullptr;
   // el offset viene del fichero sin comprobar: sin esto, un thumbs.bin truncado
   // o corrupto hacia leer fuera de la reserva de PSRAM
   if (off > size - 3) return nullptr;  // la cabecera w,h,palCount debe caber (size >= 10 siempre)
@@ -152,7 +155,7 @@ bool sdBegin() {
   return sdReady;
 }
 
-bool SdMon::load(uint8_t dexNum, bool shiny) {
+bool SdMon::load(uint16_t dexNum, bool shiny) {
   unload();
   if (!sdReady) return false;
 
@@ -297,4 +300,52 @@ bool sdSerialCommand(const String &line) {
     return true;
   }
   return false;
+}
+
+bool SdBg::load(int r, uint8_t luz) {
+  if (px && region == r && tint == luz) return true;
+  region = -1;
+  if (!sdReady || r < 0) return false;
+  char path[24];
+  snprintf(path, sizeof(path), "/mons/bg%d.bin", r + 1);
+  File f = SD_MMC.open(path, FILE_READ);
+  if (!f) return false;
+  uint8_t head[8];
+  uint16_t fw = 0, fh = 0;
+  if (f.read(head, 8) == 8 && memcmp(head, "TPBG", 4) == 0) {
+    memcpy(&fw, head + 4, 2);
+    memcpy(&fh, head + 6, 2);
+  }
+  uint32_t n = (uint32_t)fw * fh;
+  // la medida tiene que ser la del fichero y caber en la escena (466 de ancho)
+  if (fw == 0 || fh == 0 || fw > 466 || fh > 466 || f.size() != 8 + n * 2) {
+    f.close();
+    return false;
+  }
+  if (!px || (uint32_t)w * h != n) {
+    if (px) free(px);
+    px = (uint16_t *)ps_malloc(n * 2);
+    if (!px) { f.close(); w = h = 0; return false; }
+  }
+  bool ok = f.read((uint8_t *)px, n * 2) == n * 2;
+  f.close();
+  if (!ok) return false;
+  w = fw;
+  h = fh;
+  if (luz == BG_NIGHT) {  // de noche: a ~40-60 % y con un toque azul
+    for (uint32_t i = 0; i < n; i++) {
+      uint16_t v = px[i];
+      uint16_t rr = ((v >> 11) & 31) * 2 / 5, gg = ((v >> 5) & 63) * 9 / 20, bb = (v & 31) * 3 / 5;
+      px[i] = (rr << 11) | (gg << 5) | bb;
+    }
+  } else if (luz == BG_TWILIGHT) {  // amanecer/atardecer: calido, un poco mas oscuro
+    for (uint32_t i = 0; i < n; i++) {
+      uint16_t v = px[i];
+      uint16_t rr = ((v >> 11) & 31) * 19 / 20, gg = ((v >> 5) & 63) * 7 / 10, bb = (v & 31) * 1 / 2;
+      px[i] = (rr << 11) | (gg << 5) | bb;
+    }
+  }
+  region = r;
+  tint = luz;
+  return true;
 }

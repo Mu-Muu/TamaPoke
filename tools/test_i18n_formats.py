@@ -35,7 +35,7 @@ import sys
 HERE = os.path.dirname(__file__)
 I18N_CPP = os.path.join(HERE, '..', 'i18n.cpp')
 
-LANGS = ['ES', 'EN', 'FR', 'DE', 'IT', 'PT', 'JA', 'KO']
+LANGS = ['EN', 'ZH']
 STRING_RE = re.compile(r'"(?:[^"\\]|\\.)*"')
 SPEC_RE = re.compile(
     r'%[-+ #0]*[\d.]*(?:l|h|ll|hh)?[diouxXeEfFgGaAcspn%]')
@@ -139,7 +139,7 @@ def main():
     i18n_hpp = os.path.join(HERE, '..', 'i18n.h')
 
     str_count = count_enumerators(i18n_hpp, 'StrId', 'STR_COUNT')
-    med_count = 8  # MED_COUNT, #define'd in include/pet.hpp
+    med_count = 15  # MED_COUNT, #define'd in pet.h
 
     errors = []
     errors += check_table(

@@ -41,6 +41,6 @@ python3 test/test_tools.py    # solo las herramientas de tools/
 
 ## Que NO se cubre
 
-Todo lo que necesita la placa: pantalla y tactil (`TamaPoke.ino`), audio
+Todo lo que necesita la placa: pantalla y tactil (`TamaPoke.ino` y sus pestañas `.ino`), audio
 (`audio.cpp`), tarjeta SD (`sdmon.cpp`) y RTC/bateria (`rtcbat.cpp`). El
-`.ino` tampoco se compila aqui: hace falta `arduino-cli` con el core de ESP32.
+sketch (`.ino`) tampoco se compila aqui: hace falta `arduino-cli` con el core de ESP32.

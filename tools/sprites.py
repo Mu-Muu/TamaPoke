@@ -463,26 +463,6 @@ def icon_light():
     return g.rows()
 
 
-def icon_berry_blue():
-    g = G(16)
-    g.disk(8, 9.5, 5.2, 4.8, 'b', 'B')
-    g.px(8, 3, 'C'); g.px(8, 4, 'C')
-    g.px(10, 3, 'g'); g.px(11, 2, 'g')
-    g.outline()
-    g.px(6, 7, 'w'); g.px(5, 8, 'w')
-    return g.rows()
-
-
-def icon_berry_green():
-    g = G(16)
-    g.disk(8, 9.5, 5.2, 4.8, 'g', 'G')
-    g.px(8, 3, 'C'); g.px(8, 4, 'C')
-    g.px(10, 3, 't'); g.px(11, 2, 't')
-    g.outline()
-    g.px(6, 7, 'w'); g.px(5, 8, 'w')
-    return g.rows()
-
-
 def icon_candy():
     g = G(16)
     g.disk(8, 8, 4.4, 3.6, 'p', 'P')
@@ -492,6 +472,56 @@ def icon_candy():
     g.outline()
     g.px(7, 6, 'w'); g.px(6, 7, 'w')
     g.px(8, 8, 'P'); g.px(9, 9, 'P')
+    return g.rows()
+
+
+def icon_pill():
+    # capsula en diagonal: mitad roja, mitad blanca (medicina)
+    g = G(16)
+    for i in range(7):
+        x, y = 4.5 + i, 11.5 - i
+        if i < 4:
+            g.disk(x, y, 2.4, 2.4, 'r', 'R')
+        else:
+            g.disk(x, y, 2.4, 2.4, 'w', 's')
+    g.outline()
+    g.px(4, 10, 'w'); g.px(5, 9, 'w')
+    return g.rows()
+
+
+def icon_potion(liquid, shade):
+    # frasco redondo con cuello y tapon (pocion de fuerza / velocidad)
+    g = G(16)
+    g.disk(8, 10.5, 4.6, 4.2, liquid, shade)
+    g.rect(7, 3, 9, 6, 's')
+    g.rect(6, 2, 10, 2, 'c')
+    g.outline()
+    g.px(6, 9, 'w'); g.px(6, 10, 'w')
+    return g.rows()
+
+
+def icon_star():
+    # estrella de cinco puntas (amuleto shiny)
+    import math
+    g = G(16)
+    pts = []
+    for k in range(10):
+        r = 7.0 if k % 2 == 0 else 3.0
+        a = -math.pi / 2 + k * math.pi / 5
+        pts.append((7.5 + r * math.cos(a), 8.5 + r * math.sin(a)))
+    for y in range(16):
+        for x in range(16):
+            # punto dentro del poligono (regla par-impar)
+            dentro = False
+            j = len(pts) - 1
+            for i in range(len(pts)):
+                xi, yi = pts[i]; xj, yj = pts[j]
+                if (yi > y + 0.5) != (yj > y + 0.5) and x + 0.5 < (xj - xi) * (y + 0.5 - yi) / (yj - yi) + xi:
+                    dentro = not dentro
+                j = i
+            if dentro:
+                g.px(x, y, 'f' if y > 5 else 'Y')
+    g.outline()
     return g.rows()
 
 
@@ -519,9 +549,11 @@ SPRITES = {
     "ICON_PLAY": icon_play(),
     "ICON_LIGHT": icon_light(),
     "ICON_CLEAN": icon_clean(),
-    "ICON_BERRY_B": icon_berry_blue(),
-    "ICON_BERRY_G": icon_berry_green(),
     "ICON_CANDY": icon_candy(),
+    "ICON_PILL": icon_pill(),
+    "ICON_POTION_STR": icon_potion('r', 'R'),
+    "ICON_POTION_SPD": icon_potion('b', 'B'),
+    "ICON_STAR": icon_star(),
     "EGG": egg(),
     "POOP": poop(),
     "HEART": heart(),

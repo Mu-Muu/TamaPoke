@@ -74,12 +74,7 @@ TEST(power, el_periodo_de_frame_crece_con_la_inactividad_y_nunca_es_cero_con_pan
   CHECK_EQ((int)frameIntervalMs(ctx(400000)), 1000);
 }
 
-TEST(power, el_juego_y_la_pantalla_apagada_mandan_sobre_el_resto) {
-  PowerCtx g = ctx(200000);
-  g.gameOpen = true;
-  CHECK_EQ((int)frameIntervalMs(g), 85);               // la fisica esta afinada a 85 ms
-  g.batPct = 5;
-  CHECK_EQ((int)frameIntervalMs(g), 85);
+TEST(power, la_pantalla_apagada_manda_sobre_el_resto) {
   PowerCtx off = ctx(0);
   off.screenOff = true;
   CHECK_EQ((int)frameIntervalMs(off), 0);
@@ -158,4 +153,22 @@ TEST(power, con_la_pantalla_apagada_y_sin_usb_el_bucle_despierta_cinco_veces_por
   c.screenOff = true;
   CHECK(lightSleepAllowed(c));
   CHECK_EQ(1000 / POWER_SLEEP_MS, 5);                  // antes: 1000 despertares por segundo
+}
+
+TEST(power, enchufado_y_sin_tocar_es_reloj_de_espera) {
+  PowerCtx c = ctx(100000);  // 100 s sin tocar
+  CHECK(!standbyClock(c));    // con bateria: se atenua como siempre
+  c.usb = true;
+  CHECK(standbyClock(c));
+  CHECK_EQ((int)brightnessFor(c), 45);
+  c.sleeping = true;
+  CHECK_EQ((int)brightnessFor(c), 12);
+  c.idleMs = 400000;  // tampoco se apaga del todo
+  CHECK_EQ((int)brightnessFor(c), 12);
+  c.screenOff = true;
+  CHECK(!standbyClock(c));
+  CHECK_EQ((int)brightnessFor(c), 0);
+  PowerCtx a = ctx(10000);
+  a.usb = true;
+  CHECK(!standbyClock(a));  // recien tocado: la pantalla normal
 }

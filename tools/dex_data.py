@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""Fuente unica de datos de la Pokedex gen 1 para TamaPoke.
+"""Fuente unica de datos de la Pokedex (gen 1-3) para TamaPoke.
 
 Cada entrada: (num, slug, nombre_pantalla, tipo, evoluciona_a, nivel)
 - slug: nombre en minusculas de la especie (identificador interno)
@@ -8,8 +8,9 @@ Cada entrada: (num, slug, nombre_pantalla, tipo, evoluciona_a, nivel)
   nombres se pintan en mayusculas, asi que aqui van sin tilde
 - tipo: clave de TYPE_ACCENTS (color del nombre en la UI)
 - evoluciona_a: numero de dex (0 = forma final); niveles gen 1 reales,
-  piedras ~30 y por intercambio ~40 convertidos a nivel. Eevee (133) se
-  ramifica en el codigo del juego (134/135/136 al azar).
+  piedras ~30 y por intercambio ~40 convertidos a nivel. Las especies con
+  varios destinos (Eevee, Gloom...) llevan los demas en BRANCHES.
+- gen 2-3 (152-386): portadas de ShadowEnemyx/TamaPoke (MIT).
 """
 
 TYPE_ACCENTS = {
@@ -27,10 +28,14 @@ TYPE_ACCENTS = {
     'roca':      '#93803d',
     'fantasma':  '#6a5a9e',
     'dragon':    '#5a52c4',
+    'siniestro': '#5a4f73',
+    'acero':     '#7f8c9a',
+    'volador':   '#7f8fc4',
+    'hada':      '#d685ad',
 }
 
 # num, slug, display, tipo, evolucionaA, nivel
-DEX = [
+DEX_GEN3 = [
     (1, 'bulbasaur', 'BULBASAUR', 'planta', 2, 16),
     (2, 'ivysaur', 'IVYSAUR', 'planta', 3, 32),
     (3, 'venusaur', 'VENUSAUR', 'planta', 0, 0),
@@ -72,7 +77,7 @@ DEX = [
     (39, 'jigglypuff', 'JIGGLYPUFF', 'normal', 40, 30),
     (40, 'wigglytuff', 'WIGGLYTUFF', 'normal', 0, 0),
     (41, 'zubat', 'ZUBAT', 'veneno', 42, 22),
-    (42, 'golbat', 'GOLBAT', 'veneno', 0, 0),
+    (42, 'golbat', 'GOLBAT', 'veneno', 169, 30),
     (43, 'oddish', 'ODDISH', 'planta', 44, 21),
     (44, 'gloom', 'GLOOM', 'planta', 45, 36),
     (45, 'vileplume', 'VILEPLUME', 'planta', 0, 0),
@@ -125,7 +130,7 @@ DEX = [
     (92, 'gastly', 'GASTLY', 'fantasma', 93, 25),
     (93, 'haunter', 'HAUNTER', 'fantasma', 94, 40),
     (94, 'gengar', 'GENGAR', 'fantasma', 0, 0),
-    (95, 'onix', 'ONIX', 'roca', 0, 0),
+    (95, 'onix', 'ONIX', 'roca', 208, 30),
     (96, 'drowzee', 'DROWZEE', 'psiquico', 97, 26),
     (97, 'hypno', 'HYPNO', 'psiquico', 0, 0),
     (98, 'krabby', 'KRABBY', 'agua', 99, 28),
@@ -143,17 +148,17 @@ DEX = [
     (110, 'weezing', 'WEEZING', 'veneno', 0, 0),
     (111, 'rhyhorn', 'RHYHORN', 'tierra', 112, 42),
     (112, 'rhydon', 'RHYDON', 'tierra', 0, 0),
-    (113, 'chansey', 'CHANSEY', 'normal', 0, 0),
+    (113, 'chansey', 'CHANSEY', 'normal', 242, 30),
     (114, 'tangela', 'TANGELA', 'planta', 0, 0),
     (115, 'kangaskhan', 'KANGASKHAN', 'normal', 0, 0),
     (116, 'horsea', 'HORSEA', 'agua', 117, 32),
-    (117, 'seadra', 'SEADRA', 'agua', 0, 0),
+    (117, 'seadra', 'SEADRA', 'agua', 230, 42),
     (118, 'goldeen', 'GOLDEEN', 'agua', 119, 33),
     (119, 'seaking', 'SEAKING', 'agua', 0, 0),
     (120, 'staryu', 'STARYU', 'agua', 121, 30),
     (121, 'starmie', 'STARMIE', 'agua', 0, 0),
     (122, 'mrmime', 'MR. MIME', 'psiquico', 0, 0),
-    (123, 'scyther', 'SCYTHER', 'bicho', 0, 0),
+    (123, 'scyther', 'SCYTHER', 'bicho', 212, 30),
     (124, 'jynx', 'JYNX', 'hielo', 0, 0),
     (125, 'electabuzz', 'ELECTABUZZ', 'electrico', 0, 0),
     (126, 'magmar', 'MAGMAR', 'fuego', 0, 0),
@@ -167,7 +172,7 @@ DEX = [
     (134, 'vaporeon', 'VAPOREON', 'agua', 0, 0),
     (135, 'jolteon', 'JOLTEON', 'electrico', 0, 0),
     (136, 'flareon', 'FLAREON', 'fuego', 0, 0),
-    (137, 'porygon', 'PORYGON', 'normal', 0, 0),
+    (137, 'porygon', 'PORYGON', 'normal', 233, 30),
     (138, 'omanyte', 'OMANYTE', 'roca', 139, 40),
     (139, 'omastar', 'OMASTAR', 'roca', 0, 0),
     (140, 'kabuto', 'KABUTO', 'roca', 141, 40),
@@ -182,14 +187,290 @@ DEX = [
     (149, 'dragonite', 'DRAGONITE', 'dragon', 0, 0),
     (150, 'mewtwo', 'MEWTWO', 'psiquico', 0, 0),
     (151, 'mew', 'MEW', 'psiquico', 0, 0),
+    (152, 'chikorita', 'CHIKORITA', 'planta', 153, 16),
+    (153, 'bayleef', 'BAYLEEF', 'planta', 154, 32),
+    (154, 'meganium', 'MEGANIUM', 'planta', 0, 0),
+    (155, 'cyndaquil', 'CYNDAQUIL', 'fuego', 156, 14),
+    (156, 'quilava', 'QUILAVA', 'fuego', 157, 36),
+    (157, 'typhlosion', 'TYPHLOSION', 'fuego', 0, 0),
+    (158, 'totodile', 'TOTODILE', 'agua', 159, 18),
+    (159, 'croconaw', 'CROCONAW', 'agua', 160, 30),
+    (160, 'feraligatr', 'FERALIGATR', 'agua', 0, 0),
+    (161, 'sentret', 'SENTRET', 'normal', 162, 15),
+    (162, 'furret', 'FURRET', 'normal', 0, 0),
+    (163, 'hoothoot', 'HOOTHOOT', 'normal', 164, 20),
+    (164, 'noctowl', 'NOCTOWL', 'normal', 0, 0),
+    (165, 'ledyba', 'LEDYBA', 'bicho', 166, 18),
+    (166, 'ledian', 'LEDIAN', 'bicho', 0, 0),
+    (167, 'spinarak', 'SPINARAK', 'bicho', 168, 22),
+    (168, 'ariados', 'ARIADOS', 'bicho', 0, 0),
+    (169, 'crobat', 'CROBAT', 'veneno', 0, 0),
+    (170, 'chinchou', 'CHINCHOU', 'agua', 171, 27),
+    (171, 'lanturn', 'LANTURN', 'agua', 0, 0),
+    (172, 'pichu', 'PICHU', 'electrico', 25, 10),
+    (173, 'cleffa', 'CLEFFA', 'normal', 35, 10),
+    (174, 'igglybuff', 'IGGLYBUFF', 'normal', 39, 10),
+    (175, 'togepi', 'TOGEPI', 'normal', 176, 10),
+    (176, 'togetic', 'TOGETIC', 'normal', 0, 0),
+    (177, 'natu', 'NATU', 'psiquico', 178, 25),
+    (178, 'xatu', 'XATU', 'psiquico', 0, 0),
+    (179, 'mareep', 'MAREEP', 'electrico', 180, 15),
+    (180, 'flaaffy', 'FLAAFFY', 'electrico', 181, 30),
+    (181, 'ampharos', 'AMPHAROS', 'electrico', 0, 0),
+    (182, 'bellossom', 'BELLOSSOM', 'planta', 0, 0),
+    (183, 'marill', 'MARILL', 'agua', 184, 18),
+    (184, 'azumarill', 'AZUMARILL', 'agua', 0, 0),
+    (185, 'sudowoodo', 'SUDOWOODO', 'roca', 0, 0),
+    (186, 'politoed', 'POLITOED', 'agua', 0, 0),
+    (187, 'hoppip', 'HOPPIP', 'planta', 188, 18),
+    (188, 'skiploom', 'SKIPLOOM', 'planta', 189, 27),
+    (189, 'jumpluff', 'JUMPLUFF', 'planta', 0, 0),
+    (190, 'aipom', 'AIPOM', 'normal', 0, 0),
+    (191, 'sunkern', 'SUNKERN', 'planta', 192, 20),
+    (192, 'sunflora', 'SUNFLORA', 'planta', 0, 0),
+    (193, 'yanma', 'YANMA', 'bicho', 0, 0),
+    (194, 'wooper', 'WOOPER', 'agua', 195, 20),
+    (195, 'quagsire', 'QUAGSIRE', 'agua', 0, 0),
+    (196, 'espeon', 'ESPEON', 'psiquico', 0, 0),
+    (197, 'umbreon', 'UMBREON', 'siniestro', 0, 0),
+    (198, 'murkrow', 'MURKROW', 'siniestro', 0, 0),
+    (199, 'slowking', 'SLOWKING', 'agua', 0, 0),
+    (200, 'misdreavus', 'MISDREAVUS', 'fantasma', 0, 0),
+    (201, 'unown', 'UNOWN', 'psiquico', 0, 0),
+    (202, 'wobbuffet', 'WOBBUFFET', 'psiquico', 0, 0),
+    (203, 'girafarig', 'GIRAFARIG', 'normal', 0, 0),
+    (204, 'pineco', 'PINECO', 'bicho', 205, 31),
+    (205, 'forretress', 'FORRETRESS', 'bicho', 0, 0),
+    (206, 'dunsparce', 'DUNSPARCE', 'normal', 0, 0),
+    (207, 'gligar', 'GLIGAR', 'tierra', 0, 0),
+    (208, 'steelix', 'STEELIX', 'tierra', 0, 0),
+    (209, 'snubbull', 'SNUBBULL', 'normal', 210, 23),
+    (210, 'granbull', 'GRANBULL', 'normal', 0, 0),
+    (211, 'qwilfish', 'QWILFISH', 'agua', 0, 0),
+    (212, 'scizor', 'SCIZOR', 'bicho', 0, 0),
+    (213, 'shuckle', 'SHUCKLE', 'bicho', 0, 0),
+    (214, 'heracross', 'HERACROSS', 'bicho', 0, 0),
+    (215, 'sneasel', 'SNEASEL', 'siniestro', 0, 0),
+    (216, 'teddiursa', 'TEDDIURSA', 'normal', 217, 30),
+    (217, 'ursaring', 'URSARING', 'normal', 0, 0),
+    (218, 'slugma', 'SLUGMA', 'fuego', 219, 38),
+    (219, 'magcargo', 'MAGCARGO', 'fuego', 0, 0),
+    (220, 'swinub', 'SWINUB', 'hielo', 221, 33),
+    (221, 'piloswine', 'PILOSWINE', 'hielo', 0, 0),
+    (222, 'corsola', 'CORSOLA', 'agua', 0, 0),
+    (223, 'remoraid', 'REMORAID', 'agua', 224, 25),
+    (224, 'octillery', 'OCTILLERY', 'agua', 0, 0),
+    (225, 'delibird', 'DELIBIRD', 'hielo', 0, 0),
+    (226, 'mantine', 'MANTINE', 'agua', 0, 0),
+    (227, 'skarmory', 'SKARMORY', 'acero', 0, 0),
+    (228, 'houndour', 'HOUNDOUR', 'siniestro', 229, 24),
+    (229, 'houndoom', 'HOUNDOOM', 'siniestro', 0, 0),
+    (230, 'kingdra', 'KINGDRA', 'agua', 0, 0),
+    (231, 'phanpy', 'PHANPY', 'tierra', 232, 25),
+    (232, 'donphan', 'DONPHAN', 'tierra', 0, 0),
+    (233, 'porygon2', 'PORYGON2', 'normal', 0, 0),
+    (234, 'stantler', 'STANTLER', 'normal', 0, 0),
+    (235, 'smeargle', 'SMEARGLE', 'normal', 0, 0),
+    (236, 'tyrogue', 'TYROGUE', 'lucha', 106, 20),
+    (237, 'hitmontop', 'HITMONTOP', 'lucha', 0, 0),
+    (238, 'smoochum', 'SMOOCHUM', 'hielo', 124, 30),
+    (239, 'elekid', 'ELEKID', 'electrico', 125, 30),
+    (240, 'magby', 'MAGBY', 'fuego', 126, 30),
+    (241, 'miltank', 'MILTANK', 'normal', 0, 0),
+    (242, 'blissey', 'BLISSEY', 'normal', 0, 0),
+    (243, 'raikou', 'RAIKOU', 'electrico', 0, 0),
+    (244, 'entei', 'ENTEI', 'fuego', 0, 0),
+    (245, 'suicune', 'SUICUNE', 'agua', 0, 0),
+    (246, 'larvitar', 'LARVITAR', 'roca', 247, 30),
+    (247, 'pupitar', 'PUPITAR', 'roca', 248, 55),
+    (248, 'tyranitar', 'TYRANITAR', 'roca', 0, 0),
+    (249, 'lugia', 'LUGIA', 'psiquico', 0, 0),
+    (250, 'ho-oh', 'HO_OH', 'fuego', 0, 0),
+    (251, 'celebi', 'CELEBI', 'psiquico', 0, 0),
+    (252, 'treecko', 'TREECKO', 'planta', 253, 16),
+    (253, 'grovyle', 'GROVYLE', 'planta', 254, 36),
+    (254, 'sceptile', 'SCEPTILE', 'planta', 0, 0),
+    (255, 'torchic', 'TORCHIC', 'fuego', 256, 16),
+    (256, 'combusken', 'COMBUSKEN', 'fuego', 257, 36),
+    (257, 'blaziken', 'BLAZIKEN', 'fuego', 0, 0),
+    (258, 'mudkip', 'MUDKIP', 'agua', 259, 16),
+    (259, 'marshtomp', 'MARSHTOMP', 'agua', 260, 36),
+    (260, 'swampert', 'SWAMPERT', 'agua', 0, 0),
+    (261, 'poochyena', 'POOCHYENA', 'siniestro', 262, 18),
+    (262, 'mightyena', 'MIGHTYENA', 'siniestro', 0, 0),
+    (263, 'zigzagoon', 'ZIGZAGOON', 'normal', 264, 20),
+    (264, 'linoone', 'LINOONE', 'normal', 0, 0),
+    (265, 'wurmple', 'WURMPLE', 'bicho', 266, 7),
+    (266, 'silcoon', 'SILCOON', 'bicho', 267, 10),
+    (267, 'beautifly', 'BEAUTIFLY', 'bicho', 0, 0),
+    (268, 'cascoon', 'CASCOON', 'bicho', 269, 10),
+    (269, 'dustox', 'DUSTOX', 'bicho', 0, 0),
+    (270, 'lotad', 'LOTAD', 'agua', 271, 14),
+    (271, 'lombre', 'LOMBRE', 'agua', 272, 30),
+    (272, 'ludicolo', 'LUDICOLO', 'agua', 0, 0),
+    (273, 'seedot', 'SEEDOT', 'planta', 274, 14),
+    (274, 'nuzleaf', 'NUZLEAF', 'planta', 275, 30),
+    (275, 'shiftry', 'SHIFTRY', 'planta', 0, 0),
+    (276, 'taillow', 'TAILLOW', 'normal', 277, 22),
+    (277, 'swellow', 'SWELLOW', 'normal', 0, 0),
+    (278, 'wingull', 'WINGULL', 'agua', 279, 25),
+    (279, 'pelipper', 'PELIPPER', 'agua', 0, 0),
+    (280, 'ralts', 'RALTS', 'psiquico', 281, 20),
+    (281, 'kirlia', 'KIRLIA', 'psiquico', 282, 30),
+    (282, 'gardevoir', 'GARDEVOIR', 'psiquico', 0, 0),
+    (283, 'surskit', 'SURSKIT', 'bicho', 284, 22),
+    (284, 'masquerain', 'MASQUERAIN', 'bicho', 0, 0),
+    (285, 'shroomish', 'SHROOMISH', 'planta', 286, 23),
+    (286, 'breloom', 'BRELOOM', 'planta', 0, 0),
+    (287, 'slakoth', 'SLAKOTH', 'normal', 288, 18),
+    (288, 'vigoroth', 'VIGOROTH', 'normal', 289, 36),
+    (289, 'slaking', 'SLAKING', 'normal', 0, 0),
+    (290, 'nincada', 'NINCADA', 'bicho', 291, 20),
+    (291, 'ninjask', 'NINJASK', 'bicho', 0, 0),
+    (292, 'shedinja', 'SHEDINJA', 'bicho', 0, 0),
+    (293, 'whismur', 'WHISMUR', 'normal', 294, 20),
+    (294, 'loudred', 'LOUDRED', 'normal', 295, 40),
+    (295, 'exploud', 'EXPLOUD', 'normal', 0, 0),
+    (296, 'makuhita', 'MAKUHITA', 'lucha', 297, 24),
+    (297, 'hariyama', 'HARIYAMA', 'lucha', 0, 0),
+    (298, 'azurill', 'AZURILL', 'normal', 183, 10),
+    (299, 'nosepass', 'NOSEPASS', 'roca', 0, 0),
+    (300, 'skitty', 'SKITTY', 'normal', 301, 30),
+    (301, 'delcatty', 'DELCATTY', 'normal', 0, 0),
+    (302, 'sableye', 'SABLEYE', 'siniestro', 0, 0),
+    (303, 'mawile', 'MAWILE', 'acero', 0, 0),
+    (304, 'aron', 'ARON', 'acero', 305, 32),
+    (305, 'lairon', 'LAIRON', 'acero', 306, 42),
+    (306, 'aggron', 'AGGRON', 'acero', 0, 0),
+    (307, 'meditite', 'MEDITITE', 'lucha', 308, 37),
+    (308, 'medicham', 'MEDICHAM', 'lucha', 0, 0),
+    (309, 'electrike', 'ELECTRIKE', 'electrico', 310, 26),
+    (310, 'manectric', 'MANECTRIC', 'electrico', 0, 0),
+    (311, 'plusle', 'PLUSLE', 'electrico', 0, 0),
+    (312, 'minun', 'MINUN', 'electrico', 0, 0),
+    (313, 'volbeat', 'VOLBEAT', 'bicho', 0, 0),
+    (314, 'illumise', 'ILLUMISE', 'bicho', 0, 0),
+    (315, 'roselia', 'ROSELIA', 'planta', 0, 0),
+    (316, 'gulpin', 'GULPIN', 'veneno', 317, 26),
+    (317, 'swalot', 'SWALOT', 'veneno', 0, 0),
+    (318, 'carvanha', 'CARVANHA', 'agua', 319, 30),
+    (319, 'sharpedo', 'SHARPEDO', 'agua', 0, 0),
+    (320, 'wailmer', 'WAILMER', 'agua', 321, 40),
+    (321, 'wailord', 'WAILORD', 'agua', 0, 0),
+    (322, 'numel', 'NUMEL', 'fuego', 323, 33),
+    (323, 'camerupt', 'CAMERUPT', 'fuego', 0, 0),
+    (324, 'torkoal', 'TORKOAL', 'fuego', 0, 0),
+    (325, 'spoink', 'SPOINK', 'psiquico', 326, 32),
+    (326, 'grumpig', 'GRUMPIG', 'psiquico', 0, 0),
+    (327, 'spinda', 'SPINDA', 'normal', 0, 0),
+    (328, 'trapinch', 'TRAPINCH', 'tierra', 329, 35),
+    (329, 'vibrava', 'VIBRAVA', 'tierra', 330, 45),
+    (330, 'flygon', 'FLYGON', 'tierra', 0, 0),
+    (331, 'cacnea', 'CACNEA', 'planta', 332, 32),
+    (332, 'cacturne', 'CACTURNE', 'planta', 0, 0),
+    (333, 'swablu', 'SWABLU', 'normal', 334, 35),
+    (334, 'altaria', 'ALTARIA', 'dragon', 0, 0),
+    (335, 'zangoose', 'ZANGOOSE', 'normal', 0, 0),
+    (336, 'seviper', 'SEVIPER', 'veneno', 0, 0),
+    (337, 'lunatone', 'LUNATONE', 'roca', 0, 0),
+    (338, 'solrock', 'SOLROCK', 'roca', 0, 0),
+    (339, 'barboach', 'BARBOACH', 'agua', 340, 30),
+    (340, 'whiscash', 'WHISCASH', 'agua', 0, 0),
+    (341, 'corphish', 'CORPHISH', 'agua', 342, 30),
+    (342, 'crawdaunt', 'CRAWDAUNT', 'agua', 0, 0),
+    (343, 'baltoy', 'BALTOY', 'tierra', 344, 36),
+    (344, 'claydol', 'CLAYDOL', 'tierra', 0, 0),
+    (345, 'lileep', 'LILEEP', 'roca', 346, 40),
+    (346, 'cradily', 'CRADILY', 'roca', 0, 0),
+    (347, 'anorith', 'ANORITH', 'roca', 348, 40),
+    (348, 'armaldo', 'ARMALDO', 'roca', 0, 0),
+    (349, 'feebas', 'FEEBAS', 'agua', 350, 30),
+    (350, 'milotic', 'MILOTIC', 'agua', 0, 0),
+    (351, 'castform', 'CASTFORM', 'normal', 0, 0),
+    (352, 'kecleon', 'KECLEON', 'normal', 0, 0),
+    (353, 'shuppet', 'SHUPPET', 'fantasma', 354, 37),
+    (354, 'banette', 'BANETTE', 'fantasma', 0, 0),
+    (355, 'duskull', 'DUSKULL', 'fantasma', 356, 37),
+    (356, 'dusclops', 'DUSCLOPS', 'fantasma', 0, 0),
+    (357, 'tropius', 'TROPIUS', 'planta', 0, 0),
+    (358, 'chimecho', 'CHIMECHO', 'psiquico', 0, 0),
+    (359, 'absol', 'ABSOL', 'siniestro', 0, 0),
+    (360, 'wynaut', 'WYNAUT', 'psiquico', 202, 15),
+    (361, 'snorunt', 'SNORUNT', 'hielo', 362, 42),
+    (362, 'glalie', 'GLALIE', 'hielo', 0, 0),
+    (363, 'spheal', 'SPHEAL', 'hielo', 364, 32),
+    (364, 'sealeo', 'SEALEO', 'hielo', 365, 44),
+    (365, 'walrein', 'WALREIN', 'hielo', 0, 0),
+    (366, 'clamperl', 'CLAMPERL', 'agua', 367, 40),
+    (367, 'huntail', 'HUNTAIL', 'agua', 0, 0),
+    (368, 'gorebyss', 'GOREBYSS', 'agua', 0, 0),
+    (369, 'relicanth', 'RELICANTH', 'agua', 0, 0),
+    (370, 'luvdisc', 'LUVDISC', 'agua', 0, 0),
+    (371, 'bagon', 'BAGON', 'dragon', 372, 30),
+    (372, 'shelgon', 'SHELGON', 'dragon', 373, 50),
+    (373, 'salamence', 'SALAMENCE', 'dragon', 0, 0),
+    (374, 'beldum', 'BELDUM', 'acero', 375, 20),
+    (375, 'metang', 'METANG', 'acero', 376, 45),
+    (376, 'metagross', 'METAGROSS', 'acero', 0, 0),
+    (377, 'regirock', 'REGIROCK', 'roca', 0, 0),
+    (378, 'regice', 'REGICE', 'hielo', 0, 0),
+    (379, 'registeel', 'REGISTEEL', 'acero', 0, 0),
+    (380, 'latias', 'LATIAS', 'dragon', 0, 0),
+    (381, 'latios', 'LATIOS', 'dragon', 0, 0),
+    (382, 'kyogre', 'KYOGRE', 'agua', 0, 0),
+    (383, 'groudon', 'GROUDON', 'tierra', 0, 0),
+    (384, 'rayquaza', 'RAYQUAZA', 'dragon', 0, 0),
+    (385, 'jirachi', 'JIRACHI', 'acero', 0, 0),
+    (386, 'deoxys', 'DEOXYS', 'psiquico', 0, 0),
 ]
 
-# el primer huevo de la partida siempre es un inicial clasico
-CLASSIC = [1, 4, 7, 25, 133]
+# el primer huevo de la partida siempre es un inicial clasico. Pichu (172) y
+# no Pikachu: desde gen 2 Pikachu es una evolucion y de un huevo solo salen bases
+CLASSIC = [1, 4, 7, 172, 133]
 
-# rarezas de las formas base (lo que no este aqui y sea base = comun)
-RARE = {58, 77, 83, 88, 95, 106, 107, 108, 111, 113, 114, 115, 122, 123,
-        124, 125, 126, 127, 128, 131, 132, 137, 138, 140, 142, 143, 147}
-LEGENDARY = {144, 145, 146, 150, 151}
+# rarezas de las formas base (lo que no este aqui y sea base = comun).
+# Hitmonlee/Hitmonchan, Jynx, Electabuzz y Magmar ya no: desde gen 2 salen
+# de Tyrogue, Smoochum, Elekid y Magby, que son los raros
+RARE_GEN3 = {58, 77, 83, 88, 95, 108, 111, 113, 114, 115, 122, 123, 127, 128,
+        131, 132, 137, 138, 140, 142, 143, 147, 175, 193, 198, 200, 201, 206,
+        213, 214, 215, 222, 225, 226, 227, 234, 235, 236, 238, 239, 240, 241,
+        246, 302, 303, 324, 327, 335, 336, 337, 338, 345, 347, 349, 352, 357,
+        359, 361, 369, 370, 371, 374}
+LEGENDARY = {144, 145, 146, 150, 151, 243, 244, 245, 249, 250, 251, 377, 378, 379,
+             380, 381, 382, 383, 384, 385, 386}
+
+# Evoluciones con mas de un destino: ademas de evoluciona_a, el juego elige al
+# azar entre estas (prefiere la que falte en la pokedex), al mismo nivel. Las
+# de gen 2-3 por objeto, intercambio u hora del dia se simplifican asi.
+BRANCHES = {
+    44: [182],                    # Gloom -> Vileplume / Bellossom
+    61: [186],                    # Poliwhirl -> Poliwrath / Politoed
+    79: [199],                    # Slowpoke -> Slowbro / Slowking
+    133: [135, 136, 196, 197],    # Eevee -> Vaporeon / Jolteon / Flareon / Espeon / Umbreon
+    236: [107, 237],              # Tyrogue -> Hitmonlee / Hitmonchan / Hitmontop
+    265: [268],                   # Wurmple -> Silcoon / Cascoon
+    290: [292],                   # Nincada -> Ninjask / Shedinja
+    366: [368],                   # Clamperl -> Huntail / Gorebyss
+}
+
+# ---- gen 4-9 (387-1025): generadas por tools/gen_dex_modern.py desde PokeAPI ----
+from dex_data_modern import (DEX_MODERN, OLD_EVOS, BRANCHES_MODERN,  # noqa: E402
+                             RARE_MODERN, LEGENDARY_MODERN, SIN_SPRITE)
+
+_patch = {de: (a, lvl) for de, a, lvl in OLD_EVOS}
+DEX = [(n, slug, disp, tipo, *_patch.get(n, (evo, lvl))) for n, slug, disp, tipo, evo, lvl in DEX_GEN3]
+DEX += DEX_MODERN
+
+for _de, _destinos in BRANCHES_MODERN.items():
+    BRANCHES.setdefault(_de, []).extend(_destinos)
+
+# especies sin sprite animado: ni salen de huevo ni son destino de evolucion
+SIN_SPRITE = set(SIN_SPRITE)
+
+LEGENDARY = LEGENDARY | set(LEGENDARY_MODERN)
+# raras de gen 1-3 que ahora tienen preevolucion (Chansey <- Happiny...) dejan
+# de ser base: la rareza pasa a la preevolucion
+_evolucionadas = {d[4] for d in DEX if d[4]} | {t for v in BRANCHES.values() for t in v}
+RARE = (RARE_GEN3 | set(RARE_MODERN)) - _evolucionadas
 
 SLUGS = {n: s for n, s, *_ in DEX}

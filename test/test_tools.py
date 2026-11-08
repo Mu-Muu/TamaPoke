@@ -52,10 +52,10 @@ class TestDexData(unittest.TestCase):
         cls.STATS, cls.NAMES = BASE_STATS, LOCAL_NAMES
         cls.byNum = {row[0]: row for row in DEX}
 
-    def test_estan_las_151_especies_sin_huecos_ni_repetidos(self):
+    def test_estan_las_1025_especies_sin_huecos_ni_repetidos(self):
         nums = [row[0] for row in self.DEX]
-        self.assertEqual(len(nums), 151)
-        self.assertEqual(sorted(nums), list(range(1, 152)))
+        self.assertEqual(len(nums), 1025)
+        self.assertEqual(sorted(nums), list(range(1, 1026)))
 
     def test_los_slugs_son_unicos_y_en_minusculas(self):
         slugs = [row[1] for row in self.DEX]
@@ -106,12 +106,13 @@ class TestDexData(unittest.TestCase):
         self.assertFalse(self.RARE & self.LEGENDARY, 'una especie no puede ser rara y legendaria')
 
     def test_los_iniciales_clasicos_existen(self):
-        evolucionadas = {row[4] for row in self.DEX if row[4]}
+        from dex_data import BRANCHES
+        evolucionadas = {row[4] for row in self.DEX if row[4]} | {t for v in BRANCHES.values() for t in v}
         for num in self.CLASSIC:
             self.assertIn(num, self.byNum, f'inicial inexistente: {num}')
             self.assertNotIn(num, evolucionadas, f'{self.byNum[num][2]} no puede ser inicial')
 
-    def test_hay_stats_base_de_las_151(self):
+    def test_hay_stats_base_de_todas(self):
         for num in self.byNum:
             self.assertIn(num, self.STATS, f'faltan stats de {self.byNum[num][2]}')
             hp, atk, dfn, spe = self.STATS[num]
@@ -119,23 +120,14 @@ class TestDexData(unittest.TestCase):
                 self.assertTrue(0 < v <= 255, f'stat fuera de rango en {self.byNum[num][2]}: {v}')
 
     def test_los_nombres_traducidos_cuadran_con_su_fuente(self):
-        # Los latinos se pintan con la fuente CP437 (un byte por caracter, sin
-        # minusculas en los nombres); el japones y el coreano con una fuente
-        # U8g2 y van en UTF-8, asi que ni son ASCII ni tienen mayusculas que
-        # comprobar.
-        LATINOS, CJK = ('fr', 'de'), ('ja', 'ko')
+        # Solo hay nombres chinos: van en UTF-8 con una fuente U8g2, asi que el
+        # limite util son CARACTERES, no bytes (cada hanzi ocupa 3).
         for num, langs in self.NAMES.items():
             self.assertIn(num, self.byNum, f'nombre traducido de una especie inexistente: {num}')
             for lang, name in langs.items():
-                self.assertIn(lang, LATINOS + CJK, f'idioma inesperado: {lang}')
+                self.assertEqual(lang, 'zh', f'idioma inesperado: {lang}')
                 self.assertTrue(name, f'{num} {lang} vacio')
-                if lang in LATINOS:
-                    self.assertTrue(name.isascii(), f'{num} {lang} no es ASCII: {name}')
-                    self.assertEqual(name, name.upper(), f'{num} {lang} lleva minusculas: {name}')
-                    self.assertLessEqual(len(name), 12, f'{num} {lang} no cabe en pantalla: {name}')
-                else:
-                    # el limite util son CARACTERES, no bytes: en UTF-8 cada kana o silaba hangul ocupa 3
-                    self.assertLessEqual(len(name), 8, f'{num} {lang} no cabe en pantalla: {name}')
+                self.assertLessEqual(len(name), 8, f'{num} {lang} no cabe en pantalla: {name}')
 
 
 class TestGeneratedFiles(unittest.TestCase):
@@ -158,7 +150,7 @@ class TestGeneratedFiles(unittest.TestCase):
             shutil.rmtree(tmp, ignore_errors=True)
 
     def test_los_ficheros_generados_avisan_de_que_lo_son(self):
-        for name in ('dex.h', 'species.h'):
+        for name in ('dex.h', 'species.h', 'zhfont.h'):
             with open(os.path.join(ROOT, name)) as fh:
                 head = fh.read(400)
             self.assertIn('GENERADO', head, f'{name} deberia decir que esta generado')
@@ -169,22 +161,76 @@ class TestSketchSanity(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        with open(os.path.join(ROOT, 'TamaPoke.ino')) as fh:
-            cls.ino = fh.read()
+        # el sketch esta repartido en pestañas: TamaPoke.ino y las demas .ino
+        cls.ino = {}
+        for nombre in sorted(f for f in os.listdir(ROOT) if f.endswith('.ino')):
+            with open(os.path.join(ROOT, nombre), encoding='utf-8') as fh:
+                cls.ino[nombre] = fh.read()
+        assert 'TamaPoke.ino' in cls.ino
+
+    def test_ningun_numero_de_pokedex_cabe_en_8_bits(self):
+        # Desde gen 2-3 hay especies por encima de 255: un uint8_t las trunca
+        # en silencio (la 257 cargaba el sprite de la 1). Ni parametros ni
+        # variables de 8 bits con nombre de especie en el firmware.
+        # (los arrays como dexReg[] son bitmaps de bytes: esos si)
+        patron = re.compile(r'\buint8_t[\s*&]+(dex\w*|species\w*|eggTarget|evolvesTo|galleryDetail)\b(?!\s*\[)')
+        fuentes = [f for f in os.listdir(ROOT) if f.endswith(('.ino', '.cpp', '.h'))]
+        for nombre in fuentes:
+            with open(os.path.join(ROOT, nombre), encoding='utf-8') as fh:
+                for lineno, line in enumerate(fh, 1):
+                    code = line.split('//')[0]
+                    with self.subTest(fichero=nombre, linea=lineno):
+                        self.assertIsNone(patron.search(code), f'{nombre}:{lineno}: {code.strip()}')
 
     def test_el_sketch_no_lleva_caracteres_no_ascii_en_literales_de_pantalla(self):
         # los comentarios pueden llevar lo que quieran; los literales, no:
         # la fuente GFX es ASCII y un acento sale como basura
-        for lineno, line in enumerate(self.ino.splitlines(), 1):
-            code = line.split('//')[0]
-            for chunk in code.split('"')[1::2]:
-                self.assertTrue(chunk.isascii(),
-                                f'TamaPoke.ino:{lineno}: literal no ASCII: {chunk!r}')
+        for nombre, texto in self.ino.items():
+            for lineno, line in enumerate(texto.splitlines(), 1):
+                code = line.split('//')[0]
+                for chunk in code.split('"')[1::2]:
+                    self.assertTrue(chunk.isascii(),
+                                    f'{nombre}:{lineno}: literal no ASCII: {chunk!r}')
 
     def test_las_llaves_estan_equilibradas(self):
-        self.assertEqual(self.ino.count('{'), self.ino.count('}'),
-                         'llaves descompensadas en TamaPoke.ino')
+        for nombre, texto in self.ino.items():
+            self.assertEqual(texto.count('{'), texto.count('}'),
+                             f'llaves descompensadas en {nombre}')
 
+
+
+class TestChinoEnLaFuente(unittest.TestCase):
+    """Todo el chino que se pinta esta en la fuente recortada (zhfont.h).
+
+    Arduino_GFX no dibuja nada si falta el glifo (ni avanza el cursor), asi que
+    un caracter que no este en la fuente desapareceria sin avisar. La fuente
+    lleva solo lo que se usa: al cambiar un texto o un nombre hay que
+    regenerarla con tools/make_zh_font.py, y este test avisa si se olvida.
+    """
+
+    def test_textos_y_nombres_chinos_estan_en_la_fuente(self):
+        import make_zh_font
+
+        with open(os.path.join(ROOT, 'tools', 'zh_font_chars.txt'), encoding='utf-8') as fh:
+            en_fuente = set(fh.read().strip())
+        usados = {chr(c) for c in make_zh_font.used_chars()}
+        self.assertTrue(usados)
+        faltan = ''.join(sorted(usados - en_fuente))
+        self.assertFalse(faltan, f'faltan en la fuente (python3 tools/make_zh_font.py <bdf>): {faltan}')
+        self.assertIn('椪', en_fuente)  # el de Ogerpon, que GB2312 no tenia
+
+    def test_el_codificador_de_fuentes_lee_lo_que_escribe(self):
+        import make_zh_font as m
+
+        # glifos de mentira: un cuadrado, una cruz, uno vacio (espacio) y uno unicode
+        cuadro = [[1] * 6 for _ in range(6)]
+        cruz = [[1 if r == 3 or c == 3 else 0 for c in range(7)] for r in range(7)]
+        glifos = {32: (0, 0, 0, 0, 4, []), 65: (6, 6, 1, 0, 8, cuadro), 103: (7, 7, 0, -2, 8, cruz),
+                  0x4E2D: (7, 7, 0, -1, 9, cruz), 0x692A: (6, 6, 2, 1, 10, cuadro)}
+        fuente = m.build_font(glifos)
+        for c, g in glifos.items():
+            self.assertEqual(m.decode_font(fuente, c), g, chr(c))
+        self.assertIsNone(m.decode_font(fuente, 0x4E00))
 
 
 class TestBuffersDeTexto(unittest.TestCase):
@@ -206,9 +252,12 @@ class TestBuffersDeTexto(unittest.TestCase):
     ARGS_S = {  # que puede llegar por cada %s, en orden
         'S_NAME_FMT': ('estrella', 'nombre_o_apodo'),
         'S_RELEASE_FMT': ('nombre',),
-        'S_INFO_FMT': ('baya',),
         'S_FAREWELL_BTN': ('nombre_o_apodo',),
         'S_RUNAWAY_BTN': ('nombre_o_apodo',),
+        'S_REGION_DONE_FMT': ('region',),
+        'S_VISIT_FMT': ('nombre_o_apodo',),
+        'S_HOL_BIRTHDAY': ('dueño',),
+        'S_SAY_LOVE': ('dueño',),
     }
     CIFRAS = {'u': 5, 'd': 5, 'lu': 10}
     ESPEC = re.compile(r'%0?\d*(lu|u|d|s)')
@@ -228,8 +277,9 @@ class TestBuffersDeTexto(unittest.TestCase):
         ids = re.findall(r'\b(S_[A-Z0-9_]+)\b', cuerpo)
         filas = fmt.extract_table(leer('i18n.cpp'), 'STRINGS', len(cls.LANGS))
         cls.LIT = {sid: [fila[k] for fila in filas] for k, sid in enumerate(ids)}
-        cls.ino = leer('TamaPoke.ino').splitlines()
+        cls.ino = {f: leer(f).splitlines() for f in sorted(os.listdir(ROOT)) if f.endswith('.ino')}
         cls.APODO = int(re.search(r'char\s+nick\[(\d+)\]', leer('pet.h')).group(1)) - 1
+        cls.DUENO = int(re.search(r'sizeof\(OWNER_NAME\)\s*<=\s*(\d+)', leer('config.h')).group(1)) - 1
         base = max(len(row[2].encode()) for row in DEX)
         cls.NOMBRE = {}
         for lang in cls.LANGS:
@@ -269,30 +319,35 @@ class TestBuffersDeTexto(unittest.TestCase):
                 total += self.NOMBRE[lang]
             elif arg == 'nombre_o_apodo':
                 total += max(self.NOMBRE[lang], self.APODO)
-            elif arg == 'baya':
-                total += max(self.bytes_literal(self.LIT[b][li]) for b in
-                             ('S_BERRY_UNK', 'S_BERRY_RED', 'S_BERRY_BLUE', 'S_BERRY_GREEN'))
+            elif arg == 'dueño':  # OWNER_NAME (config.h, con su tope)
+                total += self.DUENO
+            elif arg == 'region':
+                total += max(self.bytes_literal(self.LIT[f'S_REGION_{k}'][li]) for k in range(1, 10))
         return total
 
     def test_cada_texto_formateado_cabe_en_su_buffer_en_todos_los_idiomas(self):
         llamada = re.compile(r'snprintf\((\w+),\s*sizeof\(\1\),\s*T\((S_[A-Z0-9_]+)\)')
         revisadas = 0
-        for n, linea in enumerate(self.ino, 1):
-            m = llamada.search(linea.split('//')[0])
-            if not m:
-                continue
-            var, sid = m.groups()
-            tam = next((int(d.group(1)) for k in range(n - 2, -1, -1)
-                        for d in [re.search(r'\bchar\s+' + var + r'\s*\[(\d+)\]', self.ino[k])]
-                        if d), None)
-            self.assertIsNotNone(tam, f'TamaPoke.ino:{n}: no encuentro la declaracion de {var}')
-            revisadas += 1
-            for li, lang in enumerate(self.LANGS):
-                with self.subTest(linea=n, id=sid, idioma=lang):
-                    peor = self.peor_caso(sid, li)
-                    self.assertLessEqual(
-                        peor, tam,
-                        f'TamaPoke.ino:{n}: {var}[{tam}] con {sid} en {lang} necesita {peor} bytes')
+        for fichero, lineas in self.ino.items():
+            for n, linea in enumerate(lineas, 1):
+                m = llamada.search(linea.split('//')[0])
+                if not m:
+                    continue
+                var, sid = m.groups()
+                tam = next((int(d.group(1)) for k in range(n - 2, -1, -1)
+                            for d in [re.search(r'\bchar\s+(?:\w+\s*\[\d+\]\s*,\s*)*' + var + r'\s*\[(\d+)\]', lineas[k])]
+                            if d), None)
+                if tam is None:  # buffer global: esta en el principal, que va delante
+                    tam = next((int(d.group(1)) for l in self.ino['TamaPoke.ino']
+                                for d in [re.match(r'char\s+' + var + r'\s*\[(\d+)\]', l)] if d), None)
+                self.assertIsNotNone(tam, f'{fichero}:{n}: no encuentro la declaracion de {var}')
+                revisadas += 1
+                for li, lang in enumerate(self.LANGS):
+                    with self.subTest(fichero=fichero, linea=n, id=sid, idioma=lang):
+                        peor = self.peor_caso(sid, li)
+                        self.assertLessEqual(
+                            peor, tam,
+                            f'{fichero}:{n}: {var}[{tam}] con {sid} en {lang} necesita {peor} bytes')
         self.assertGreater(revisadas, 10, 'el patron de snprintf ya no encuentra las llamadas')
 
 if __name__ == '__main__':
