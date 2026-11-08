@@ -182,6 +182,9 @@ uint32_t dizzyUntil = 0;  // mareado (solo visual: no cambia ninguna estadistica
 #define DIZZY_MS 4000
 uint8_t gPhase = PH_DAY;  // PH_DAY / PH_TWILIGHT / PH_NIGHT (por la salida y la puesta del sol)
 Weather gWxView;          // el tiempo de este frame
+// consola CLOCKAT: hora (minuto del dia) que enseñan los relojes, solo en pantalla (-1 = la real)
+int16_t gClockForce = -1;
+uint32_t shownClock(uint32_t e) { return gClockForce < 0 ? e : e - e % 86400 + (uint32_t)gClockForce * 60; }
 int8_t gWxForce = -1, gPhaseForce = -1;  // consola WXSET / PHASE: ver un tiempo o una luz sin esperar
 // fiestas: la de hoy (la calcula render) y el cumpleaños del dueño (NVS "fest", consola BDAY)
 uint8_t gHoliday = HOL_NONE;

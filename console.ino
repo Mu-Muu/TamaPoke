@@ -257,6 +257,17 @@ void handleSerial() {
   } else if (line == "VISIT") {  // que venga ya alguien de la granja (pruebas)
     nextVisit = millis();
     Serial.println("DONE");
+  } else if (line.startsWith("CLOCKAT ")) {  // los relojes enseñan esta hora: CLOCKAT hh mm (CLOCKAT -1 = la real)
+    int h = line.substring(8).toInt(), sp = line.indexOf(' ', 8);
+    int m = sp > 0 ? line.substring(sp + 1).toInt() : 0;
+    gClockForce = (h >= 0 && h < 24 && m >= 0 && m < 60) ? (int16_t)(h * 60 + m) : -1;
+    Serial.println("DONE");
+  } else if (line == "BATHFX") {  // solo la animacion del baño, sin limpiar (capturas)
+    startBath(false);
+    Serial.println("DONE");
+  } else if (line == "WAKE") {  // como un toque: enciende la pantalla y quita el reloj de espera (capturas)
+    wakeUI();
+    Serial.println("DONE");
   } else if (line == "SAY") {  // que diga algo ya (pruebas)
     nextBubble = millis();
     Serial.println("DONE");

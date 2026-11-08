@@ -73,7 +73,7 @@ void renderClock() {
   printT(T(S_SET_TIME));
 
   // la hora de ahora, en grande (se corrige sola por Wi-Fi)
-  uint32_t ahora = pet.lastSeenEpoch ? pet.lastSeenEpoch : rtcEpoch();
+  uint32_t ahora = shownClock(pet.lastSeenEpoch ? pet.lastSeenEpoch : rtcEpoch());
   char t[8];
   snprintf(t, sizeof(t), "%02lu:%02lu", (unsigned long)((ahora / 3600) % 24), (unsigned long)((ahora / 60) % 60));
   setSize(10);

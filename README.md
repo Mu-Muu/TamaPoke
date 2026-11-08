@@ -136,6 +136,10 @@ hop, poke the head or belly, tickle it (too much and it gets annoyed), drag it
 to walk, draw a circle to spin it. Tilting the board makes it walk downhill,
 laying it face down puts it to sleep, and a hard shake makes it dizzy.
 
+<table><tr><td align="center"><img src="docs/screenshots/en/sleep.png" width="220" alt="Main screen (asleep at night)"><br>Main screen (asleep at night)</td><td align="center"><img src="docs/screenshots/en/card.png" width="220" alt="Pet card"><br>Pet card</td><td align="center"><img src="docs/screenshots/en/settings.png" width="220" alt="Settings"><br>Settings</td></tr></table>
+
+<table><tr><td align="center"><img src="docs/screenshots/en/stats.png" width="220" alt="Stats"><br>Stats</td><td align="center"><img src="docs/screenshots/en/standby.png" width="220" alt="Standby clock"><br>Standby clock</td></tr></table>
+
 ### Care
 
 - Four needs from 0 to 100: food, joy, energy and hygiene. They drop every
@@ -167,6 +171,8 @@ laying it face down puts it to sleep, and a hard shake makes it dizzy.
   resistance grows by 1 for every 3 hours of good care and cuts the chance of
   getting sick by up to 60%.
 
+<table><tr><td align="center"><img src="docs/screenshots/en/abilities.png" width="220" alt="Abilities"><br>Abilities</td><td align="center"><img src="docs/screenshots/en/medals.png" width="220" alt="Medals"><br>Medals</td></tr></table>
+
 ### Points and shop
 
 You start with 10 points. Basic care is free.
@@ -194,6 +200,8 @@ You start with 10 points. Basic care is free.
 
 Eggs can only be opened when you have no partner.
 
+<table><tr><td align="center"><img src="docs/screenshots/en/shop.png" width="220" alt="Shop"><br>Shop</td><td align="center"><img src="docs/screenshots/en/bag.png" width="220" alt="Bag"><br>Bag</td><td align="center"><img src="docs/screenshots/en/accessories.png" width="220" alt="Accessories"><br>Accessories</td></tr></table>
+
 ### Pokédex, farm and album
 
 - The 9 regions open in order: the next one opens once every common and rare
@@ -207,6 +215,10 @@ Eggs can only be opened when you have no partner.
   medals and how it ended.
 - A **backup** of the game is written to the SD once a day (Wi-Fi details are
   not included) and can be restored from settings.
+
+<table><tr><td align="center"><img src="docs/screenshots/en/dex_cover.png" width="220" alt="Region cover"><br>Region cover</td><td align="center"><img src="docs/screenshots/en/dex_locked.png" width="220" alt="Locked region"><br>Locked region</td><td align="center"><img src="docs/screenshots/en/dex_grid.png" width="220" alt="Region grid"><br>Region grid</td></tr></table>
+
+<table><tr><td align="center"><img src="docs/screenshots/en/dex_detail.png" width="220" alt="Pokédex entry"><br>Pokédex entry</td><td align="center"><img src="docs/screenshots/en/farm.png" width="220" alt="Farm"><br>Farm</td><td align="center"><img src="docs/screenshots/en/album.png" width="220" alt="Album"><br>Album</td></tr></table>
 
 ### World and power
 

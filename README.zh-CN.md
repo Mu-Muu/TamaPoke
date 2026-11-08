@@ -122,6 +122,10 @@ git 上传。把 [`config_private.example.h`](config_private.example.h) 复制�
 （挠太多它会烦），拖着它走，画圈让它转圈。把板子倾斜，它会往低处走；屏幕朝下放，它会
 睡觉；用力摇晃，它会头晕。
 
+<table><tr><td align="center"><img src="docs/screenshots/zh/sleep.png" width="220" alt="主屏幕（夜里睡着了）"><br>主屏幕（夜里睡着了）</td><td align="center"><img src="docs/screenshots/zh/card.png" width="220" alt="宠物卡片"><br>宠物卡片</td><td align="center"><img src="docs/screenshots/zh/settings.png" width="220" alt="设置"><br>设置</td></tr></table>
+
+<table><tr><td align="center"><img src="docs/screenshots/zh/stats.png" width="220" alt="统计"><br>统计</td><td align="center"><img src="docs/screenshots/zh/standby.png" width="220" alt="待机时钟"><br>待机时钟</td></tr></table>
+
 ### 照顾
 
 - 四项需求，每项 0 到 100：饱食、心情、精力、清洁。醒着时每分钟下降，睡着时慢很多。
@@ -145,6 +149,8 @@ git 上传。把 [`config_private.example.h`](config_private.example.h) 复制�
   开一个新蛋。
 - **能力**（0-100，没有对战）：体力（体力药剂）让精力最多慢一半下降；活力（活力药剂）让
   心情最多慢一半下降；抵抗力在连续好好照顾时每 3 小时加 1，最多让生病的几率降低 60%。
+
+<table><tr><td align="center"><img src="docs/screenshots/zh/abilities.png" width="220" alt="能力"><br>能力</td><td align="center"><img src="docs/screenshots/zh/medals.png" width="220" alt="奖章"><br>奖章</td></tr></table>
 
 ### 积分和商店
 
@@ -170,6 +176,8 @@ git 上传。把 [`config_private.example.h`](config_private.example.h) 复制�
 
 只有在没有搭档时才能开蛋。
 
+<table><tr><td align="center"><img src="docs/screenshots/zh/shop.png" width="220" alt="商店"><br>商店</td><td align="center"><img src="docs/screenshots/zh/bag.png" width="220" alt="背包"><br>背包</td><td align="center"><img src="docs/screenshots/zh/accessories.png" width="220" alt="装饰品"><br>装饰品</td></tr></table>
+
 ### 图鉴、农场和相册
 
 - 9 个地区按顺序开放：上一个地区里所有普通和稀有的宝可梦都登记后，下一个地区才开放。
@@ -179,6 +187,10 @@ git 上传。把 [`config_private.example.h`](config_private.example.h) 复制�
   通过进化得到。
 - **相册**为每位离开的伙伴留一页，记录日期、等级、奖章和它离开的方式。
 - 游戏进度每天**备份**到 SD 卡一次（不包括 Wi-Fi 信息），可以在设置里恢复。
+
+<table><tr><td align="center"><img src="docs/screenshots/zh/dex_cover.png" width="220" alt="地区封面"><br>地区封面</td><td align="center"><img src="docs/screenshots/zh/dex_locked.png" width="220" alt="未开放的地区"><br>未开放的地区</td><td align="center"><img src="docs/screenshots/zh/dex_grid.png" width="220" alt="地区列表"><br>地区列表</td></tr></table>
+
+<table><tr><td align="center"><img src="docs/screenshots/zh/dex_detail.png" width="220" alt="图鉴详情"><br>图鉴详情</td><td align="center"><img src="docs/screenshots/zh/farm.png" width="220" alt="农场"><br>农场</td><td align="center"><img src="docs/screenshots/zh/album.png" width="220" alt="相册"><br>相册</td></tr></table>
 
 ### 环境和电源
 

@@ -242,7 +242,7 @@ static void drawWxIcon(uint8_t kind, bool night, int cx, int cy) {
 
 void renderStandby() {
   uint32_t now = millis();
-  uint32_t e = pet.lastSeenEpoch ? pet.lastSeenEpoch : rtcEpoch();
+  uint32_t e = shownClock(pet.lastSeenEpoch ? pet.lastSeenEpoch : rtcEpoch());
   uint32_t min = e / 60;
   int dx = (int)((min * 7) % 25) - 12, dy = (int)((min * 13) % 21) - 10;
   gfx->fillScreen(RGB565_BLACK);
