@@ -148,13 +148,14 @@ laying it face down puts it to sleep, and a hard shake makes it dizzy.
   Two or more poops, being overweight, or a need at 20 or below can make it
   **sick**: give medicine, or every 2 hours sick counts as a mistake. If it
   stays sick and awake for 10 minutes it takes a medicine from the bag by
-  itself, or buys one with your points.
+  itself. It never spends your points: with no medicine in the bag it stays
+  sick until you give it one.
 - If all four needs sit at 0 for an hour, a run-away button appears.
 - **Night:** if the light is still on, it falls asleep by itself at 23:00 and
   wakes at 07:00. Turning the screen off with PWR also puts it to sleep.
 - **Self-care:** while plugged in and with nobody touching it for 10 minutes,
-  it brings any need below 40 back up to 50, one per minute. This doesn't
-  count as your care.
+  it brings any need below 40 back up to 50, one per minute, and it doesn't
+  get sick. This doesn't count as your care.
 - **Natures** (rolled at hatch): easygoing, glutton, playful, tidy, lazy. One
   need drops a little faster and its favourite care gives more.
 

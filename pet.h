@@ -23,7 +23,7 @@
 #define EVO_MISTAKE_MIN 120
 #define RUNAWAY_TICKS 60                   // se escapa tras 1 h con TODO a cero
 #define SICK_MISTAKE_MIN 120               // enfermo sin medicina: un descuido cada 2 h
-#define SELF_MED_MIN 10                    // enfermo y despierto 10 min: se toma una medicina solo
+#define SELF_MED_MIN 10                    // enfermo y despierto 10 min: se toma una de la mochila solo
 // con corriente y sin que nadie lo atienda, se cuida solo, pero solo hasta la
 // mitad: cuando algo baja de AUTO_CARE_FROM lo sube a AUTO_CARE_LEVEL. Una cosa
 // por minuto (comer, lavarse, descansar, jugar)
@@ -304,9 +304,8 @@ public:
   // jugar solo algo de animo
   void selfRest();
   void selfPlay();
-  // se tomo una medicina el solo (de la mochila, o comprada con sus puntos):
-  // true una vez, para enseñarlo; buyed = tuvo que comprarla
-  bool takeSelfMed(bool &bought);
+  // se tomo una medicina de la mochila el solo: true una vez, para enseñarlo
+  bool takeSelfMed();
   // el sketch: con USB y sin atenderlo un rato, se cuida solo (hasta la mitad)
   void setGuardian(bool on) { guardian = on; }
   void eggTap();  // tocar el huevo: 3 toques y eclosiona
@@ -422,8 +421,8 @@ private:
   uint32_t medalUntil = 0;     // celebracion de medalla en pantalla
   uint32_t milestoneUntil = 0; // celebracion de hito de racha
   uint32_t regionUntil = 0;    // celebracion de region completada
-  uint8_t selfMed = 0;         // 1 = se curo solo con la de la mochila, 2 = la compro
-  bool guardian = false;       // se cuida solo (ver setGuardian)
+  bool selfMed = false;        // se curo solo con una de la mochila
+  bool guardian = false;       // se cuida solo (ver setGuardian); asi no enferma
   void autoCare();
   uint8_t weather = PW_NONE;
   bool memoPending = false;

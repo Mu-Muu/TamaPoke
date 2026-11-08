@@ -188,30 +188,28 @@ void Pet::tick() {
 
   // enfermedad: el mal cuidado da una probabilidad por mil y por minuto de
   // ponerse malo. Enfermo, la comida y el animo caen mas rapido y cada 2 h sin
-  // medicina cuentan como un descuido (retrasa la evolucion).
+  // medicina cuentan como un descuido (retrasa la evolucion). Mientras se cuida
+  // solo (guardian) no enferma.
   if (!sick) {
     int riesgo = (poops >= 2 ? 4 : 0) + (weight > 50 ? 3 : 0) + (lowestStat() <= 20 ? 4 : 0);
     // resistencia: menos probabilidad (en milesimas x10 para no perder la rebaja)
-    if (riesgo && (int)random(10000) < riesgo * (100 - resistPct()) / 10) {
+    if (!guardian && riesgo && (int)random(10000) < riesgo * (100 - resistPct()) / 10) {
       sick = true;
       sickMinutes = 0;
     }
   } else {
     fullness = clamp100(fullness - 1);
     joy = clamp100(joy - 1);
-    // al rato se toma una medicina el solo: la de la mochila o, si no hay, la
-    // compra con los puntos. Sin puntos no puede (hay que ganarlos jugando)
-    if (sickMinutes >= SELF_MED_MIN) {
-      bool tenia = bag[ITEM_MEDICINE] > 0;
-      if (tenia || buy(ITEM_MEDICINE)) {  // como giveMedicine, pero no cuenta como cuidado del jugador
-        bag[ITEM_MEDICINE]--;
-        sick = false;
-        sickMinutes = 0;
-        joy = clamp100(joy - 5);
-        checkMedals(MED_CURED);
-        selfMed = tenia ? 1 : 2;
-        pendingSave = true;
-      }
+    // al rato se toma una medicina el solo, si hay en la mochila. Nunca gasta
+    // puntos: comprarla es cosa del jugador
+    if (sickMinutes >= SELF_MED_MIN && bag[ITEM_MEDICINE] > 0) {
+      bag[ITEM_MEDICINE]--;  // como giveMedicine, pero no cuenta como cuidado del jugador
+      sick = false;
+      sickMinutes = 0;
+      joy = clamp100(joy - 5);
+      checkMedals(MED_CURED);
+      selfMed = true;
+      pendingSave = true;
     }
     if (sick && ++sickMinutes % SICK_MISTAKE_MIN == 0) {
       careMistakes++;
@@ -983,10 +981,9 @@ void Pet::selfPlay() {
   energy = clamp100(energy - 1);
 }
 
-bool Pet::takeSelfMed(bool &bought) {
+bool Pet::takeSelfMed() {
   if (!selfMed) return false;
-  bought = selfMed == 2;
-  selfMed = 0;
+  selfMed = false;
   return true;
 }
 

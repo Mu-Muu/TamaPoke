@@ -72,7 +72,7 @@ static const char *const STRINGS[LANG_COUNT][STR_COUNT] = {
     "RESTORE %u/%u", "No backup yet", "Restore this backup?", "Restoring...",
     "So comfy~", "FARM HARVEST!", "+%u pts",
     "Hehe~", "Giggle giggle!", "Haha, that tickles!", "Hey, stop it!", "Wheee!",
-    "Yummy!", "So fun!", "*big stretch*", "Took my medicine!", "Bought medicine!",
+    "Yummy!", "So fun!", "*big stretch*", "Took my medicine!",
     "EVO POTION", "Not needed now",
     "LOCKED", "Register every egg Pokemon of", "NEW REGION!",
     "energy drains %u%% slower", "joy drains %u%% slower", "%u%% less likely to get sick",
@@ -184,7 +184,7 @@ static const char *const STRINGS[LANG_COUNT][STR_COUNT] = {
 
     "嘿嘿～", "咯咯咯！", "哈哈哈，好痒！", "别闹啦！", "转圈圈～",
 
-    "好吃！", "好开心！", "伸个懒腰～", "自己吃了药！", "用积分买药吃了！",
+    "好吃！", "好开心！", "伸个懒腰～", "自己吃了药！",
 
     "进化药水", "现在用不上",
 

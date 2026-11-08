@@ -100,7 +100,7 @@ enum StrId : uint8_t {
   // gestos: cabeza, barriga, cosquillas, harto, vuelta
   S_SAY_HEAD, S_SAY_BELLY, S_SAY_TICKLE, S_SAY_ANNOYED, S_SAY_SPIN,
   // vida propia: comer, jugar, desperezarse, medicina por su cuenta
-  S_SAY_YUM, S_SAY_FUN, S_SAY_STRETCH, S_SAY_SELFMED, S_SAY_SELFMED_BUY,
+  S_SAY_YUM, S_SAY_FUN, S_SAY_STRETCH, S_SAY_SELFMED,
   // pocion de evolucion (tienda y mochila)
   S_ITEM_POTION_EVO, S_CANT_USE,
   // regiones que se abren en orden (pokedex)

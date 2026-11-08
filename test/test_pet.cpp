@@ -2046,49 +2046,37 @@ TEST(gestures, demasiadas_cosquillas_agobian) {
 }
 
 // ---------------------------------------------------------------- se cura solo
-TEST(selfmed, con_medicina_o_puntos_se_la_toma_solo) {
+TEST(selfmed, con_medicina_en_la_mochila_se_la_toma_solo) {
   Pet p;
   makePet(p, 4);
   setStats(p, 90, 90, 90, 90);
   p.sick = true;
   p.sickMinutes = 0;
-  p.bag[ITEM_MEDICINE] = 0;
-  p.points = 4;
+  p.bag[ITEM_MEDICINE] = 1;
+  p.points = 50;
   advance(p, SELF_MED_MIN - 1);
   CHECK(p.sick);  // aun no
   advance(p, 2);
   CHECK(!p.sick);
-  CHECK_EQ(p.points, (int32_t)1);  // la compro (3)
+  CHECK_EQ(p.bag[ITEM_MEDICINE], (uint16_t)0);
+  CHECK_EQ(p.points, (int32_t)50);  // no gasto puntos
   CHECK(p.hasMedal(MED_CURED));
-  bool compro = false;
-  CHECK(p.takeSelfMed(compro));
-  CHECK(compro);
-  CHECK(!p.takeSelfMed(compro));
+  CHECK(p.takeSelfMed());
+  CHECK(!p.takeSelfMed());
 }
 
-TEST(selfmed, primero_la_de_la_mochila_y_sin_nada_no_puede) {
+TEST(selfmed, sin_medicina_no_la_compra_con_los_puntos) {
   Pet p;
   makePet(p, 4);
   setStats(p, 90, 90, 90, 90);
   p.sick = true;
-  p.bag[ITEM_MEDICINE] = 1;
+  p.bag[ITEM_MEDICINE] = 0;
   p.points = 50;
-  advance(p, SELF_MED_MIN + 1);
-  CHECK(!p.sick);
+  advance(p, SELF_MED_MIN + 5);
+  CHECK(p.sick);
+  CHECK_EQ(p.points, (int32_t)50);
   CHECK_EQ(p.bag[ITEM_MEDICINE], (uint16_t)0);
-  CHECK_EQ(p.points, (int32_t)50);  // no gasto puntos
-  bool compro = true;
-  CHECK(p.takeSelfMed(compro));
-  CHECK(!compro);
-
-  Pet q;
-  makePet(q, 4);
-  setStats(q, 90, 90, 90, 90);
-  q.sick = true;
-  q.points = 2;  // no llega a 3
-  advance(q, SELF_MED_MIN + 5);
-  CHECK(q.sick);
-  CHECK_EQ(q.points, (int32_t)2);
+  CHECK(!p.takeSelfMed());
 }
 
 TEST(selfmed, dormido_no_se_la_toma) {
@@ -2159,6 +2147,21 @@ TEST(guardian, dos_cacas_las_limpia_aunque_este_limpio) {
   mockClearForcedRandom();
   CHECK_EQ(p.poops, (uint8_t)0);
   CHECK(p.hygiene > AUTO_CARE_LEVEL);  // no lo baja a la mitad
+}
+
+// lo mismo que en sick.con_cacas_acaba_enfermando, pero cuidandose solo: nunca
+TEST(guardian, cuidandose_solo_no_enferma) {
+  Pet p;
+  makePet(p, 4);
+  p.setGuardian(true);
+  p.weight = 200;  // sobrepeso: eso no lo arregla el solo
+  randomSeed(12);
+  for (int i = 0; i < 3000; i++) {
+    setStats(p, 15, 15, 15, 15);
+    p.poops = 3;
+    advance(p, 1);
+    CHECK_MSG(!p.sick, "enfermo cuidandose solo");
+  }
 }
 
 // ---------------------------------------------------------------- regiones en orden

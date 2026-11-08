@@ -601,9 +601,8 @@ void loop() {
     else react(REACT_BOUNCE, 1500, T(S_SAY_FUN));
   }
   // se tomo una medicina el solo
-  bool compro;
-  if (pet.takeSelfMed(compro)) {
-    bubbleText = T(compro ? S_SAY_SELFMED_BUY : S_SAY_SELFMED);
+  if (pet.takeSelfMed()) {
+    bubbleText = T(S_SAY_SELFMED);
     bubbleUntil = now + 4000;
     sfxPlay(SFX_EAT);
   }
