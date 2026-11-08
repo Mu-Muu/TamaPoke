@@ -13,6 +13,24 @@ into a slower, gentler life sim: all **1025** species, an English and
 > GAME FREAK / The Pokémon Company; this project isn't affiliated with or
 > endorsed by them. See [Credits](#credits) and [License](#license).
 
+## Why this fork
+
+I made this for my daughter. She loves chess, but like any kid she sometimes
+loses the drive to practise. So this pet lives on chess: the games she plays on
+chess.com turn into points, and the points buy candy, potions, eggs and
+accessories for her companion.
+
+- Only real games count: games with 10+ minutes of base time, or daily games.
+  Blitz, bullet and games against bots don't. A win gives 10 points and any
+  other result 1, and new personal bests (rating, tactics, Puzzle Rush) give
+  bonuses, so practice pays off.
+- Everything else gives only a trickle of points (steps, a small farm
+  harvest), so chess stays the main way to earn.
+- Basic care (food, play, bath, sleep) is always free. Skipping chess never
+  hurts the pet; playing just makes its life richer.
+- The board syncs once a night, and the next day the pet cheers about
+  yesterday's games ("You won 3 games!").
+
 ## What's different from upstream
 
 | | Upstream v1.18 | This fork |
