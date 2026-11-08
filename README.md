@@ -1,436 +1,257 @@
-# TamaPoke
+# TamaPoke — fork
 
-[![Flash in browser](https://img.shields.io/badge/flash-in%20browser-FF6B00?logo=googlechrome&logoColor=white)](https://socquique.github.io/TamaPoke/web/)
-[![MakerWorld](https://img.shields.io/badge/MakerWorld-3D%20case-00AE42?logo=bambulab&logoColor=white)](https://makerworld.com/es/models/2937822-tamapoke-a-pokemon-pokeball-tamagotchi)
-![Board](https://img.shields.io/badge/board-ESP32--S3%20round%20AMOLED-E7352C?logo=espressif&logoColor=white)
-![Firmware](https://img.shields.io/badge/firmware-v1.17-8A2BE2)
-[![CI](https://github.com/socquique/TamaPoke/actions/workflows/ci.yml/badge.svg)](https://github.com/socquique/TamaPoke/actions/workflows/ci.yml)
-![Code](https://img.shields.io/badge/code-MIT-blue)
-![Languages](https://img.shields.io/badge/languages-8-FFCB05)
-[![Stars](https://img.shields.io/github/stars/socquique/TamaPoke?style=flat&logo=github&color=yellow)](https://github.com/socquique/TamaPoke/stargazers)
+**English** · [简体中文](README.zh-CN.md)
 
-A gen-1-Pokémon-inspired tamagotchi for the
-**Waveshare ESP32-S3-Touch-AMOLED-1.75** (round 466×466 AMOLED, CO5300 driver
-over QSPI, CST9217 touch over I2C). Raise any of the 151, evolve it, train it
-and complete them all (shinies included).
+A Pokémon virtual pet for the **Waveshare ESP32-S3-Touch-AMOLED-1.75** (round
+466×466 AMOLED with touch). This is a fork of
+[socquique/TamaPoke](https://github.com/socquique/TamaPoke) v1.18 that turns it
+into a slower, gentler life sim: all **1025** species, an English and
+**Simplified Chinese** UI, no battles, and a pet that grows up over days.
 
-> **Personal, non-commercial fan project.** Code is MIT; the sprites are from
-> PMD SpriteCollab (CC BY-NC, Pokémon © Nintendo/Game Freak), and the 3D case is
-> CC BY-NC-SA. See **[License](#license)** and **Credits**.
+> **Personal, non-commercial fan project.** The code is MIT. The sprites come
+> from PMD SpriteCollab (CC BY-NC 4.0). Pokémon is © Nintendo / Creatures /
+> GAME FREAK / The Pokémon Company; this project isn't affiliated with or
+> endorsed by them. See [Credits](#credits) and [License](#license).
 
-🔴 **3D-printed Pokéball case + print profiles → [on MakerWorld](https://makerworld.com/es/models/2937822-tamapoke-a-pokemon-pokeball-tamagotchi)** · flash it in your browser → **[web installer](https://socquique.github.io/TamaPoke/web/)**
+## What's different from upstream
 
-## This fork
-
-A personal fork of [socquique/TamaPoke](https://github.com/socquique/TamaPoke)
-(v1.18). What changed here:
-
-- **Pokédex of all 1025** (Gen 1-9, SpriteCollab sprites), one cover page per
-  region; regions unlock in order and eggs only bring species from open ones.
-- **English + Simplified Chinese** UI (trimmed WenQuanYi bitmap font).
-- **Life sim instead of battles**: evolution by age (care mistakes delay it),
-  natures, sickness and medicine, an autonomous behaviour planner, gestures,
-  self-care when plugged in and nobody is around, farm (residents keep growing
-  slowly), album of past companions, steps, accessories, medals.
-- **Points from chess.com** (public API, daily sync) spent in a shop.
-- Real **weather**, sunrise/sunset, seasons, holidays and a **standby clock**
-  when plugged in; time set by NTP.
-- Optional **Stack-chan / xiaozhi** control over MCP.
-- The sketch is split into tabs; host tests in `test/`.
-
-The rest of this README describes the upstream project; some parts (battles,
-minigame, the 151) don't apply to this fork.
-
-### Personal settings
-
-Owner name, chess.com username, weather coordinates and time zone live in
-`config_private.h`, which is git-ignored: copy `config_private.example.h` to
-`config_private.h` and fill it in. Without it the firmware builds with neutral
-example values (and no chess sync). Wi-Fi and the xiaozhi endpoint are entered
-on the board's setup page and stay in its NVS.
-
-`tools/privacy_check.py` scans what would be published for the values in that
-file (plus an optional local `.privacy_denylist`); it can run as a `pre-push`
-hook.
-
-## Status
-
-Running on hardware. Implemented: the 151 + shinies animated from microSD, full
-life cycle (egg by rarity → evolution → farewell/release/runaway, each gated
-behind a decision dialog), bred-Pokédex with gallery, battle stats (genes +
-training), retention hooks (streak / bond / medals / name), biome + real-time
-backgrounds, ball minigame, training bag, animated bath, RTC with offline
-progression, battery (AXP2101) and PWR button, anti-burn-in dimming,
-**sound (ES8311)**, **8 UI languages (English default)**, **starter choice on
-first run**, and a one-click **web installer**.
-
-Pending: wild encounters / battle (designed, not implemented), 3D case, soak
-test. See **Roadmap**.
-
-## Game manual (the actual numbers)
-
-A quick reference to how the game really works (values straight from the code).
-
-### Time & leveling
-- **1 real minute = 1 in-game minute.** Your Pokémon gains **+1 level every hour**
-  of real time. Leveling is purely time-based — caring well doesn't speed it up,
-  but neglect *delays evolution*.
-- It keeps **aging while powered off** (the RTC runs), catching up to **2 weeks** max.
-
-### The four stats (0–100)
-Needs: **FOOD**, **JOY**, **ENE** (energy), **HYG** (hygiene). Start 80 / 80 / 80 / 100.
-While **awake**, per minute:
-
-| Stat | Drain/min | Notes |
+| | Upstream v1.18 | This fork |
 |---|---|---|
-| FOOD | −2 | |
-| ENE | −1 | −1 extra if overweight (weight > 50 → sluggish) |
-| HYG | −1 | **−4 more per poop** on screen (max 3 poops) |
-| JOY | −1 | **−2 extra** if FOOD < 30, **−2 extra** if HYG < 30 |
-
-- ~**15 %/min** chance to poop (only if FOOD > 40). Poops tank hygiene fast.
-- **Care slip-up** = letting any stat hit **≤ 10** (30-min cooldown so it counts once).
-  Each slip-up **delays evolution by 1 level** and cools the bond.
-
-### Actions
-- 🍎 **Berry** (3 flavors): +25 FOOD. Each species has a **hidden favorite flavor**
-  → +35 FOOD, +10 JOY, ♥, bond, and it gets revealed.
-- 🍬 **Candy:** +10 FOOD, +12 JOY, but **+12 weight** (fattening).
-- ⚽ **Play / minigame:** +JOY, −ENE; the minigame trains **SPEED** and burns weight.
-- 🥊 **Training bag:** trains **STRENGTH** (~4 hits = 1 pt, cap +18/session), tires it.
-- 🫧 **Bath:** clears poops, HYG → 100.
-- 👆 **Pet it:** +5 JOY + bond.
-- 🌙 **Sleep:** rest — ENE **+6/min**, needs drain ~**4× slower** with floors
-  (FOOD 30 / JOY 35 / HYG 45). No poops, no slip-ups, can't run away while asleep.
-
-### Eggs & who you get (spawn odds)
-- **First ever pet:** you pick a starter — **Bulbasaur / Charmander / Squirtle**.
-- Hatch the egg: tap it **3×** (or wait — it hatches on its own).
-- Every later egg rolls a **rarity tier** (over the ~79 base forms that come from eggs):
-
-| Tier | Base chance | After a proper goodbye | # species |
-|---|---|---|---|
-| ✨ Legendary | ~3 %\* | ~10 % | 5 |
-| 🔵 Rare | ~27 % | ~45 % | 27 |
-| ⚪ Common | the rest | the rest | 47 |
-
-  \* Legendaries only start appearing once you've **registered ≥ 25** Pokémon.
-- A daily **streak** and high **bond** push rare/legendary odds higher.
-- A clean **goodbye blesses** the next egg; a **run-away curses** it (forces Common).
-- Within a tier it favors species whose **evolution line you haven't finished** (so
-  all 151 are completable).
-- **Shiny:** base **1 / 48** (→ **1 / 24** right after a goodbye), improved by
-  streak/bond down to a best of **1 / 8**. Tracked separately in the dex.
-- Every hatch rolls unique **genes** (90–110 % per stat) — no two are identical.
-
-### Evolution
-- Triggers when **level ≥ its evolution level** (16 for most base forms; ~30 for
-  stone-style, ~40 for trade-style) **and every stat ≥ 40** at that moment.
-- **Never automatic** — a button appears and **you tap to witness it** (with a
-  flicker between the old and new form). Each **slip-up delays it by 1 level**.
-- You can **decline** ("keep form"); it re-offers at the next level.
-- *Eevee* branches toward whichever evolution you're still missing.
-
-### The three endings (you choose & witness each — none auto-fire)
-- 💛 **Farewell** — when it's a **final form** that has lived **3 days**. A button
-  appears; triggering it **blesses your next egg**. You can **postpone** ("stay
-  together", re-offered in a day). The good ending.
-- 💔 **Run-away** — if you let **all four stats sit at 0 for a full hour**. A single
-  act of care cancels it. It **curses the next egg** (forces Common). The sad ending.
-- 👋 **Release** — long-press the creature to let it go on your terms (neutral).
-
-After any ending, a **new egg** appears.
-
-### Bonds, streaks, medals, Pokédex
-- **Streak** (player-wide, survives across pets): first care each real day; milestones
-  at **3 / 7 / 30 / 100** days; skipping a day breaks it.
-- **Bond** (per pet, resets on hatch): grows with affection (**cap +8/day**), cools on
-  neglect. Both streak & bond improve egg/shiny odds.
-- **8 medals** (Lv10/25/50, favorite berry found, 7-day streak, max bond, final form,
-  "fit" = weight 0 & no slip-ups), per-pet + a global counter.
-- **Pokédex:** raising a species registers it; **151 + shinies** to complete.
-
-### Battle stats
-ATK / DEF / SPD = real **Gen-1 base** × genes + level + training (STRENGTH ← bag,
-SPEED ← minigame, DEFENSE ← 12 h of unbroken good care). *(Battles: on the roadmap.)*
+| Species | Gen 1 (151) | Gen 1-9 (1025), one Pokédex page per region |
+| Languages | 8 | English + Simplified Chinese |
+| Growing up | +1 level per hour, evolution by level, battle stats, ball minigame | evolution by age, natures, sickness, abilities, no battles or minigame |
+| On its own | — | behaviour planner, speech bubbles, self-care when plugged in |
+| Collection | Pokédex gallery, streak, bond, medals | adds farm, album, stats page, accessories |
+| Points | — | chess.com games, steps, region rewards → shop |
+| World | biome and time-of-day backgrounds | real weather, sunrise/sunset, seasons, holidays, region landscapes |
+| Extras | battery, dimming, web installer | adds standby clock, NTP time, daily SD backup, optional Stack-chan control |
 
 ## Hardware
 
-- Board: [ESP32-S3-Touch-AMOLED-1.75](https://www.waveshare.com/wiki/ESP32-S3-Touch-AMOLED-1.75)
-  — get the **Standard** (no case) or **-G** (GPS, also fits) version; **not the "-B"**
-  (ships with a protective case that won't fit). The separate "1.75**C**" is a different board.
-  - **Where to buy**: [Waveshare store](https://www.waveshare.com/esp32-s3-touch-amoled-1.75.htm) (often on backorder), or the **-G** on Amazon — TamaPoke leaves the GPS unused, the board is otherwise identical: 🇺🇸 [.com](https://www.amazon.com/dp/B0F7XWWMJW?tag=capsuleradar-20) · 🇪🇸 [.es](https://www.amazon.es/dp/B0F7XWWMJW?tag=capsuleradar-21) · 🇩🇪 [.de](https://www.amazon.de/dp/B0F7XWWMJW?tag=capsulerada03-21) · 🇬🇧 [.co.uk](https://www.amazon.co.uk/dp/B0F7XWWMJW?tag=capsulerada0d-21) · 🇮🇹 [.it](https://www.amazon.it/dp/B0F7XWWMJW?tag=capsulerada08-21) · 🇫🇷 [.fr](https://www.amazon.fr/dp/B0F7XWWMJW?tag=capsulerada0e-21) · 🇯🇵 [.co.jp](https://www.amazon.co.jp/dp/B0F7XWWMJW?tag=capsuleradar-22) · 🇨🇦 [.ca](https://www.amazon.ca/dp/B0F7XWWMJW?tag=capsulerada09-20). Optional battery — 1100 mAh protected LiPo, MX1.25 plug: 🇪🇸 [.es](https://www.amazon.es/dp/B0F1FGZQS5?tag=capsuleradar-21) · 🇺🇸 [.com](https://www.amazon.com/dp/B0F1FGZQS5?tag=capsuleradar-20) · 🇮🇹 [.it](https://www.amazon.it/dp/B0F1FGZQS5?tag=capsulerada08-21) · 🇫🇷 [.fr](https://www.amazon.fr/dp/B0F1FGZQS5?tag=capsulerada0e-21) (DE/UK: that exact pack is not listed — search for a *protected* 3.7 V LiPo, ~1100 mAh, size **102540**, 1.25 mm micro-JST plug) — check plug polarity against the board first. <sub>Amazon links are affiliate links; as an Amazon Associate I earn from qualifying purchases.</sub>
-  - **MicroSD card** (holds the sprite set — any small, class-10 card works): 🇪🇸 [.es](https://www.amazon.es/s?k=microsd+32gb&tag=capsuleradar-21) · 🇺🇸 [.com](https://www.amazon.com/s?k=microsd+32gb&tag=capsuleradar-20) · 🇩🇪 [.de](https://www.amazon.de/s?k=microsd+32gb&tag=capsulerada03-21) · 🇬🇧 [.co.uk](https://www.amazon.co.uk/s?k=microsd+32gb&tag=capsulerada0d-21) · 🇮🇹 [.it](https://www.amazon.it/s?k=microsd+32gb&tag=capsulerada08-21) · 🇫🇷 [.fr](https://www.amazon.fr/s?k=microsd+32gb&tag=capsulerada0e-21) · 🇯🇵 [.co.jp](https://www.amazon.co.jp/s?k=microsd+32gb&tag=capsuleradar-22) · 🇨🇦 [.ca](https://www.amazon.ca/s?k=microsd+32gb&tag=capsulerada09-20)
-- Round 466×466 AMOLED, **CO5300** driver (QSPI, 80 MHz)
-- Capacitive touch **CST9217** (I2C, address 0x5A)
-- **AXP2101** (power management + battery + PWR button), **PCF85063** (RTC),
-  microSD slot, **ES8311** audio codec (→ amplifier → external speaker on the
-  MX1.25 connector)
-- Pins taken from the [official Waveshare repo](https://github.com/waveshareteam/ESP32-S3-Touch-AMOLED-1.75) (see `pin_config.h`)
+- [ESP32-S3-Touch-AMOLED-1.75](https://www.waveshare.com/wiki/ESP32-S3-Touch-AMOLED-1.75)
+  (Standard or -G; upstream notes that the "-B" version comes in a case that
+  doesn't fit, and the "1.75C" is a different board).
+- A microSD card (FAT32) for the sprites, farm, album and backups.
+- Optional: a 3.7 V LiPo with an MX1.25 plug (check polarity), and a small
+  speaker on the MX1.25 speaker connector.
+- Optional: the 3D-printed Poké Ball case from upstream
+  ([MakerWorld](https://makerworld.com/es/models/2937822-tamapoke-a-pokemon-pokeball-tamagotchi)).
 
-## Libraries (Arduino IDE / arduino-cli)
+## Build and flash
 
-| Library | Author | Use |
+Arduino core **esp32 3.3.x** (tested with 3.3.10) and these libraries
+(tested versions):
+
+| Library | Version | Used for |
 |---|---|---|
-| GFX Library for Arduino (`Arduino_GFX`) | moononournation | CO5300 over QSPI + framebuffer in PSRAM |
-| SensorLib | Lewis He | CST9217 touch + PCF85063 RTC |
-| XPowersLib | Lewis He | AXP2101 PMU (battery, brightness, PWR button) |
-| U8g2 | olikraus | CJK glyphs (`unifont_t_japanese3`, the only Japanese subset that also carries `！？。、「」`; `unifont_t_korean2` for Hangul, 2350 syllables against korean1's 478); only the font data is used, not its display driver |
-| ESP_I2S (bundled in the ESP32 core) | Espressif | I2S to the ES8311 codec |
+| GFX Library for Arduino | 1.6.9 | CO5300 display over QSPI, framebuffer in PSRAM |
+| SensorLib | 0.5.1 | CST9217 touch, PCF85063 RTC, QMI8658 IMU |
+| XPowersLib | 0.3.3 | AXP2101 power management and PWR button |
+| U8g2 | 2.36.19 | font support |
+| ArduinoJson | 7.4.3 | chess.com, Open-Meteo, MCP |
+| WebSockets (Markus Sattler) | 2.7.2 | Stack-chan / xiaozhi MCP |
 
-## IDE setup / build
-
-- Board: **ESP32S3 Dev Module** · Flash **16MB** · PSRAM **OPI PSRAM**
-  (required: the 466×466×16-bit framebuffer ≈ 434 KB lives in PSRAM) ·
-  Partition Scheme with FAT (e.g. `16M Flash (3MB APP/9MB FATFS)`) ·
-  USB CDC On Boot **Enabled**
+Board settings: **ESP32S3 Dev Module**, Flash **16MB**, PSRAM **OPI**,
+partition **16M Flash (3MB APP/9.9MB FATFS)**, USB CDC On Boot **Enabled**.
 
 ```bash
 FQBN="esp32:esp32:esp32s3:CDCOnBoot=cdc,FlashSize=16M,PSRAM=opi,PartitionScheme=app3M_fat9M_16MB"
-arduino-cli compile --fqbn "$FQBN" .
-arduino-cli upload -p /dev/cu.usbmodemXXXX --fqbn "$FQBN" .
+arduino-cli compile --fqbn "$FQBN" --output-dir build .
+arduino-cli upload --fqbn "$FQBN" -p /dev/cu.usbmodemXXXX --input-dir build .
 ```
 
-### Easiest install: the web installer
+The web installer in `web/` still flashes **upstream v1.18**, not this fork.
 
-`web/index.html` flashes the firmware (ESP Web Tools) and pushes the sprites to
-the SD over Web Serial, no Arduino needed. Serve it over HTTPS or `localhost`
-(secure context) and open it in **Chrome/Edge**. See [`web/README.md`](web/README.md).
+### Personal settings
 
-### Generate and load the sprites yourself
+Owner name, chess.com username, weather coordinates and time zone go in
+`config_private.h`, which is git-ignored. Copy
+[`config_private.example.h`](config_private.example.h) to `config_private.h`
+and fill it in. Without it the firmware builds with neutral example values from
+[`config.h`](config.h) (New York, no chess sync).
 
-All sprites come from **[PMD SpriteCollab](https://github.com/PMDCollab/SpriteCollab)**
-(CC BY-NC). You can regenerate the whole set and load it onto your board with the
-pipeline below — the firmware accepts files over USB (PUT protocol with per-block
-ACK), so you don't have to remove the card (it formats the SD to FAT if needed).
+| Setting | What it does |
+|---|---|
+| `OWNER_NAME` | name used in a few lines ("I love you, …!", birthday); 16 bytes max |
+| `CHESS_USER` | chess.com username in lowercase; empty = no chess points |
+| `WX_LAT`, `WX_LON`, `WX_TZ` | Open-Meteo location and IANA time zone (`/` written as `%2F`) |
+| `LOCAL_TZ` | POSIX time zone string for NTP |
+| `TZ_STD_OFFSET_H`, `TZ_DST_NA` | standard UTC offset in hours, and whether the US/Canada DST rule applies |
 
-```bash
-python3 tools/pack_pmd.py       # fetch + pack PMD sprites: the 151 + shiny -> tools/sdcard/mons/p[s]NNN.bin
-python3 tools/make_thumbs.py    # Pokédex thumbnails (from the PMD sprites) -> thumbs.bin
-python3 tools/send_sd.py        # send tools/sdcard/mons/* to the board's SD over USB
-```
+### SD card
 
-To make the **one-click web-installer bundle** instead of sending over USB:
+Copy the folder [`tools/sdcard/mons`](tools/sdcard/mons) to the root of the
+card, so the files end up in `/mons/` (about 290 MB: sprites, shiny sprites,
+Pokédex thumbnails and the 9 region landscapes). `python3 tools/send_sd.py`
+can also send them over USB, but that is slow for the full set.
 
-```bash
-python3 tools/pack_bundle.py    # bundle tools/sdcard/mons/* into web/sprites.pak
-```
+**If the card can't be mounted, the firmware formats it.** Back up anything on
+it first.
 
-Then load it from the web installer's **"Load sprites"** button (or `send_sd.py`
-above). `pack_pmd.py` also takes individual dex numbers, e.g. `pack_pmd.py 7 25`.
-(~40 MB total, all PMD. Versioned under `tools/sdcard/`.)
+### Wi-Fi
+
+On the settings page tap **Wi-Fi**. The board opens an access point called
+`TamaPoke`; join it with a phone and open `192.168.4.1`. Enter your network
+and password, and optionally a xiaozhi MCP endpoint. They are stored on the
+board only and never shown again.
 
 ## How to play
 
-On first run you **choose a starter** (Bulbasaur / Charmander / Squirtle). After
-that you start with an **egg**. Tap it 3 times or wait and it hatches. From then
-on, care for your companion:
+### Screens
 
-**Four stats** that decay: **FOOD**, **JOY**, **ENE** (energy), **HYG** (hygiene).
-If one bottoms out it counts as a *slip-up*.
+From the main screen:
 
-**Buttons (bottom arc, icons):**
-- 🍎 **Feed** → food menu: 3 berries (each species has a hidden favourite that
-  gives a bonus) and a candy (+happiness but it fattens; weight makes it sluggish).
-- ⚽ **Play** → the pokeball minigame (trains SPEED).
-- 🌙 **Light** → sleep/wake (recovers energy, dims the screen). While asleep,
-  needs decay much slower (rest).
-- 🫧 **Bath** → a foam scene that cleans up the poops.
+| Gesture | Opens |
+|---|---|
+| swipe **right** | Pokédex: one cover per region, swipe on to the next region, tap a cover to open its grid (up/down for pages, tap a Pokémon for details) |
+| swipe **left** | farm (album button at the bottom) |
+| swipe **up** | the pet's card: profile, abilities, medals (swipe left/right for pages) |
+| swipe **down** | settings: clock, sound, Wi-Fi, language, restore backup, stats, sync chess now |
+| tap the **points** at the top | shop (items, eggs, accessories) |
+| **long press** the pet | send it to the farm, or release it |
 
-**Touch gestures:**
-- Tap the creature = pet it (+happiness, bond).
-- Horizontal swipe = open the **Pokédex / gallery**.
-- Vertical swipe up = open the **stat card** (4 pages: Profile / Battle / Medals /
-  Progress; swipe between them; tap the name on Profile to rename; on Battle the
-  "Train strength" button opens the bag).
-- Swipe down = **set the clock** and pick the **language** + sound on/off.
-- Long press (3 s) on the creature = **release** dialog.
+Buttons along the bottom: **Feed** (berry, candy, medicine), **Play**,
+**Light** (sleep / wake) and **Bath** (cleans up poops).
 
-**Physical PWR button:** short = screen on/off · long (4 s) = full power-off
-(the RTC stays alive, so time passes even while it's off).
+Touching the pet: tap to pet it, stroke back and forth, double tap to make it
+hop, poke the head or belly, tickle it (too much and it gets annoyed), drag it
+to walk, draw a circle to spin it. Tilting the board makes it walk downhill,
+laying it face down puts it to sleep, and a hard shake makes it dizzy.
 
-## Decisions: you choose, and you watch
+### Care
 
-The three life-cycle endings and evolution **don't happen on their own** — when
-the conditions are met a button appears and you tap it (so you're present to
-witness it), each opening a two-option dialog:
+- Four needs from 0 to 100: food, joy, energy and hygiene. They drop every
+  minute while awake and much slower while asleep. Poops lower hygiene.
+- A need at 10 or below counts as a **care mistake** (at most one per hour).
+  Two or more poops, being overweight, or a need at 20 or below can make it
+  **sick**: give medicine, or every 2 hours sick counts as a mistake. If it
+  stays sick and awake for 10 minutes it takes a medicine from the bag by
+  itself, or buys one with your points.
+- If all four needs sit at 0 for an hour, a run-away button appears.
+- **Night:** if the light is still on, it falls asleep by itself at 23:00 and
+  wakes at 07:00. Turning the screen off with PWR also puts it to sleep.
+- **Self-care:** while plugged in and with nobody touching it for 10 minutes,
+  it brings any need below 40 back up to 50, one per minute. This doesn't
+  count as your care.
+- **Natures** (rolled at hatch): easygoing, glutton, playful, tidy, lazy. One
+  need drops a little faster and its favourite care gives more.
 
-- **Evolution** (red button): *Evolve* (epic animation: halo, rays, sparkles and
-  a **flicker between the old and new form**) or *Keep form* (re-offered next level).
-- **Farewell** (gold button, final form + 3 days): *Say goodbye* (warm farewell,
-  rising hearts → new egg) or *Stay together* (keep your companion; re-offered in
-  a day). Tension: a maxed-out friend vs. completing the Pokédex.
-- **Runaway** (dark button, total neglect for 1 h): a somber "feels abandoned"
-  ending in the rain — caring for the creature cancels it.
+### Growing up
 
-## Sprites: PMD SpriteCollab everywhere
+- Evolution is by **age**, the same for every line: the first at 3 days, the
+  second at 5 days. Each care mistake delays it by 2 hours and all needs must
+  be at 40 or more. When it's ready, a button lets you evolve or keep the
+  current form. An **evolution potion** (100 points) lets it evolve now.
+- In its final form it says goodbye after **7 days** (you can choose to stay
+  together for a while). It then goes to the album, and you open a new egg.
+- **Abilities** (0-100, no battles): stamina (stamina potion) slows energy loss
+  by up to 50%, vitality (vitality potion) slows joy loss by up to 50%, and
+  resistance grows by 1 for every 3 hours of good care and cuts the chance of
+  getting sick by up to 60%.
 
-- **PMD SpriteCollab** (everything — main screen, stat card, minigame **and the
-  Pokédex grid + detail view**): behaviour sprites — `tools/pack_pmd.py` packs
-  actions (Idle, Walk L/R, Sleep, Eat, Hurt, Attack, Pose, Nod, DeepBreath) into
-  the multi-action **TPK2** format (`/mons/pNNN.bin`). The engine in `pet_anim.ino`
-  makes the creature wander, gesture, curl up to sleep, chew and wince. Anchored by
-  the feet (lowest content row), not the canvas. The Pokédex thumbnails
-  (`thumbs.bin`, TPTH) are derived from these by `tools/make_thumbs.py`.
-- **In-house workshop** (`tools/sprites.py`): 9 primitive-drawn sprites as a
-  no-SD fallback + the UI icons. Generates `species.h`. Preview in
-  `tools/sheet.png`, emit with `python3 tools/sprites.py emit`.
+### Points and shop
 
-`sdmon.h/.cpp` loads the PMD sprites into PSRAM (`PmdMon` for TPK2) plus the
-thumbnails (`SdThumbs`). `SdMon` (TPK1) remains as a dormant legacy fallback only.
+You start with 10 points. Basic care is free.
 
-## Pokédex and species data
+- **chess.com** (if `CHESS_USER` is set): synced once a day at midnight, on
+  the next boot, or with **Sync now**. A game with 10+ minutes base time or a
+  daily game gives 1 point, a win 10; games without a clock (bots) don't
+  count. A new best rapid or daily rating gives 20, each new hundred in rapid
+  50, a new tactics or Puzzle Rush best 10. The first sync only records your
+  current marks.
+- **Steps** from the IMU: 1 point per 1000 steps (5 a day at most).
+- Completing a region's Pokédex: 200 points, a crown and a shiny legendary egg
+  from that region.
+- A small daily farm harvest after 07:00.
 
-`tools/dex_data.py` is the **single source**: name, slug, type (accent colour +
-background biome), evolution line with gen-1 levels, rarities and starters.
-`tools/dex_stats.py` has the real base stats (from PokéAPI). `tools/gen_names.py`
-pulls the **official localized names** from PokéAPI into `tools/dex_names.py`
-(only French and German differ in gen 1; Spanish, Italian and Portuguese use the
-English ones). `gen_dex.py` emits `dex.h` (the `DEX_TBL[152]` table plus the
-per-language name tables and the `dexName()` accessor). The pet's identity is its
-Pokédex number (persisted in NVS).
+| Item | Points |
+|---|---|
+| Candy (joy and food, but fattening) | 2 |
+| Medicine | 3 |
+| Stamina potion / vitality potion | 5 each |
+| Evolution potion | 100 |
+| Shiny charm | 50 |
+| Common / rare / legendary egg | 10 / 30 / 100 |
+| Accessories (bow, flower, cap, witch hat, top hat, crown) | 15-80 |
 
-- **Evolution** gen-1 style (levels 16/36/…; stones ≈30, trade ≈40; Eevee
-  branches to whichever evolution you're missing). Each slip-up delays it 1
-  level; it won't evolve with any stat < 40 or while asleep.
+Eggs can only be opened when you have no partner.
 
-## Battle stats and training
+### Pokédex, farm and album
 
-Each creature has ATK/DEF/SPD = real gen-1 base × **genes** (90–110 %, rolled at
-hatch) + level + **training**:
-- SPEED ← the minigame
-- DEFENSE ← sustained good care (12 h with no slip-ups)
-- STRENGTH ← the training bag (whacking)
+- The 9 regions open in order: the next one opens once every common and rare
+  species of the previous one has been registered. Eggs only bring species
+  from open regions.
+- The **farm** keeps companions you send there on the SD card. They keep
+  growing at a tenth of the speed (without evolving), come back healthy, and
+  sometimes walk across the main screen. Species in the farm don't come out of
+  eggs or evolutions.
+- The **album** keeps one page per companion that has left, with dates, level,
+  medals and how it ended.
+- A **backup** of the game is written to the SD once a day (Wi-Fi details are
+  not included) and can be restored from settings.
 
-Shown on the Battle page of the stat card. The (hidden) weight goes up with candy
-and burns off with training.
+### World and power
 
-## Retention: streak, bond, medals, name
+- Weather from Open-Meteo: every hour when plugged in, every 3 hours on battery
+  (not between 00:00 and 06:00). Rain, snow, fog and storms show on screen and
+  affect moods by type; sunrise and sunset drive day and night.
+- Seasons, holidays (New Year, Lunar New Year, Lantern Festival, Valentine's,
+  Easter, Mother's and Father's Day, Dragon Boat, Canada Day, Mid-Autumn,
+  Thanksgiving, Halloween, Christmas) and a birthday (set over serial with
+  `BDAY month day`).
+- **Standby clock:** plugged in and untouched for 90 seconds, the screen shows
+  a large clock with the date and weather.
+- Time comes from NTP at boot and every hour.
 
-- **Streak** (the player's, persists across creatures): the first care of each
-  real day advances the streak; 3/7/30/100 milestones are celebrated; skipping a
-  day breaks it. Flame badge on the main screen.
-- **Bond** (the creature's): rises slowly with care and petting, drops with slip-ups.
-- **Medals** for the individual (level, berry, streak, bond, final form, fit) +
-  a global counter. Medals page of the stat card.
-- **Name**: touch keyboard; the nickname rules the header and the card.
+### Stack-chan / xiaozhi (optional)
 
-High streak and bond **improve the egg roll** (rarity and shiny): caring well
-always pays off.
+With a xiaozhi MCP endpoint saved and USB power, the board stays online as an
+MCP server. A xiaozhi agent (for example on a Stack-chan) can then check the
+pet's status and feed it, play with it, bathe it, put it to bed or wake it,
+give candy or medicine, report chess points and Pokédex progress, buy cheap
+items and list the farm.
 
-## Life cycle, eggs by rarity, languages
+## Development
 
-The life cycle lasts **3 days** of play. Three endings (all leave a new egg):
-**farewell** (final form + 3 days), **release** (long press), **runaway** (all 4
-bars at zero for 1 h). Each bred species is recorded in the **bred Pokédex**
-(normal and shiny separately).
+```bash
+./test/run_tests.sh            # host tests (C++)
+python3 test/test_tools.py     # sketch and tool checks
+python3 tools/test_i18n_formats.py
+```
 
-The egg rolls rarity over the ~79 base forms (47 common / 27 rare / 5 legendary),
-**biased towards the lines you're missing** (all 151 are completable), blessed by
-a farewell and punished by a runaway. Legendaries only with 25+ registered.
-**Shiny** 1/48 (better with streak/bond/farewell).
-
-**Languages:** the UI ships in 8 languages — English (default), Spanish, French,
-German, Italian, Portuguese, Japanese and Korean — switchable from the settings
-screen (swipe down).
-**Pokémon names are localized too**: French, German, Japanese and Korean show
-the official names (Bulbizarre, Bisasam, フシギダネ, 이상해씨...). Spanish, Italian
-and Portuguese use the English ones, which is what those regions officially use
-for gen 1. Nidoran♀/♂ read ニドランF/M in Japanese and 니드런 암/수 in Korean: no
-U8g2 unifont subset carries ♀ or ♂, so each language picks its own substitute.
-
-## Backgrounds: biome + real time
-
-The idle screen paints the sky from the **RTC's real time** (dawn / day / dusk /
-night with moon and stars) and the ground from the **type's biome** (meadow,
-beach, forest, volcano, mountain, snow). Sleeping forces night.
-
-## Layout
-
-- `TamaPoke.ino` — init, game loop, power/brightness, globals shared by the tabs
-- sketch tabs (Arduino appends them to `TamaPoke.ino` in alphabetical order): `console.ino` (serial console), `touch.ino` (taps, swipes, gestures), `scene.ino` (background, weather, seasons, standby clock, holidays), `text.ino` (fonts), `render.ino` (screen dispatch, header, ceremonies), `screens.ino` (card, settings, stats, keyboard), `pokedex.ino`, `farm_ui.ino` (farm + album), `shop.ino`, `wifi_ui.ino` (portal, chess sync, Stack-chan), `pet_anim.ino` (bath, PMD sprites, autonomous behaviour, bars)
-- `pet.h` / `pet.cpp` — pet state and logic (stats, evolution, life cycle, streak/bond/medals, NVS)
-- `sdmon.h` / `sdmon.cpp` — TPK1 (animated) and TPK2 (PMD) sprites + thumbnails, and file reception over USB (PUT/LS)
-- `rtcbat.h` / `rtcbat.cpp` — PCF85063 RTC + AXP2101 PMU (battery, brightness, PWR button)
-- `audio.h` / `audio.cpp` — ES8311 + I2S + Game-Boy-style tone synth (non-blocking task)
-- `i18n.h` / `i18n.cpp` — the 8-language string tables
-- `dex.h` — GENERATED (`gen_dex.py`): the 151 table
-- `species.h` — GENERATED (`sprites.py`): fallback sprites, UI icons, colours
-- `pin_config.h` — the board's official pins
-- `tools/` — pipeline: `dex_data.py` (data), `dex_stats.py`, `dex_names.py` +
-  `gen_names.py` (localized names), `gen_dex.py`,
-  `sprites.py` (workshop), `pack_pmd.py` / `make_thumbs.py`
-  (packers), `pack_bundle.py` (web bundle), `send_sd.py` (SD upload), `touch_log.py`
-- `tools/sdcard/mons/` — the generated .bin files (animated, shiny, PMD, thumbnails)
-- `web/` — the browser installer (ESP Web Tools + Web Serial sprite loader)
-
-## Battery
-
-The percentage on screen comes from a typical single-cell LiPo discharge curve (`batcurve.h`) over a smoothed
-voltage, and only goes down while discharging; on USB or while charging the PMU's own gauge is used. When the
-smoothed voltage stays under 3.30 V for 30 s the pet is saved and the PMU powers off (not in the first 30 s
-after boot); the PMU itself is set to cut at 3.1 V as a backstop.
-
-What the firmware does to save power (the policy is in `power.h`, covered by `test/test_power.cpp`):
-
-- **Frame rate follows activity.** 10 fps while you interact; 6.7 fps after 1 min without touching;
-  4 fps when the screen dims (90 s); 1 fps when it is almost off (5 min); 2 fps while the pet sleeps and
-  nobody touches it. The ball minigame keeps its 85 ms step. Over 10 idle minutes this sends about 68 % fewer
-  frames to the panel (each one is a full redraw plus a 434 KB QSPI transfer).
-- **Static screens are not redrawn.** Keyboard, clock, card pages 2-4 and the starter choice are painted once
-  and again only when something on them changes.
-- **Light sleep when nobody is looking.** With the screen off, or almost off (5 min), and on battery, the CPU
-  sleeps until the next frame or 200 ms; a touch wakes it at once. With USB connected it never sleeps (the
-  serial port for the SD card stays available), and USB is checked right before each sleep.
-- **Speaker amplifier only when it can be used.** It is off while the pet sleeps and while the screen is dimmed
-  or off; a sound requested meanwhile (e.g. "ready to evolve") switches it on for 4 s, and sounds wait 50 ms
-  after a power-up so the start is not cut.
-- **Low battery (< 20 %, not charging):** brightness capped (100, then 60 under 10 %) and frames twice as slow.
-- **Battery reads over I2C** every 10 s instead of 2 s when the screen is off or almost off.
-- The pet walks by real time, so lower frame rates do not slow it down.
-
-## Serial console (115200, debug)
-
-`STATS` (full state) · `SPEC <dex>` (change species) · `LVL <n>` · `HATCH` ·
-`SHINY` · `NICK <x>` · `BYE` / `RUN` (farewell / runaway) · `ABANDON` (force the
-runaway-ready state) · `WIPE` (factory reset → new game) · `BEEP` (audio test) ·
-`REG` (Pokédex) · `EGGS` (simulate 20 eggs) · `GAL` (gallery) · `CAREDAY` ·
-`TIME <epoch>` / `RTCSET <epoch>` · `HEALTH` (uptime + heap for the soak test) ·
-`LS` / `PUT` (SD files).
-
-To test fast: lower `PET_TICK_MS`, `MINUTES_PER_LEVEL` and `FAREWELL_AGE_MIN` in `pet.h`.
-
-## Roadmap
-
-- **Wild encounters / battle** — designed (see project memory): resolution by
-  ATK/DEF/SPD with PMD Attack/Hurt animations, trainer rank as endgame. Style
-  still to pick (auto / timing / turn-based).
-- **Soak test** 24–48 h (instrumentation ready: `HEALTH` command/heartbeat).
-
-*(Done: 3D-printed case [published on MakerWorld](https://makerworld.com/es/models/2937822-tamapoke-a-pokemon-pokeball-tamagotchi); repo public with the browser installer + one-click sprite bundle.)*
-
-## Community forks
-
-- **[TamaPoke — Expanded](https://github.com/ShadowEnemyx/TamaPoke/tree/tamapoke-expanded-update)** by **ShadowEnemy** — a substantial community fork (different author/branch): a full **type-matchup battle system**, all **151 + shinies** with a **Pokédex / collection box** and daily goals, **6 UI languages**, **ES8311 sound**, starter choice and a one-click web installer. Worth a look. 🎮
-- **[TamaPoke](https://github.com/DylanPDao/TamaPoke)** by **DylanPDao** — another substantial fork: **gym battles** and **LAN battles** between two devices, **movesets**, a **party + box** system, an **EV/IV** stat system, and coverage extended **up to Gen 3 (386)**. Keeps the PMD sprite pipeline. 🏆
+- Chinese font: `tools/make_zh_font.py` builds `zhfont.h` from the WenQuanYi
+  BDF files in the U8g2 repository (`tools/font/bdf`), with only the characters
+  that are actually drawn. Run it again after adding Chinese text.
+- Region pictures: `tools/make_regions.py` builds `regions.h` and the `bgN.bin`
+  backgrounds from `tools/assets/regions_source.png`.
+- Pokédex data: generated from PokéAPI (`tools/gen_dex*.py`).
+- Serial console at 115200 baud for debugging, for example `HEALTH`, `STATS`,
+  `SHOT` (screen dump), `WX`, `SYNC`.
+- Before publishing, `tools/privacy_check.py` scans what would be uploaded for
+  the values in `config_private.h` and an optional local `.privacy_denylist`.
+  It can run as a `pre-push` hook.
 
 ## Credits
 
-All sprites: [PMD SpriteCollab](https://github.com/PMDCollab/SpriteCollab)
-(community, CC BY-NC). Base stats: [PokéAPI](https://pokeapi.co). Pokémon is a ™ of
-Nintendo / Game Freak / The Pokémon Company. Non-commercial, personal-use project.
-Full list in [`CREDITS.md`](CREDITS.md). Version history in
-[`CHANGELOG.md`](CHANGELOG.md) — most of the fixes there came from people
-who built one and reported what they found.
+- Original project: [socquique/TamaPoke](https://github.com/socquique/TamaPoke)
+  by Quique Tortosa and contributors.
+- Sprites: [PMD SpriteCollab](https://github.com/PMDCollab/SpriteCollab)
+  (CC BY-NC 4.0; per-sprite credits in its `tracker.json`).
+- Species data and names: [PokéAPI](https://pokeapi.co).
+- Chinese font: WenQuanYi Bitmap Song, from the
+  [U8g2](https://github.com/olikraus/u8g2) repository.
+- Weather data by [Open-Meteo.com](https://open-meteo.com/) (CC BY 4.0).
+- Chess data from the [chess.com Published-Data API](https://www.chess.com/news/view/published-data-api).
+- Libraries: Arduino_GFX (moononournation), SensorLib and XPowersLib (Lewis
+  He), U8g2 (olikraus), ArduinoJson (Benoît Blanchon), WebSockets (Markus
+  Sattler).
+- Region landscapes: AI-generated for this fork.
 
 ## License
 
-- **Source code** (firmware + tooling): **[MIT](LICENSE)**.
-- **Sprites & names**: © Nintendo / Game Freak / The Pokémon Company; pixel art
-  from [PMD SpriteCollab](https://github.com/PMDCollab/SpriteCollab) (CC BY-NC 4.0).
-  **Non-commercial use only.**
-- **3D-printed case**: remix of *"Pokeball"* by **yoyothechicken**
-  ([MakerWorld #839922](https://makerworld.com/es/models/839922-pokeball)),
-  licensed **CC BY-NC-SA**, and shared here under the same terms.
-
-This is an unofficial fan project, not affiliated with or endorsed by Nintendo.
+- Code: MIT, see [LICENSE](LICENSE). This fork's changes are under the same
+  license.
+- Sprites (`tools/sdcard/mons`): CC BY-NC 4.0, from PMD SpriteCollab. Don't
+  use them commercially.
+- Upstream's 3D case on MakerWorld: CC BY-NC-SA.
+- Pokémon names and characters belong to their owners.
