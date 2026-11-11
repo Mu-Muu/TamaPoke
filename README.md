@@ -17,6 +17,8 @@ It grows up over days and earns its points from real chess games.
 
 **English** · [简体中文](README.zh-CN.md)
 
+<img src="docs/demo.gif" alt="On the real board: tap the standby clock and the pet wakes up and walks around" width="360">
+
 </div>
 
 **[Install it from your browser](https://mu-muu.github.io/TamaPoke/web/)** (Chrome or Edge on a computer, no Arduino needed).

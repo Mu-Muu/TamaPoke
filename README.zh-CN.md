@@ -17,6 +17,8 @@
 
 [English](README.md) · **简体中文**
 
+<img src="docs/demo.gif" alt="真机实拍：碰一下熄屏时钟，宠物就醒来四处走动" width="360">
+
 </div>
 
 **[在浏览器里一键安装](https://mu-muu.github.io/TamaPoke/web/)**（电脑上用 Chrome 或 Edge，不用装 Arduino）。
