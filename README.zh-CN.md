@@ -2,6 +2,8 @@
 
 [English](README.md) · **简体中文**
 
+**[在浏览器里一键安装](https://mu-muu.github.io/TamaPoke/web/)**（电脑上用 Chrome 或 Edge，不用装 Arduino）。
+
 一个宝可梦电子宠物，运行在 **Waveshare ESP32-S3-Touch-AMOLED-1.75**（466×466 圆形
 AMOLED 触摸屏）上。本项目分叉自
 [socquique/TamaPoke](https://github.com/socquique/TamaPoke) v1.18，改成了节奏更慢、
@@ -70,7 +72,9 @@ arduino-cli compile --fqbn "$FQBN" --output-dir build .
 arduino-cli upload --fqbn "$FQBN" -p /dev/cu.usbmodemXXXX --input-dir build .
 ```
 
-`web/` 里的网页刷机工具刷的仍是**原项目 v1.18**，不是本分叉。
+也可以不编译，直接用[网页安装](https://mu-muu.github.io/TamaPoke/web/)：在 Chrome 或 Edge
+里刷入本分叉。它用的是通用设置（时间和天气按美国纽约，没有 chess.com 积分）。SD 卡文件是
+[最新发布版本](https://github.com/Mu-Muu/TamaPoke/releases/latest)里的 `tamapoke-sd.zip`。
 
 ### 个人设置
 

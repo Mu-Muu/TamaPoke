@@ -1,73 +1,60 @@
 # TamaPoke web installer
 
-A one-click page that flashes the firmware and loads the sprites from the browser
-(Chrome/Edge), with no Arduino or drivers. It uses
-[ESP Web Tools](https://esphome.github.io/esp-web-tools/) to flash and **Web
-Serial** to push the sprites to the SD with the firmware's `PUT` protocol (the
-same one as `tools/send_sd.py`).
+A page that flashes this fork from the browser (Chrome or Edge on a computer),
+with no Arduino and no drivers. It uses
+[ESP Web Tools](https://esphome.github.io/esp-web-tools/). Live at
+<https://mu-muu.github.io/TamaPoke/web/>.
 
 ## Contents
 
-- `index.html` — the page (flashing + sprite loader).
-- `manifest.json` — ESP Web Tools config (points at the firmware).
-- `firmware/tamapoke.bin` — combined firmware, flashable at `0x0`.
-- `sprites.pak` — all the sprites in one bundle (TPAK), so the page sends them in
-  one click. **Generated** by `tools/pack_bundle.py` (gitignored by default — see
-  *Hosting the sprites* below).
+- `index.html`: the page (English and 简体中文). Step 1 flashes the firmware;
+  step 2 links to `tamapoke-sd.zip` on the latest GitHub Release, which the
+  user unzips onto the microSD; step 3 is the Wi-Fi setup.
+- `manifest.json`: ESP Web Tools config. It flashes four parts at their own
+  offsets (bootloader `0x0`, partition table `0x8000`, `boot_app0` `0xe000`,
+  app `0x10000`) instead of one merged image, so the NVS at `0x9000` (pet,
+  points, Wi-Fi) survives an update as long as "Erase device" stays unticked.
+- `firmware/*.bin`: the four parts.
+
+The public firmware is built **without** `config_private.h`, so it has the
+neutral settings from `config.h`: New York time and weather, no chess.com
+points.
 
 ## Regenerate
 
-After changing the firmware or the sprites:
-
 ```bash
-bash tools/build_web.sh        # recompiles -> firmware/tamapoke.bin AND rebuilds sprites.pak
+bash tools/build_web.sh
 ```
+
+It compiles `HEAD` in a clean temporary worktree (no `config_private.h`, no
+uncommitted changes), copies the four parts into `web/firmware/`, stamps the
+version into `manifest.json`, and zips `tools/sdcard/mons` into
+`build/tamapoke-sd.zip` (about 10 MB). Commit `web/`, push, and upload the zip
+to a new GitHub Release as `tamapoke-sd.zip`; the page always links to the
+latest release.
 
 ## Test locally
 
-Web Serial and ESP Web Tools need a **secure context**: `https://` or
-`http://localhost`. To test:
+Web Serial needs a secure context (`https://` or `http://localhost`):
 
 ```bash
 cd web && python3 -m http.server 8000
-# open http://localhost:8000 in Chrome/Edge
+# open http://localhost:8000 in Chrome or Edge
 ```
 
-## End-user flow
+## Deploy
 
-1. **Install TamaPoke** → flashes the firmware (pick the USB port; tick "Erase
-   device" for a fresh board).
-2. **Connect board** + **Load sprites** → downloads `sprites.pak` and copies it to
-   the microSD over USB (progress bar, ~8–10 min). Close the step-1 install tab
-   first: only one program can use the port at a time.
-3. Restart (PWR button) → choose your starter and play.
+GitHub Pages serves the `mods` branch from `/` (the empty `.nojekyll` at the
+root skips the Jekyll build), so the page lives under `/web/`.
 
-A hidden "pick them manually" option lets advanced users send their own `.bin`.
+## Updating ESP Web Tools
 
-## Hosting the sprites
+`index.html` loads an exact version from unpkg with Subresource Integrity.
+After changing the version, recompute the hash:
 
-`sprites.pak` is ~58 MB and **gitignored** so it doesn't bloat the repo. To make
-the one-click sprite loader work on a real deployment, pick one:
+```bash
+curl -s https://unpkg.com/esp-web-tools@X.Y.Z/dist/web/install-button.js \
+  | openssl dgst -sha384 -binary | openssl base64 -A
+```
 
-- **Commit it** — add `web/sprites.pak` to git and serve it from Pages. Simple,
-  but doubles the repo's sprite size.
-- **Release asset** — attach `sprites.pak` to a GitHub Release and change the
-  `fetch('sprites.pak')` URL in `index.html` to the release URL (keeps the repo
-  small; watch out for CORS on the asset host).
-
-All sprites are from PMD SpriteCollab, CC BY-NC (non-commercial sharing with
-attribution is allowed); see [`../CREDITS.md`](../CREDITS.md).
-
-## Deploy (GitHub Pages)
-
-1. Repo settings → Pages → serve from `main`, folder `/web` (or move `web/` to
-   `docs/`). Pages gives HTTPS automatically.
-2. URL ends up at `https://<user>.github.io/<repo>/`.
-
-> **Pages on private repos** needs GitHub Pro/Team. If you make the repo
-> **public** to use Pages for free, decide about the sprites first (see above and
-> CREDITS).
-
-## Limitations
-
-- Desktop **Chrome/Edge** only (Web Serial isn't in Firefox/Safari).
+The hash only covers that entry file, not the chunks it imports.

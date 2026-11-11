@@ -3,229 +3,139 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>TamaPoke · Installer</title>
+<title>TamaPoke · Web installer</title>
 <style>
-  :root { --bg:#f2efe1; --ink:#2a2a36; --accent:#4f93c4; --ok:#58b868; --bad:#e8503a; --track:#d8d2bd; }
+  :root { --bg:#f2efe1; --ink:#2a2a36; --muted:#6b6b76; --accent:#4f93c4; --ok:#58b868; --bad:#e8503a; --track:#d8d2bd; }
   * { box-sizing: border-box; }
-  body { margin:0; font-family: system-ui, -apple-system, sans-serif; background:var(--bg);
-         color:var(--ink); line-height:1.6; }
-  .wrap { max-width: 680px; margin: 0 auto; padding: 2rem 1.25rem 4rem; }
-  h1 { font-size: 2rem; margin: 0 0 .25rem; }
-  h2 { font-size: 1.25rem; margin: 2.5rem 0 .5rem; }
-  .sub { color:#6b6b76; margin: 0 0 1.5rem; }
-  .step { background:#fff; border:1px solid var(--track); border-radius:14px; padding:1.25rem 1.5rem; margin: 1rem 0; }
+  body { margin:0; font-family: system-ui, -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif;
+         background:var(--bg); color:var(--ink); line-height:1.6; }
+  .wrap { max-width: 680px; margin: 0 auto; padding: 1.5rem 1rem 4rem; }
+  .lang { text-align:right; }
+  .lang button { font: inherit; font-size:.85rem; padding:.2rem .7rem; border-radius:8px; border:1px solid var(--track);
+                 background:#fff; color:var(--ink); cursor:pointer; }
+  .lang button[aria-pressed="true"] { border-color:var(--ink); font-weight:600; }
+  h1 { font-size: 2rem; margin: .5rem 0 .25rem; }
+  h2 { font-size: 1.2rem; margin: 2.25rem 0 .5rem; }
+  .sub { color:var(--muted); margin: 0 0 1.25rem; }
+  .step { background:#fff; border:1px solid var(--track); border-radius:14px; padding:1.1rem 1.25rem; margin: .75rem 0; }
   .num { display:inline-flex; width:26px; height:26px; border-radius:50%; background:var(--accent); color:#fff;
          align-items:center; justify-content:center; font-weight:600; margin-right:.5rem; font-size:.9rem; }
-  button { font: inherit; font-weight:500; padding:.6rem 1.2rem; border-radius:10px; border:1px solid var(--ink);
-           background:#fff; cursor:pointer; }
-  button:hover { background:var(--bg); }
-  button:disabled { opacity:.5; cursor:default; }
+  button.big, a.big { font: inherit; font-weight:500; padding:.6rem 1.2rem; border-radius:10px; border:1px solid var(--ink);
+           background:#fff; color:var(--ink); cursor:pointer; text-decoration:none; display:inline-block; }
+  button.big:hover, a.big:hover { background:var(--bg); }
   esp-web-install-button { display:inline-block; }
-  esp-web-install-button[install-unsupported] { display:none; }
   .unsupported { display:none; color:var(--bad); font-weight:500; }
-  .row { display:flex; gap:.75rem; align-items:center; flex-wrap:wrap; }
-  #log { font-family: ui-monospace, monospace; font-size:.85rem; background:#1b1b25; color:#d8dcf0;
-         border-radius:10px; padding:.75rem 1rem; margin-top:1rem; max-height:220px; overflow:auto; white-space:pre-wrap; display:none; }
-  .bar { height:10px; background:var(--track); border-radius:5px; overflow:hidden; margin-top:.75rem; display:none; }
-  .bar > div { height:100%; width:0; background:var(--ok); transition: width .15s; }
+  .warn { border-left:4px solid var(--bad); padding:.25rem .75rem; margin:.75rem 0; }
   code { background:#0001; padding:.1em .4em; border-radius:5px; }
   a { color:var(--accent); }
-  .note { font-size:.9rem; color:#6b6b76; }
+  .note { font-size:.9rem; color:var(--muted); }
+  ol { padding-left:1.25rem; }
+  body[data-lang="en"] [data-l="zh"], body[data-lang="zh"] [data-l="en"] { display:none !important; }
 </style>
 </head>
-<body>
+<body data-lang="en">
 <div class="wrap">
-  <h1>🐢 TamaPoke</h1>
-  <p class="sub">A 151-Pokémon tamagotchi for the Waveshare ESP32-S3-Touch-AMOLED-1.75.
-     Install it from your browser — no Arduino, no drivers.</p>
+  <div class="lang">
+    <button type="button" data-set="en" aria-pressed="true">English</button>
+    <button type="button" data-set="zh" aria-pressed="false">中文</button>
+  </div>
+
+  <h1>TamaPoke</h1>
+  <p class="sub" data-l="en">A gentle Pokémon life-sim pet for the <b>Waveshare ESP32-S3-Touch-AMOLED-1.75</b>:
+     all 1025 species, English and 简体中文, weather, a farm and an album. Install it from your browser,
+     with no Arduino and no drivers.</p>
+  <p class="sub" data-l="zh">运行在 <b>微雪 ESP32-S3-Touch-AMOLED-1.75</b> 圆屏开发板上的宝可梦养成小宠物：
+     全部 1025 种宝可梦，中英文界面，有天气、农场和相册。在浏览器里就能安装，不用装 Arduino，也不用装驱动。</p>
 
   <p class="unsupported" id="unsupported">
-    ⚠️ Your browser doesn't support Web Serial. Use <b>Chrome</b> or <b>Edge</b> on a computer.
+    <span data-l="en">Your browser can't talk to USB devices. Use <b>Chrome</b> or <b>Edge</b> on a computer.</span>
+    <span data-l="zh">这个浏览器不支持连接 USB 设备。请在电脑上用 <b>Chrome</b> 或 <b>Edge</b> 打开本页。</span>
   </p>
 
-  <h2><span class="num">1</span>Flash the firmware</h2>
+  <h2><span class="num">1</span><span data-l="en">Flash the firmware</span><span data-l="zh">刷入固件</span></h2>
   <div class="step">
-    <p>Plug the board in via USB and press install. Pick the port and wait.</p>
+    <p data-l="en">Plug the board into the computer with a USB-C cable, press the button and pick the board's port.
+       It takes about a minute.</p>
+    <p data-l="zh">用 USB-C 数据线把开发板接到电脑，点下面的按钮，选择开发板的端口。大约需要一分钟。</p>
     <esp-web-install-button manifest="manifest.json">
-      <button slot="activate">⚡ Install TamaPoke</button>
-      <span slot="unsupported">Browser not supported (use Chrome/Edge).</span>
-      <span slot="not-allowed">Needs HTTPS.</span>
+      <button class="big" slot="activate"><span data-l="en">Install TamaPoke</span><span data-l="zh">安装 TamaPoke</span></button>
+      <span slot="unsupported"><span data-l="en">Browser not supported (use Chrome or Edge).</span><span data-l="zh">浏览器不支持（请用 Chrome 或 Edge）。</span></span>
+      <span slot="not-allowed"><span data-l="en">This page must be opened over HTTPS.</span><span data-l="zh">本页需要通过 HTTPS 打开。</span></span>
     </esp-web-install-button>
-    <p class="note">🔄 <b>Updating to a new version? Install <u>without</u> erasing</b> to keep
-       your Pokémon — the save lives in flash and the sprites on the microSD, so a normal
-       install keeps both. Only a full <b>Erase</b> wipes your saved pet (the SD sprites
-       survive even that). First time on a fresh board? You can erase, no problem.</p>
+    <p class="warn" data-l="en"><b>Updating?</b> Leave <b>"Erase device"</b> unticked. The installer only writes the
+       program, so your pet, points and Wi-Fi stay. Ticking it wipes the board, and your pet with it.
+       Tick it only on a new board or one that ran other firmware.</p>
+    <p class="warn" data-l="zh"><b>升级时</b>不要勾选 <b>"Erase device"（擦除设备）</b>。安装只写入程序，宠物、积分和 Wi-Fi
+       设置都会保留；勾选会清空整块板子，宠物也会没了。只有新板子或之前刷过别的固件时才勾选。</p>
+    <p class="note" data-l="en">No port shows up? Try another cable (some only charge), or hold <b>BOOT</b> while plugging in.</p>
+    <p class="note" data-l="zh">找不到端口？换一根数据线试试（有的线只能充电），或者按住 <b>BOOT</b> 键再插上 USB。</p>
   </div>
 
-  <h2><span class="num">2</span>Load the sprites onto the microSD</h2>
+  <h2><span class="num">2</span><span data-l="en">Prepare the microSD card</span><span data-l="zh">准备 microSD 卡</span></h2>
   <div class="step">
-    <p>Put a microSD into the board (it formats itself). Press <b>Connect board</b>
-       and then <b>Load sprites</b>: they download and copy over USB automatically
-       (~40 MB, a few minutes). Don't remove the card.</p>
-    <p class="note">Close the step-1 install tab first (only one program can use
-       the port at a time).</p>
-    <div class="row">
-      <button id="connect">🔌 Connect board</button>
-      <button id="auto" disabled>⬇️ Load sprites</button>
-    </div>
-    <p class="note">Have your own <code>.bin</code> files? <label style="cursor:pointer;text-decoration:underline">pick them manually<input id="files" type="file" accept=".bin" multiple disabled hidden></label></p>
-    <p class="note">🎨 Want to make your own sprites? See <a href="https://github.com/socquique/TamaPoke#generate-and-load-the-sprites-yourself" target="_blank">how to generate &amp; load them</a> in the repo.</p>
-    <div class="bar" id="bar"><div></div></div>
-    <pre id="log"></pre>
+    <p data-l="en">The pictures (sprites, shiny sprites, Pokédex thumbnails and region landscapes) live on a
+       FAT32 microSD card.</p>
+    <p data-l="zh">宝可梦图片（普通、异色、图鉴小图和地区风景）放在一张 FAT32 格式的 microSD 卡里。</p>
+    <p><a class="big" href="https://github.com/Mu-Muu/TamaPoke/releases/latest/download/tamapoke-sd.zip"><span data-l="en">Download the SD files</span><span data-l="zh">下载 SD 卡文件</span></a>
+       <span class="note">tamapoke-sd.zip</span></p>
+    <ol data-l="en">
+      <li>Unzip it and copy the <code>mons</code> folder to the <b>root</b> of the card (files end up in <code>/mons/</code>).</li>
+      <li>Put the card in the board and restart it.</li>
+    </ol>
+    <ol data-l="zh">
+      <li>解压后，把 <code>mons</code> 文件夹复制到卡的<b>根目录</b>（文件路径是 <code>/mons/</code>）。</li>
+      <li>把卡插进开发板，重启。</li>
+    </ol>
+    <p class="note" data-l="en">If the board can't read the card, it formats it, so back up anything on it first.</p>
+    <p class="note" data-l="zh">如果板子读不了这张卡，会自动格式化它，卡里原有的东西请先备份。</p>
   </div>
 
-  <h2>How to play</h2>
-  <p>Care for your egg until it hatches, feed it, play, train it and complete them
-     all. Tap the creature to pet it; swipe to open the Pokédex (sideways), the
-     stat card (up) or set the clock (down); the physical PWR button turns the
-     screen off (short press) or everything off (long press).
-     More in the <a href="https://github.com/socquique/TamaPoke" target="_blank">repository</a>.</p>
+  <h2><span class="num">3</span><span data-l="en">Connect to Wi-Fi</span><span data-l="zh">连接 Wi-Fi</span></h2>
+  <div class="step">
+    <p data-l="en">Swipe down to the settings page and tap <b>Wi-Fi</b>. On your phone, join the network
+       <code>TamaPoke</code> and open <code>192.168.4.1</code> to enter your Wi-Fi. The board uses it for the
+       clock and the weather.</p>
+    <p data-l="zh">下滑打开设置页，点 <b>Wi-Fi</b>。用手机连接名为 <code>TamaPoke</code> 的网络，打开
+       <code>192.168.4.1</code>，填入你家的 Wi-Fi。板子会用它校准时间和获取天气。</p>
+  </div>
 
-  <p class="note">Sprites from <a href="https://github.com/PMDCollab/SpriteCollab" target="_blank">PMD SpriteCollab</a> (CC BY-NC).
-     Pokémon is a ™ of Nintendo / Game Freak. Non-commercial project.</p>
+  <h2 data-l="en">Good to know</h2>
+  <h2 data-l="zh">需要知道的</h2>
+  <div class="step">
+    <p data-l="en">This build uses neutral settings: the clock and weather follow <b>New York</b>, and chess.com points are
+       off. To use your own city, time zone and chess.com account, build it yourself with a
+       <code>config_private.h</code> (see the <a href="https://github.com/Mu-Muu/TamaPoke#personal-settings">README</a>).</p>
+    <p data-l="zh">这个版本用的是通用设置：时间和天气按<b>美国纽约</b>，没有 chess.com 下棋积分。想用自己的城市、时区和
+       chess.com 账号，需要自己编译，填好 <code>config_private.h</code>（见<a href="https://github.com/Mu-Muu/TamaPoke/blob/mods/README.zh-CN.md#个人设置">中文说明</a>）。</p>
+    <p data-l="en">How to play, gestures and everything else: <a href="https://github.com/Mu-Muu/TamaPoke">the repository</a>.</p>
+    <p data-l="zh">玩法、手势和其他说明见<a href="https://github.com/Mu-Muu/TamaPoke/blob/mods/README.zh-CN.md">仓库</a>。</p>
+  </div>
+
+  <p class="note" data-l="en">A fork of <a href="https://github.com/socquique/TamaPoke">socquique/TamaPoke</a>. Personal,
+     non-commercial fan project. Sprites from <a href="https://github.com/PMDCollab/SpriteCollab">PMD SpriteCollab</a>
+     (CC BY-NC 4.0). Pokémon is © Nintendo / Creatures / GAME FREAK / The Pokémon Company; not affiliated with or endorsed by them.</p>
+  <p class="note" data-l="zh">基于 <a href="https://github.com/socquique/TamaPoke">socquique/TamaPoke</a> 修改。个人非商业粉丝项目。
+     图片来自 <a href="https://github.com/PMDCollab/SpriteCollab">PMD SpriteCollab</a>（CC BY-NC 4.0）。
+     宝可梦版权归任天堂 / Creatures / GAME FREAK / The Pokémon Company 所有，本项目与他们无关，也未获他们认可。</p>
 </div>
 
-<!-- version exacta (no el rango flotante @10) con Subresource Integrity, para
-     que un fichero del CDN alterado o cambiado sin avisar no se ejecute en
-     silencio. Ojo: el SRI solo cubre este fichero de entrada; los import()
-     dinamicos que el hace de sus propios chunks no quedan cubiertos, y cerrar
-     eso del todo obligaria a hospedar el arbol entero de esp-web-tools.
-     Al subir de version hay que recalcular el hash:
-       curl -s https://unpkg.com/esp-web-tools@X.Y.Z/dist/web/install-button.js \
-         | openssl dgst -sha384 -binary | openssl base64 -A -->
+<!-- version exacta con Subresource Integrity (ver la nota en web/README.md para recalcular el hash al subir de version) -->
 <script type="module" crossorigin="anonymous"
         integrity="sha384-9XfyvAabgkISlB/Xb3OpshGKpZx0TOt5Mmu78SeiNU3so/p4o2s9m66vy6Utdnom"
         src="https://unpkg.com/esp-web-tools@10.4.0/dist/web/install-button.js"></script>
 <script>
-const log = (m) => { const el = document.getElementById('log'); el.style.display='block';
-  el.textContent += m + '\n'; el.scrollTop = el.scrollHeight; };
-const supported = 'serial' in navigator;
-if (!supported) { document.getElementById('unsupported').style.display='block';
-  document.getElementById('connect').disabled = true; }
-
-let port, reader, writer, lineBuf = '';
-
-async function readLine(timeoutMs = 6000) {
-  const deadline = Date.now() + timeoutMs;
-  while (true) {
-    const nl = lineBuf.indexOf('\n');
-    if (nl >= 0) { const l = lineBuf.slice(0, nl).trim(); lineBuf = lineBuf.slice(nl + 1); return l; }
-    if (Date.now() > deadline) return null;
-    const { value, done } = await reader.read();
-    if (done) return null;
-    lineBuf += new TextDecoder().decode(value);
-  }
+function setLang(l) {
+  document.body.dataset.lang = l;
+  document.documentElement.lang = l === 'zh' ? 'zh-CN' : 'en';
+  document.title = l === 'zh' ? 'TamaPoke · 网页安装' : 'TamaPoke · Web installer';
+  document.querySelectorAll('.lang button').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.set === l)));
+  try { localStorage.setItem('lang', l); } catch (e) {}
 }
-
-async function waitFor(token, timeoutMs = 6000) {
-  const deadline = Date.now() + timeoutMs;
-  while (Date.now() < deadline) {
-    const l = await readLine(deadline - Date.now());
-    if (l === null) return false;
-    if (l === token) return true;
-    if (l === 'ERR') return false;
-  }
-  return false;
-}
-
-const enc = new TextEncoder();
-
-// sends one file to the board with the PUT protocol (name includes the mons/ prefix)
-async function sendOne(name, data) {
-  await writer.write(enc.encode(`PUT ${name} ${data.length}\n`));
-  if (!await waitFor('OK')) return false;
-  for (let i = 0; i < data.length; i += 2048) {
-    await writer.write(data.slice(i, i + 2048));
-    if (!await waitFor('#')) return false;
-  }
-  return await waitFor('DONE', 30000);
-}
-
-// splits the sprites.pak bundle (TPAK) into its individual files
-function parsePak(buf) {
-  const dv = new DataView(buf), td = new TextDecoder();
-  if (td.decode(new Uint8Array(buf, 0, 4)) !== 'TPAK') throw new Error('invalid bundle');
-  const count = dv.getUint16(4, true);
-  let off = 6; const items = [];
-  for (let i = 0; i < count; i++) {
-    const nl = dv.getUint8(off); off += 1;
-    const name = td.decode(new Uint8Array(buf, off, nl)); off += nl;
-    const size = dv.getUint32(off, true); off += 4;
-    items.push({ name, size });
-  }
-  let pos = off;
-  for (const it of items) { it.data = new Uint8Array(buf, pos, it.size); pos += it.size; }
-  return items;
-}
-
-// reanudacion: recuerda que ficheros se confirmaron (nombre+tamano, para que un
-// bundle regenerado con distinto contenido bajo el mismo nombre no se salte sin
-// avisar), asi una recarga tras un corte no repite los ~40 MB / ~10 min enteros
-const RESUME_KEY = 'tamapoke_sent_files';
-const loadResumeSet = () => { try { return new Set(JSON.parse(localStorage.getItem(RESUME_KEY) || '[]')); } catch { return new Set(); } };
-const saveResumeSet = (s) => { try { localStorage.setItem(RESUME_KEY, JSON.stringify([...s])); } catch {} };
-const clearResumeSet = () => { try { localStorage.removeItem(RESUME_KEY); } catch {} };
-
-async function sendAll(items) {
-  const bar = document.getElementById('bar'); bar.style.display = 'block';
-  const fill = bar.firstElementChild;
-  const sent = loadResumeSet();
-  let done = 0, fail = 0, skipped = 0;
-  for (const it of items) {
-    const key = `${it.name}:${it.data.length}`;
-    if (sent.has(key)) {
-      skipped++;
-    } else if (await sendOne(it.name, it.data)) {
-      sent.add(key);
-      saveResumeSet(sent);
-    } else {
-      log('   failed ' + it.name);
-      fail++;
-    }
-    done++;
-    fill.style.width = (done / items.length * 100) + '%';
-  }
-  if (skipped) log(`Resumed: skipped ${skipped} already-sent file(s) from an earlier attempt.`);
-  if (fail === 0) clearResumeSet();  // todo confirmado: la proxima vez no se salta nada
-  log(`Done (${done - fail}/${items.length}). Restart the board (PWR button).`);
-}
-
-document.getElementById('connect').onclick = async () => {
-  try {
-    port = await navigator.serial.requestPort();
-    await port.open({ baudRate: 115200 });
-    reader = port.readable.getReader();
-    writer = port.writable.getWriter();
-    lineBuf = '';
-    log('Connected. Press "Load sprites".');
-    document.getElementById('auto').disabled = false;
-    document.getElementById('files').disabled = false;
-    document.getElementById('connect').disabled = true;
-  } catch (e) { log('Could not connect: ' + e.message); }
-};
-
-document.getElementById('auto').onclick = async () => {
-  if (!writer) { log('Connect the board first.'); return; }
-  document.getElementById('auto').disabled = true;
-  log('Downloading sprite bundle (~58 MB)...');
-  let items;
-  try {
-    // sprites.pak servido desde el mismo origen (GitHub Pages) -> sin lios de CORS
-    const resp = await fetch('sprites.pak');
-    if (!resp.ok) throw new Error('HTTP ' + resp.status);
-    items = parsePak(await resp.arrayBuffer());
-  } catch (e) { log('Could not download sprites.pak: ' + e.message); return; }
-  log(`${items.length} sprites. Sending over USB...`);
-  await sendAll(items);
-};
-
-document.getElementById('files').onchange = async (ev) => {
-  const files = [...ev.target.files];
-  const items = [];
-  for (const f of files) items.push({ name: 'mons/' + f.name, data: new Uint8Array(await f.arrayBuffer()) });
-  log(`${items.length} files. Sending...`);
-  await sendAll(items);
-};
+document.querySelectorAll('.lang button').forEach(b => b.addEventListener('click', () => setLang(b.dataset.set)));
+let saved = null;
+try { saved = localStorage.getItem('lang'); } catch (e) {}
+setLang(saved || ((navigator.language || '').toLowerCase().startsWith('zh') ? 'zh' : 'en'));
+if (!('serial' in navigator)) document.getElementById('unsupported').style.display = 'block';
 </script>
 </body>
 </html>

@@ -2,6 +2,8 @@
 
 **English** · [简体中文](README.zh-CN.md)
 
+**[Install it from your browser](https://mu-muu.github.io/TamaPoke/web/)** (Chrome or Edge on a computer, no Arduino needed).
+
 A Pokémon virtual pet for the **Waveshare ESP32-S3-Touch-AMOLED-1.75** (round
 466×466 AMOLED with touch). This is a fork of
 [socquique/TamaPoke](https://github.com/socquique/TamaPoke) v1.18 that turns it
@@ -78,7 +80,10 @@ arduino-cli compile --fqbn "$FQBN" --output-dir build .
 arduino-cli upload --fqbn "$FQBN" -p /dev/cu.usbmodemXXXX --input-dir build .
 ```
 
-The web installer in `web/` still flashes **upstream v1.18**, not this fork.
+Or skip the build: the [web installer](https://mu-muu.github.io/TamaPoke/web/) flashes this fork
+from Chrome or Edge. It has neutral settings (New York time and weather, no
+chess.com points), and the SD files are `tamapoke-sd.zip` on the
+[latest release](https://github.com/Mu-Muu/TamaPoke/releases/latest).
 
 ### Personal settings
 
