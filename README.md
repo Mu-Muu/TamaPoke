@@ -4,16 +4,16 @@
 
 # TamaPoke
 
-A gentle Pokémon pet for a round AMOLED screen.<br>
-It grows up over days and earns its points from real chess games.
+A gentle Pokémon pet that lives on real **chess.com** games.<br>
+Play chess, earn points, and spend them on candy, eggs and potions for a companion that grows up over days.
 
+[![chess.com](https://img.shields.io/badge/chess.com-games%20%E2%86%92%20points-81B64C?logo=chessdotcom&logoColor=white)](#why-this-fork)
 [![Flash in browser](https://img.shields.io/badge/flash-in%20browser-FF6B00?logo=googlechrome&logoColor=white)](https://mu-muu.github.io/TamaPoke/web/)
 [![Pokémon](https://img.shields.io/badge/Pok%C3%A9mon-1025-FFCB05)](#whats-different-from-upstream)
 [![Board](https://img.shields.io/badge/board-ESP32--S3%20AMOLED%201.75-E7352C?logo=espressif&logoColor=white)](#hardware)
 [![UI](https://img.shields.io/badge/UI-English%20%7C%20%E7%AE%80%E4%BD%93%E4%B8%AD%E6%96%87-4C9BE8)](README.zh-CN.md)
-[![Code: MIT](https://img.shields.io/badge/code-MIT-blue)](#license)
 
-**[Why this fork](#why-this-fork)** · **[What's different](#whats-different-from-upstream)** · **[Hardware](#hardware)** · **[Build and flash](#build-and-flash)** · **[How to play](#how-to-play)**
+**[chess.com points](#why-this-fork)** · **[What's different](#whats-different-from-upstream)** · **[Hardware](#hardware)** · **[Build and flash](#build-and-flash)** · **[How to play](#how-to-play)**
 
 **English** · [简体中文](README.zh-CN.md)
 
@@ -41,6 +41,9 @@ loses the drive to practise. So this pet lives on chess: the games she plays on
 chess.com turn into points, and the points buy candy, potions, eggs and
 accessories for her companion.
 
+**Play on chess.com → the board syncs every night → points buy candy, eggs and
+potions → the next morning the pet cheers about yesterday's games.**
+
 - Only real games count: games with 10+ minutes of base time, or daily games.
   Blitz, bullet and games against bots don't. A win gives 10 points and any
   other result 1, and new personal bests (rating, tactics, Puzzle Rush) give
@@ -51,6 +54,12 @@ accessories for her companion.
   hurts the pet; playing just makes its life richer.
 - The board syncs once a night, and the next day the pet cheers about
   yesterday's games ("You won 3 games!").
+- It only reads chess.com's public data for one username (the
+  [Published-Data API](https://www.chess.com/news/view/published-data-api)):
+  no login, no password, and nothing is ever posted to chess.com.
+- The username is set when you build the firmware (see
+  [Personal settings](#personal-settings)); the web installer build has no
+  chess points for now.
 
 ## What's different from upstream
 

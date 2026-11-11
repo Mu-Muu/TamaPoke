@@ -4,16 +4,16 @@
 
 # TamaPoke
 
-住在圆形 AMOLED 屏幕里的温和宝可梦电子宠物。<br>
-它按天慢慢长大，靠真实的国际象棋对局赚积分。
+靠真实的 **chess.com** 国际象棋对局"过日子"的温和宝可梦电子宠物。<br>
+下棋赚积分，给按天慢慢长大的伙伴买糖果、蛋和药剂。
 
+[![chess.com](https://img.shields.io/badge/chess.com-games%20%E2%86%92%20points-81B64C?logo=chessdotcom&logoColor=white)](#初衷)
 [![Flash in browser](https://img.shields.io/badge/flash-in%20browser-FF6B00?logo=googlechrome&logoColor=white)](https://mu-muu.github.io/TamaPoke/web/)
 [![Pokémon](https://img.shields.io/badge/Pok%C3%A9mon-1025-FFCB05)](#和原项目的区别)
 [![Board](https://img.shields.io/badge/board-ESP32--S3%20AMOLED%201.75-E7352C?logo=espressif&logoColor=white)](#硬件)
 [![UI](https://img.shields.io/badge/UI-English%20%7C%20%E7%AE%80%E4%BD%93%E4%B8%AD%E6%96%87-4C9BE8)](README.md)
-[![Code: MIT](https://img.shields.io/badge/code-MIT-blue)](#许可)
 
-**[初衷](#初衷)** · **[和原项目的区别](#和原项目的区别)** · **[硬件](#硬件)** · **[编译和刷机](#编译和刷机)** · **[怎么玩](#怎么玩)**
+**[chess.com 联动](#初衷)** · **[和原项目的区别](#和原项目的区别)** · **[硬件](#硬件)** · **[编译和刷机](#编译和刷机)** · **[怎么玩](#怎么玩)**
 
 [English](README.md) · **简体中文**
 
@@ -39,6 +39,8 @@ AMOLED 触摸屏）上。本项目分叉自
 所以我让这只宠物靠下棋"过日子"：她在 chess.com 上下的棋会变成积分，积分可以给她的伙伴买
 糖果、药剂、蛋和装饰品。
 
+**在 chess.com 下棋 → 板子每晚自动同步 → 积分买糖果、蛋和药剂 → 第二天早上宠物为昨天的对局欢呼。**
+
 - 只有认真下的棋才算：基础时间 10 分钟以上的对局，或者每日对局。超快棋、闪电战和跟电脑
   下的都不算。赢一盘得 10 分，其他结果得 1 分；等级分、战术题、Puzzle Rush 创新高还有奖励，
   练得越多，回报越多。
@@ -46,6 +48,9 @@ AMOLED 触摸屏）上。本项目分叉自
 - 基本照顾（喂食、玩耍、洗澡、睡觉）永远免费。不下棋不会让宠物受苦，下棋只会让它的生活
   更丰富。
 - 板子每晚同步一次，第二天宠物会为昨天的对局欢呼（"昨天赢了 3 盘，好厉害！"）。
+- 只读取一个用户名在 chess.com 上的公开数据（[公开数据 API](https://www.chess.com/news/view/published-data-api)），
+  不用登录、不用密码，也从不往 chess.com 发送任何东西。
+- 用户名在编译固件时填写（见[个人设置](#个人设置)）；网页一键安装的版本暂时没有象棋积分。
 
 ## 和原项目的区别
 
