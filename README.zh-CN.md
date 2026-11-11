@@ -1,6 +1,23 @@
-# TamaPoke — 分叉版
+<div align="center">
+
+<img src="docs/banner-zh.png" alt="TamaPoke 的圆形屏幕：熄屏时钟、伙伴卡片、夜晚的主屏幕、图鉴地区封面和商店" width="100%">
+
+# TamaPoke
+
+住在圆形 AMOLED 屏幕里的温和宝可梦电子宠物。<br>
+它按天慢慢长大，靠真实的国际象棋对局赚积分。
+
+[![Flash in browser](https://img.shields.io/badge/flash-in%20browser-FF6B00?logo=googlechrome&logoColor=white)](https://mu-muu.github.io/TamaPoke/web/)
+[![Pokémon](https://img.shields.io/badge/Pok%C3%A9mon-1025-FFCB05)](#和原项目的区别)
+[![Board](https://img.shields.io/badge/board-ESP32--S3%20AMOLED%201.75-E7352C?logo=espressif&logoColor=white)](#硬件)
+[![UI](https://img.shields.io/badge/UI-English%20%7C%20%E7%AE%80%E4%BD%93%E4%B8%AD%E6%96%87-4C9BE8)](README.md)
+[![Code: MIT](https://img.shields.io/badge/code-MIT-blue)](#许可)
+
+**[初衷](#初衷)** · **[和原项目的区别](#和原项目的区别)** · **[硬件](#硬件)** · **[编译和刷机](#编译和刷机)** · **[怎么玩](#怎么玩)**
 
 [English](README.md) · **简体中文**
+
+</div>
 
 **[在浏览器里一键安装](https://mu-muu.github.io/TamaPoke/web/)**（电脑上用 Chrome 或 Edge，不用装 Arduino）。
 

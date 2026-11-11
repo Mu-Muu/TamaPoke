@@ -1,6 +1,23 @@
-# TamaPoke — fork
+<div align="center">
+
+<img src="docs/banner.png" alt="TamaPoke on the round screen: standby clock, pet card, main screen at night, Pokédex region cover and shop" width="100%">
+
+# TamaPoke
+
+A gentle Pokémon pet for a round AMOLED screen.<br>
+It grows up over days and earns its points from real chess games.
+
+[![Flash in browser](https://img.shields.io/badge/flash-in%20browser-FF6B00?logo=googlechrome&logoColor=white)](https://mu-muu.github.io/TamaPoke/web/)
+[![Pokémon](https://img.shields.io/badge/Pok%C3%A9mon-1025-FFCB05)](#whats-different-from-upstream)
+[![Board](https://img.shields.io/badge/board-ESP32--S3%20AMOLED%201.75-E7352C?logo=espressif&logoColor=white)](#hardware)
+[![UI](https://img.shields.io/badge/UI-English%20%7C%20%E7%AE%80%E4%BD%93%E4%B8%AD%E6%96%87-4C9BE8)](README.zh-CN.md)
+[![Code: MIT](https://img.shields.io/badge/code-MIT-blue)](#license)
+
+**[Why this fork](#why-this-fork)** · **[What's different](#whats-different-from-upstream)** · **[Hardware](#hardware)** · **[Build and flash](#build-and-flash)** · **[How to play](#how-to-play)**
 
 **English** · [简体中文](README.zh-CN.md)
+
+</div>
 
 **[Install it from your browser](https://mu-muu.github.io/TamaPoke/web/)** (Chrome or Edge on a computer, no Arduino needed).
 
