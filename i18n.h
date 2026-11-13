@@ -116,6 +116,9 @@ enum StrId : uint8_t {
   S_TAP_OPEN,
   // ajustes: sincronizar el ajedrez ya, y aviso si no habia nada nuevo
   S_SYNC_NOW, S_SYNC_NONE,
+  // la cuenta de chess.com se pone en el portal Wi-Fi: pista en su pantalla y
+  // aviso si se pide sincronizar sin ella
+  S_WIFI_HINT3, S_NEED_CHESS,
   STR_COUNT
 };
 

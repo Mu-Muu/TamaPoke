@@ -4,7 +4,7 @@
 // pon tus datos. Lo que no definas aqui toma el valor de ejemplo de config.h.
 
 #define OWNER_NAME "Ash"
-#define CHESS_USER "your_chess_com_username"  // en minusculas
+#define CHESS_USER "your_chess_com_username"  // por defecto; el del portal Wi-Fi manda
 
 #define WX_LAT "40.71"
 #define WX_LON "-74.01"

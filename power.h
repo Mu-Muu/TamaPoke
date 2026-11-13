@@ -22,7 +22,13 @@ struct PowerCtx {
   bool usb;           // alimentacion externa
   bool charging;
   int batPct;         // 0-100, -1 si no hay bateria
+  uint8_t userDim;    // nivel de brillo elegido en ajustes: 0 = alto (el de siempre), 1 = medio, 2 = bajo
 };
+
+// niveles de brillo de ajustes (portado de socquique#34): el porcentaje se
+// aplica a todos los brillos de abajo, incluido el reloj de espera
+#define BRIGHT_LEVELS 3
+inline uint8_t userBrightPct(uint8_t userDim) { return userDim == 1 ? 60 : userDim >= 2 ? 30 : 100; }
 
 // ms desde `last`, sin desbordar si `last` es posterior a `now` (un toque atendido despues de
 // leer el reloj al principio del bucle): se tomaba como 49 dias de inactividad y el panel
@@ -47,15 +53,24 @@ inline bool standbyClock(const PowerCtx &c) {
 }
 
 // brillo del panel (0-255): el de siempre, con un tope cuando queda poca bateria
+// y escalado por el nivel elegido en ajustes
 inline uint8_t brightnessFor(const PowerCtx &c) {
   if (c.screenOff) return 0;
-  if (standbyClock(c)) return c.sleeping ? 12 : 45;  // reloj: legible, y de noche muy suave
-  uint8_t stage = dimStageFor(c.idleMs);
-  uint8_t t = c.sleeping ? 25 : (c.usb ? 180 : 145);
-  if (stage == DIM_LOW) t = c.sleeping ? 10 : 60;
-  else if (stage == DIM_OFF) t = 8;
-  if (batteryCritical(c) && t > 60) t = 60;
-  else if (batteryLow(c) && t > 100) t = 100;
+  uint8_t t;
+  if (standbyClock(c)) {
+    t = c.sleeping ? 12 : 45;  // reloj: legible, y de noche muy suave
+  } else {
+    uint8_t stage = dimStageFor(c.idleMs);
+    t = c.sleeping ? 25 : (c.usb ? 180 : 145);
+    if (stage == DIM_LOW) t = c.sleeping ? 10 : 60;
+    else if (stage == DIM_OFF) t = 8;
+    if (batteryCritical(c) && t > 60) t = 60;
+    else if (batteryLow(c) && t > 100) t = 100;
+  }
+  if (c.userDim) {  // el nivel elegido escala todo, sin bajar de 2 (0 seria pantalla apagada)
+    t = (uint8_t)((uint16_t)t * userBrightPct(c.userDim) / 100);
+    if (t < 2) t = 2;
+  }
   return t;
 }
 

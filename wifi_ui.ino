@@ -15,6 +15,8 @@ void renderWifiPortal() {
   printT(T(S_WIFI_HINT1));
   setCur(centerX(T(S_WIFI_HINT2), 2), 230);
   printT(T(S_WIFI_HINT2));
+  setCur(centerX(T(S_WIFI_HINT3), 2), 270);
+  printT(T(S_WIFI_HINT3));
   gfx->setTextColor(UI_TRACK);
   setCur(centerX(T(S_DETAIL_BACK), 2), 330);
   printT(T(S_DETAIL_BACK));

@@ -172,3 +172,58 @@ TEST(power, enchufado_y_sin_tocar_es_reloj_de_espera) {
   a.usb = true;
   CHECK(!standbyClock(a));  // recien tocado: la pantalla normal
 }
+
+// ---- nivel de brillo de los ajustes (portado de socquique#34) ----
+
+TEST(power, el_nivel_alto_deja_los_brillos_de_siempre) {
+  PowerCtx c = ctx(0);
+  CHECK_EQ((int)c.userDim, 0);
+  CHECK_EQ((int)brightnessFor(c), 145);
+  c.usb = true;
+  CHECK_EQ((int)brightnessFor(c), 180);
+  c.idleMs = 100000;  // reloj de espera (enchufado y quieto)
+  CHECK(standbyClock(c));
+  CHECK_EQ((int)brightnessFor(c), 45);
+  CHECK_EQ((int)userBrightPct(0), 100);
+}
+
+TEST(power, el_nivel_de_ajustes_escala_todos_los_brillos) {
+  PowerCtx c = ctx(0);
+  c.userDim = 1;
+  CHECK_EQ((int)brightnessFor(c), 87);  // 145 al 60 %
+  c.userDim = 2;
+  CHECK_EQ((int)brightnessFor(c), 43);  // 145 al 30 %
+  c.usb = true;
+  CHECK_EQ((int)brightnessFor(c), 54);  // 180 al 30 %
+  c.idleMs = 100000;                    // el reloj de espera tambien baja
+  CHECK_EQ((int)brightnessFor(c), 13);
+  c.sleeping = true;
+  CHECK_EQ((int)brightnessFor(c), 3);
+}
+
+TEST(power, en_bajo_cada_escalon_sigue_por_debajo_del_anterior_y_nunca_se_apaga) {
+  PowerCtx c = ctx(0);
+  c.userDim = 2;
+  uint8_t awake = brightnessFor(c);
+  c.idleMs = 100000;
+  uint8_t low = brightnessFor(c);
+  c.sleeping = true;
+  uint8_t lowSleep = brightnessFor(c);
+  c.idleMs = 400000;
+  uint8_t off = brightnessFor(c);
+  CHECK(awake > low);
+  CHECK(low > lowSleep);
+  CHECK(lowSleep >= 2);
+  CHECK(off >= 2);  // nunca 0: eso seria la pantalla apagada
+  c.screenOff = true;
+  CHECK_EQ((int)brightnessFor(c), 0);  // apagada con PWR sigue siendo 0
+}
+
+TEST(power, el_tope_de_bateria_manda_y_luego_se_aplica_el_nivel) {
+  PowerCtx c = ctx(0);
+  c.batPct = 5;  // critica: tope 60
+  c.userDim = 2;
+  CHECK_EQ((int)brightnessFor(c), 18);
+  c.batPct = 15;  // baja: tope 100
+  CHECK_EQ((int)brightnessFor(c), 30);
+}

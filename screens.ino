@@ -52,7 +52,33 @@ void openClock() { clockOpen = true; }
 #define SET_BTN_Y1 262
 #define STATS_BTN_Y 334
 #define STATS_BTN_H 48
+// la fila de abajo son dos botones de texto (72 y 276) con el brillo en medio,
+// mas estrecho porque solo lleva su icono
+#define STATS_BTN_W 118
+#define STATS_BTN_X1 276
+#define BRI_BTN_X 198
+#define BRI_BTN_W 70
 static const char *const LANG_CODES[LANG_COUNT] = { "EN", "ZH" };
+
+// Boton de brillo: un sol y tres barras, encendidas las del nivel de ahora.
+// Sin texto a proposito: cabe en poco sitio y se entiende en los dos idiomas.
+static void drawBrightnessBtn() {
+  gfx->fillRoundRect(BRI_BTN_X, STATS_BTN_Y, BRI_BTN_W, STATS_BTN_H, 14, UI_WHITE);
+  gfx->drawRoundRect(BRI_BTN_X, STATS_BTN_Y, BRI_BTN_W, STATS_BTN_H, 14, UI_INK);
+  int sx = BRI_BTN_X + 20, sy = STATS_BTN_Y + STATS_BTN_H / 2;
+  gfx->fillCircle(sx, sy, 5, UI_INK);
+  static const int8_t RAY[8][2] = { { 1, 0 }, { -1, 0 }, { 0, 1 }, { 0, -1 },
+                                    { 1, 1 }, { -1, -1 }, { 1, -1 }, { -1, 1 } };
+  for (int i = 0; i < 8; i++) {
+    int k = i < 4 ? 8 : 6, e = i < 4 ? 11 : 9;  // las diagonales algo mas cortas
+    gfx->drawLine(sx + RAY[i][0] * k, sy + RAY[i][1] * k, sx + RAY[i][0] * e, sy + RAY[i][1] * e, UI_INK);
+  }
+  for (int i = 0; i < BRIGHT_LEVELS; i++) {  // alto: tres barras; medio: dos; bajo: una
+    int bh = 9 + i * 5, x = BRI_BTN_X + 34 + i * 11, y = sy + 11 - bh;
+    if (i < BRIGHT_LEVELS - userDim) gfx->fillRect(x, y, 8, bh, UI_BAR_OK);
+    gfx->drawRect(x, y, 8, bh, UI_INK);
+  }
+}
 
 static void setButton(int x, int y, const char *l, bool on, bool apagado) {
   gfx->fillRoundRect(x, y, SET_BTN_W, SET_BTN_H, 14, apagado ? UI_TRACK : on ? UI_BAR_OK : UI_WHITE);
@@ -99,17 +125,21 @@ void renderClock() {
   }
   setButton(SET_BTN_X1, SET_BTN_Y1, rl, false, !hayCopia);
 
-  // debajo: estadisticas y sincronizar el ajedrez ya (gris sin wi-fi)
-  const int16_t bx[2] = { SET_BTN_X0, SET_BTN_X1 };
+  // debajo: estadisticas, brillo y sincronizar el ajedrez ya (gris sin wi-fi o sin cuenta de chess.com)
+  const int16_t bx[2] = { SET_BTN_X0, STATS_BTN_X1 };
   const StrId bl[2] = { S_STATS, S_SYNC_NOW };
+  bool puedeSync = wifiHasCreds() && chessHasAccount();
   for (int i = 0; i < 2; i++) {
-    gfx->fillRoundRect(bx[i], STATS_BTN_Y, SET_BTN_W, STATS_BTN_H, 14, UI_WHITE);
-    gfx->drawRoundRect(bx[i], STATS_BTN_Y, SET_BTN_W, STATS_BTN_H, 14, UI_INK);
-    gfx->setTextColor(i == 1 && !wifiHasCreds() ? UI_TRACK : UI_INK);
-    setSize(3);
-    setCur(bx[i] + (SET_BTN_W - textW(T(bl[i]), 3)) / 2, STATS_BTN_Y + (STATS_BTN_H - 21) / 2);
-    printT(T(bl[i]));
+    gfx->fillRoundRect(bx[i], STATS_BTN_Y, STATS_BTN_W, STATS_BTN_H, 14, UI_WHITE);
+    gfx->drawRoundRect(bx[i], STATS_BTN_Y, STATS_BTN_W, STATS_BTN_H, 14, UI_INK);
+    gfx->setTextColor(i == 1 && !puedeSync ? UI_TRACK : UI_INK);
+    const char *l = T(bl[i]);
+    int ts = textW(l, 3) <= STATS_BTN_W - 16 ? 3 : 2;  // tan grande como quepa (como setButton)
+    setSize(ts);
+    setCur(bx[i] + (STATS_BTN_W - textW(l, ts)) / 2, STATS_BTN_Y + (STATS_BTN_H - 7 * ts) / 2);
+    printT(l);
   }
+  drawBrightnessBtn();
 
   gfx->setTextColor(UI_TRACK);
   setSize(2);
@@ -216,12 +246,20 @@ void clockTap(int16_t x, int16_t y) {
     return;
   }
   bool col0 = x >= SET_BTN_X0 && x < SET_BTN_X0 + SET_BTN_W, col1 = x >= SET_BTN_X1 && x < SET_BTN_X1 + SET_BTN_W;
-  if (y >= STATS_BTN_Y && y < STATS_BTN_Y + STATS_BTN_H) {
-    if (col0) {
+  if (y >= STATS_BTN_Y && y < STATS_BTN_Y + STATS_BTN_H) {  // esta fila tiene sus propias columnas
+    if (x >= SET_BTN_X0 && x < SET_BTN_X0 + STATS_BTN_W) {
       statsOpen = true;
-    } else if (col1 && wifiHasCreds()) {  // sincronizar ya: el resumen sale en la pantalla principal
-      clockOpen = false;
-      syncRequested = true;
+    } else if (x >= BRI_BTN_X && x < BRI_BTN_X + BRI_BTN_W) {  // cicla el brillo: alto, medio, bajo
+      userDim = (userDim + 1) % BRIGHT_LEVELS;
+      Preferences p;
+      p.begin("tamapoke", false);
+      p.putUChar("bri", userDim);
+      p.end();
+      sfxPlay(SFX_TAP);
+    } else if (x >= STATS_BTN_X1 && x < STATS_BTN_X1 + STATS_BTN_W && wifiHasCreds()) {
+      clockOpen = false;  // sincronizar ya: el resumen sale en la pantalla principal
+      if (chessHasAccount()) syncRequested = true;
+      else toast(T(S_NEED_CHESS));  // sin cuenta: decir donde se pone
     }
     return;
   }

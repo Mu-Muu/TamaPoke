@@ -57,9 +57,10 @@ potions → the next morning the pet cheers about yesterday's games.**
 - It only reads chess.com's public data for one username (the
   [Published-Data API](https://www.chess.com/news/view/published-data-api)):
   no login, no password, and nothing is ever posted to chess.com.
-- The username is set when you build the firmware (see
-  [Personal settings](#personal-settings)); the web installer build has no
-  chess points for now.
+- The username goes on the board's Wi-Fi setup page (see [Wi-Fi](#wi-fi)),
+  so the web installer build earns chess points too. If you build the firmware
+  yourself you can also set a default in `config_private.h` (see
+  [Personal settings](#personal-settings)).
 
 ## What's different from upstream
 
@@ -109,8 +110,9 @@ arduino-cli upload --fqbn "$FQBN" -p /dev/cu.usbmodemXXXX --input-dir build .
 ```
 
 Or skip the build: the [web installer](https://mu-muu.github.io/TamaPoke/web/) flashes this fork
-from Chrome or Edge. It has neutral settings (New York time and weather, no
-chess.com points), and the SD files are `tamapoke-sd.zip` on the
+from Chrome or Edge. It has neutral settings (New York time and weather; for
+chess points, enter the chess.com username on the Wi-Fi page), and the SD
+files are `tamapoke-sd.zip` on the
 [latest release](https://github.com/Mu-Muu/TamaPoke/releases/latest).
 
 ### Personal settings
@@ -119,12 +121,12 @@ Owner name, chess.com username, weather coordinates and time zone go in
 `config_private.h`, which is git-ignored. Copy
 [`config_private.example.h`](config_private.example.h) to `config_private.h`
 and fill it in. Without it the firmware builds with neutral example values from
-[`config.h`](config.h) (New York, no chess sync).
+[`config.h`](config.h) (New York, chess.com username only from the Wi-Fi page).
 
 | Setting | What it does |
 |---|---|
 | `OWNER_NAME` | name used in a few lines ("I love you, …!", birthday); 16 bytes max |
-| `CHESS_USER` | chess.com username in lowercase; empty = no chess points |
+| `CHESS_USER` | default chess.com username; one entered on the Wi-Fi page takes priority; empty = only from the Wi-Fi page |
 | `WX_LAT`, `WX_LON`, `WX_TZ` | Open-Meteo location and IANA time zone (`/` written as `%2F`) |
 | `LOCAL_TZ` | POSIX time zone string for NTP |
 | `TZ_STD_OFFSET_H`, `TZ_DST_NA` | standard UTC offset in hours, and whether the US/Canada DST rule applies |
@@ -143,8 +145,11 @@ it first.
 
 On the settings page tap **Wi-Fi**. The board opens an access point called
 `TamaPoke`; join it with a phone and open `192.168.4.1`. Enter your network
-and password, and optionally a xiaozhi MCP endpoint. They are stored on the
-board only and never shown again.
+and password, and optionally your chess.com username and a xiaozhi MCP
+endpoint. They are stored on the board only and never shown again. Leave a
+field empty to keep what was saved before, or enter `-` to remove the
+username or the MCP endpoint. After a new username, the next sync only records
+that account's current marks.
 
 ## How to play
 
@@ -157,7 +162,7 @@ From the main screen:
 | swipe **right** | Pokédex: one cover per region, swipe on to the next region, tap a cover to open its grid (up/down for pages, tap a Pokémon for details) |
 | swipe **left** | farm (album button at the bottom) |
 | swipe **up** | the pet's card: profile, abilities, medals (swipe left/right for pages) |
-| swipe **down** | settings: clock, sound, Wi-Fi, language, restore backup, stats, sync chess now |
+| swipe **down** | settings: clock, sound, Wi-Fi, language, restore backup, stats, screen brightness (three levels), sync chess now |
 | tap the **points** at the top | shop (items, eggs, accessories) |
 | **long press** the pet | send it to the farm, or release it |
 
@@ -211,12 +216,13 @@ laying it face down puts it to sleep, and a hard shake makes it dizzy.
 
 You start with 10 points. Basic care is free.
 
-- **chess.com** (if `CHESS_USER` is set): synced once a day at midnight, on
+- **chess.com** (once a username is set on the Wi-Fi page or in
+  `CHESS_USER`): synced once a day at midnight, on
   the next boot, or with **Sync now**. A game with 10+ minutes base time or a
   daily game gives 1 point, a win 10; games without a clock (bots) don't
   count. A new best rapid or daily rating gives 20, each new hundred in rapid
-  50, a new tactics or Puzzle Rush best 10. The first sync only records your
-  current marks.
+  50, a new tactics or Puzzle Rush best 10. The first sync, and the first after
+  changing the username, only records your current marks.
 - **Steps** from the IMU: 1 point per 1000 steps (5 a day at most).
 - Completing a region's Pokédex: 200 points, a crown and a shiny legendary egg
   from that region.

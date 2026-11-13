@@ -81,6 +81,7 @@ static const char *const STRINGS[LANG_COUNT][STR_COUNT] = {
     "Steps", "Chess points", "Farm",
     "tap to open",
     "SYNC NOW", "No new games",
+    "also your chess.com name", "Set chess.com name in WI-FI",
   },
   // ---------------- ZH ----------------
   // Chino simplificado. Los especificadores van en el orden de la fila
@@ -198,6 +199,7 @@ static const char *const STRINGS[LANG_COUNT][STR_COUNT] = {
     "总步数", "下棋赚的积分", "农场",
     "点击查看",
     "立即同步", "没有新对局",
+    "还能设置 chess.com 名字", "先在 Wi-Fi 里设置 chess.com 名字",
   },
 };
 

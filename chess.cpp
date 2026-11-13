@@ -4,6 +4,64 @@
 #include <string.h>
 #include <strings.h>
 
+bool chessNormUser(const char *in, char *out, size_t cap) {
+  if (!out || !cap) return false;
+  out[0] = 0;
+  if (!in || cap < CHESS_USER_MAX + 1) return false;
+  size_t n = 0;
+  for (; in[n]; n++) {
+    char c = in[n];
+    if (c >= 'A' && c <= 'Z') c = (char)(c - 'A' + 'a');
+    bool vale = (c >= 'a' && c <= 'z') || (c >= '0' && c <= '9') || c == '_' || c == '-';
+    if (!vale || n >= CHESS_USER_MAX) {
+      out[0] = 0;
+      return false;
+    }
+    out[n] = c;
+  }
+  out[n] = 0;
+  if (n >= CHESS_USER_MIN) return true;
+  out[0] = 0;
+  return false;
+}
+
+bool chessAccount(char *out, size_t cap) {
+  char guardado[CHESS_USER_MAX + 2] = "";
+  Preferences p;
+  if (p.begin("chess", true)) {
+    p.getString("user", guardado, sizeof(guardado));
+    p.end();
+  }
+  return chessNormUser(guardado, out, cap) || chessNormUser(CHESS_USER, out, cap);
+}
+
+void chessSaveUser(const char *user) {
+  Preferences p;
+  p.begin("chess", false);
+  if (user && user[0]) p.putString("user", user);
+  else p.remove("user");
+  p.end();
+}
+
+bool chessPrepare(ChessState &st, const char *user, const char *legacyOwner, uint32_t todayUtc) {
+  char viejo[CHESS_USER_MAX + 1];
+  const char *antes = st.owner;
+  if (!antes[0]) {  // marcas de antes de apuntar la cuenta: eran de CHESS_USER
+    chessNormUser(legacyOwner, viejo, sizeof(viejo));
+    antes = viejo;
+  }
+  bool cambia = strcmp(antes, user ? user : "") != 0;
+  if (cambia) {  // marcas de otra cuenta: fuera (la marca de agua se queda)
+    uint32_t wm = st.watermark;
+    st = ChessState();
+    st.watermark = wm;
+  }
+  strncpy(st.owner, user ? user : "", sizeof(st.owner) - 1);
+  st.owner[sizeof(st.owner) - 1] = 0;
+  if (!st.baseline && st.watermark < todayUtc) st.watermark = todayUtc;
+  return cambia;
+}
+
 bool chessCountsTimeControl(const char *tc) {
   if (!tc || !tc[0] || tc[0] == '-') return false;  // sin reloj: bots
   if (strncmp(tc, "1/", 2) == 0) return true;        // diaria (dias por jugada)
@@ -21,13 +79,14 @@ void chessArchiveFilter(JsonDocument &filter) {
 }
 
 void chessScoreArchive(JsonVariantConst archive, const ChessState &st, ChessReport &rep) {
+  if (!st.owner[0]) return;  // sin cuenta no hay partidas suyas
   for (JsonVariantConst g : archive["games"].as<JsonArrayConst>()) {
     uint32_t end = g["end_time"] | 0u;
     if (end <= st.watermark) continue;  // ya contada en otra sincronizacion
     if (!chessCountsTimeControl(g["time_control"] | "")) continue;
     const char *lado = nullptr;
-    if (strcasecmp(g["white"]["username"] | "", CHESS_USER) == 0) lado = "white";
-    else if (strcasecmp(g["black"]["username"] | "", CHESS_USER) == 0) lado = "black";
+    if (strcasecmp(g["white"]["username"] | "", st.owner) == 0) lado = "white";
+    else if (strcasecmp(g["black"]["username"] | "", st.owner) == 0) lado = "black";
     if (!lado) continue;
     bool gana = strcmp(g[lado]["result"] | "", "win") == 0;
     rep.games++;
@@ -92,6 +151,8 @@ void chessLoad(ChessState &st) {
   st.hundredRapid = p.getUShort("hun", 0);
   st.tacticsHigh = p.getUShort("tac", 0);
   st.rushBest = p.getUShort("rush", 0);
+  st.owner[0] = 0;
+  p.getString("own", st.owner, sizeof(st.owner));
   p.end();
 }
 
@@ -129,5 +190,6 @@ void chessSave(const ChessState &st) {
   p.putUShort("hun", st.hundredRapid);
   p.putUShort("tac", st.tacticsHigh);
   p.putUShort("rush", st.rushBest);
+  p.putString("own", st.owner);
   p.end();
 }

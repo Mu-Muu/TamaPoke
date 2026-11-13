@@ -104,6 +104,7 @@ int16_t galleryDetail = 0;  // dex en vista detalle, 0 = rejilla
 bool galleryShowAll = false;
 
 bool screenOff = false;       // pulsacion corta del boton PWR
+uint8_t userDim = 0;          // nivel de brillo elegido en ajustes (power.h): 0 alto, 1 medio, 2 bajo
 bool cardOpen = false;        // ficha del bicho (deslizar vertical)
 bool kbOpen = false;          // teclado para renombrar al bicho
 char nameBuf[12] = "";
@@ -325,7 +326,13 @@ void setup() {
   // QSPI a 80MHz (por defecto 40): el flush del framebuffer es el cuello de
   // botella del fps (~56ms a 40MHz). Si el panel mostrara basura, bajar a 40M.
   if (!gfx->begin(80000000)) Serial.println("gfx->begin() fallo");
-  panel->setBrightness(180);
+  {  // nivel de brillo guardado (ajustes): ya desde el primer fotograma, sin fogonazo
+    Preferences p;
+    p.begin("tamapoke", true);
+    userDim = p.getUChar("bri", 0) % BRIGHT_LEVELS;
+    p.end();
+  }
+  panel->setBrightness((uint8_t)(180 * userBrightPct(userDim) / 100));
   applyLangFont();  // fuente del idioma guardado (clasica salvo CJK)
 
   touch.setPins(TP_RESET, TP_INT);
@@ -525,14 +532,14 @@ void loop() {
 
   // sincronizacion diaria del ajedrez: la primera vez que se ve un dia nuevo
   // (a medianoche si esta encendida; si estaba apagada, al encenderla). Si
-  // falla, se reintenta a los 30 min.
+  // falla, se reintenta a los 30 min. Sin cuenta de chess.com no se intenta.
   static uint32_t nextSyncCheck = 0;
   if (!wifiPortalActive() && (syncRequested || (int32_t)(now - nextSyncCheck) >= 0)) {
     nextSyncCheck = now + 60000;
     if (syncRequested || (wifiHasCreds() && rtcEpoch() / 86400 != chessSyncDay())) {
       bool manual = syncRequested;
       syncRequested = false;
-      if (!runChessSync(manual)) nextSyncCheck = now + 30UL * 60 * 1000;
+      if (chessHasAccount() && !runChessSync(manual)) nextSyncCheck = now + 30UL * 60 * 1000;
     }
   }
 
@@ -704,6 +711,7 @@ PowerCtx powerCtx(uint32_t now) {
   c.usb = usbPresent();
   c.charging = batCharging();
   c.batPct = batPercent();
+  c.userDim = userDim;
   return c;
 }
 

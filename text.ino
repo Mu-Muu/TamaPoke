@@ -149,6 +149,7 @@ static uint32_t screenKey() {
   } else if (clockOpen) {
     h = mixKey(h, pet.lastSeenEpoch / 60);  // la hora que se enseña
     h = mixKey(h, audioEnabled());
+    h = mixKey(h, userDim);
     h = mixKey(h, gLang);
   } else if (cardOpen) {
     for (uint32_t v : { (uint32_t)pet.speciesId, (uint32_t)pet.shiny, (uint32_t)pet.ageMinutes, (uint32_t)pet.streak,

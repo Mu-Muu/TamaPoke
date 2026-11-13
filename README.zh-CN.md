@@ -50,7 +50,8 @@ AMOLED 触摸屏）上。本项目分叉自
 - 板子每晚同步一次，第二天宠物会为昨天的对局欢呼（"昨天赢了 3 盘，好厉害！"）。
 - 只读取一个用户名在 chess.com 上的公开数据（[公开数据 API](https://www.chess.com/news/view/published-data-api)），
   不用登录、不用密码，也从不往 chess.com 发送任何东西。
-- 用户名在编译固件时填写（见[个人设置](#个人设置)）；网页一键安装的版本暂时没有象棋积分。
+- 用户名在板子的 Wi-Fi 设置页里填写（见 [Wi-Fi](#wi-fi)），所以网页一键安装的版本也能拿象棋积分。
+  自己编译固件的话，也可以在 `config_private.h` 里预先写好（见[个人设置](#个人设置)）。
 
 ## 和原项目的区别
 
@@ -97,7 +98,8 @@ arduino-cli upload --fqbn "$FQBN" -p /dev/cu.usbmodemXXXX --input-dir build .
 ```
 
 也可以不编译，直接用[网页安装](https://mu-muu.github.io/TamaPoke/web/)：在 Chrome 或 Edge
-里刷入本分叉。它用的是通用设置（时间和天气按美国纽约，没有 chess.com 积分）。SD 卡文件是
+里刷入本分叉。它用的是通用设置（时间和天气按美国纽约）；要象棋积分，在 Wi-Fi 设置页填上
+chess.com 用户名就行。SD 卡文件是
 [最新发布版本](https://github.com/Mu-Muu/TamaPoke/releases/latest)里的 `tamapoke-sd.zip`。
 
 ### 个人设置
@@ -105,12 +107,12 @@ arduino-cli upload --fqbn "$FQBN" -p /dev/cu.usbmodemXXXX --input-dir build .
 主人名字、chess.com 用户名、天气坐标和时区写在 `config_private.h` 里，这个文件不会被
 git 上传。把 [`config_private.example.h`](config_private.example.h) 复制成
 `config_private.h` 再填写。没有这个文件时，固件使用 [`config.h`](config.h) 里的中性
-示例值（纽约，不同步象棋）。
+示例值（纽约，chess.com 用户名只能在 Wi-Fi 设置页填）。
 
 | 设置 | 作用 |
 |---|---|
 | `OWNER_NAME` | 几句台词里用到的名字（"最喜欢……了！"、生日祝福），最多 16 字节 |
-| `CHESS_USER` | chess.com 用户名（小写）；留空就不从下棋拿积分 |
+| `CHESS_USER` | 默认的 chess.com 用户名；Wi-Fi 设置页里填的优先；留空就只用设置页里填的 |
 | `WX_LAT`、`WX_LON`、`WX_TZ` | Open-Meteo 的地点和 IANA 时区（`/` 写成 `%2F`） |
 | `LOCAL_TZ` | 联网校时用的 POSIX 时区字符串 |
 | `TZ_STD_OFFSET_H`、`TZ_DST_NA` | 标准时间相对 UTC 的小时数，以及是否按美国/加拿大规则实行夏令时 |
@@ -126,8 +128,9 @@ git 上传。把 [`config_private.example.h`](config_private.example.h) 复制�
 ### Wi-Fi
 
 在设置页点 **Wi-Fi**，板子会开一个叫 `TamaPoke` 的热点。用手机连上后打开
-`192.168.4.1`，填入 Wi-Fi 名称和密码，也可以填小智的 MCP 接入点。这些信息只保存在板子
-上，之后不会再显示。
+`192.168.4.1`，填入 Wi-Fi 名称和密码，也可以填 chess.com 用户名和小智的 MCP 接入点。
+这些信息只保存在板子上，之后不会再显示。不改的项留空即可；填一个减号 `-` 会删掉用户名或
+MCP 接入点。换了用户名后，下一次同步只记录新账号当前的成绩。
 
 ## 怎么玩
 
@@ -140,7 +143,7 @@ git 上传。把 [`config_private.example.h`](config_private.example.h) 复制�
 | 向**右**滑 | 图鉴：每个地区一张封面，继续滑换地区；点封面进入该地区的列表（上下滑翻页，点某只看详情） |
 | 向**左**滑 | 农场（底部有相册按钮） |
 | 向**上**滑 | 宠物卡片：资料、能力、奖章（左右滑翻页） |
-| 向**下**滑 | 设置：时钟、声音、Wi-Fi、语言、恢复备份、统计、立即同步象棋 |
+| 向**下**滑 | 设置：时钟、声音、Wi-Fi、语言、恢复备份、统计、屏幕亮度（三档）、立即同步象棋 |
 | 点顶部的**积分** | 商店（道具、蛋、装饰品） |
 | **长按**宠物 | 送去农场，或放生 |
 
@@ -185,10 +188,12 @@ git 上传。把 [`config_private.example.h`](config_private.example.h) 复制�
 
 开局有 10 积分。基本照顾都是免费的。
 
-- **chess.com**（设置了 `CHESS_USER` 才有）：每天午夜同步一次，错过时在下次开机同步，也可以
+- **chess.com**（在 Wi-Fi 设置页或 `CHESS_USER` 里设了用户名才有）：每天午夜同步一次，
+  错过时在下次开机同步，也可以
   点**立即同步**。基础时间 10 分钟以上的对局或每日对局得 1 分，赢一盘得 10 分；没有计时的
   对局（和电脑下）不算。快棋或每日棋创新高得 20 分，快棋每突破一个新的百位整数得 50 分，
-  战术题或 Puzzle Rush 创新纪录得 10 分。第一次同步只记录你当前的成绩，不补发以前的分。
+  战术题或 Puzzle Rush 创新纪录得 10 分。第一次同步（以及换了用户名后的第一次）
+  只记录你当前的成绩，不补发以前的分。
 - **走路步数**（运动传感器统计）：每 1000 步 1 分，每天最多 5 分。
 - 集齐一个地区的图鉴：200 分、一顶皇冠，以及一个该地区的异色传说蛋。
 - 每天 07:00 后农场有一点小收获。

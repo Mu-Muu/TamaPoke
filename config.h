@@ -15,7 +15,7 @@
 static_assert(sizeof(OWNER_NAME) <= 17, "OWNER_NAME: 16 bytes como mucho (cabe en los bocadillos)");
 
 #ifndef CHESS_USER
-#define CHESS_USER ""  // usuario de chess.com en minusculas; vacio = sin ajedrez
+#define CHESS_USER ""  // usuario de chess.com por defecto; manda el del portal Wi-Fi (vacio = solo el del portal)
 #endif
 
 // tiempo de Open-Meteo: coordenadas y zona IANA (con "/" escrito %2F)

@@ -46,17 +46,28 @@ button{width:100%;padding:12px;font-size:17px}small{color:#666}</style></head><b
 <h2>TamaPoke Wi-Fi</h2><p>填家里的 Wi-Fi，用来每晚同步 chess.com 的积分和更新天气。</p>
 <form method="post" action="/save"><label>Wi-Fi 名称</label><input name="ssid">
 <label>密码</label><input name="pass" type="password">
+<label>chess.com 用户名（可不填）</label>
+<input name="chess" maxlength="25" autocapitalize="none" autocorrect="off" spellcheck="false">
+<small>用来把 chess.com 上的对局换成积分。第一次同步（或换了用户名后）只记录当前成绩，不补发以前的分。</small><br><br>
 <label>小智 MCP 接入点（可选，给 Stack-chan 用）</label>
 <input name="mcp" placeholder="wss://api.xiaozhi.me/mcp/?token=...">
-<small>不改的项留空就行（会保留原来的）。要删掉 MCP 接入点，填一个减号 -</small><br><br>
+<small>不改的项留空就行（会保留原来的）。要删掉 chess.com 用户名或 MCP 接入点，填一个减号 -</small><br><br>
 <button>保存</button></form></body></html>)";
 
 static void paginaGuardado() {
   String ssid = server->arg("ssid");
   String pass = server->arg("pass");
   String mcp = server->arg("mcp");
+  String chess = server->arg("chess");
   ssid.trim();
   mcp.trim();
+  chess.trim();
+  char usuario[CHESS_USER_MAX + 1] = "";
+  if (chess.length() && chess != "-" && !chessNormUser(chess.c_str(), usuario, sizeof(usuario))) {
+    server->send(400, "text/html; charset=utf-8",
+                 "<meta charset=utf-8><p>chess.com 用户名只能有字母、数字、_ 和 -（3 到 25 个），请返回重填。</p>");
+    return;
+  }
   bool hayRed = wifiHasCreds();
   if ((ssid.length() == 0 && !hayRed) || ssid.length() > 32 || pass.length() > 64 || mcp.length() > 400 ||
       (mcp.length() > 1 && !mcp.startsWith("wss://") && !mcp.startsWith("ws://"))) {
@@ -72,6 +83,8 @@ static void paginaGuardado() {
   if (mcp == "-") p.remove("mcp");
   else if (mcp.length()) p.putString("mcp", mcp);
   p.end();
+  if (chess == "-") chessSaveUser("");  // vuelve a valer la de config_private.h (si la hay)
+  else if (usuario[0]) chessSaveUser(usuario);
   server->send(200, "text/html; charset=utf-8",
                "<meta charset=utf-8><h2>已保存</h2><p>可以断开这个热点了。</p>");
   guardado = true;
@@ -224,7 +237,8 @@ uint32_t chessSyncDay() {
 
 static bool chessSyncLocked(Pet &pet, ChessReport &rep) {
   rep = ChessReport();
-  if (!CHESS_USER[0]) {  // sin usuario en config_private.h no hay ajedrez
+  char usuario[CHESS_USER_MAX + 1];
+  if (!chessAccount(usuario, sizeof(usuario))) {  // ni en el portal ni en config_private.h
     Serial.println("sync: sin usuario de chess.com");
     return false;
   }
@@ -239,10 +253,12 @@ static bool chessSyncLocked(Pet &pet, ChessReport &rep) {
   ChessState st;
   chessLoad(st);
   bool ok = utc != 0;
-  // primera vez: cuenta desde la medianoche local de hoy
-  if (ok && !st.baseline && st.watermark == 0) st.watermark = (uint32_t)utc - (pared % 86400);
+  // primera vez (o cuenta nueva): solo se apuntan las marcas y se cuenta desde
+  // la medianoche local de hoy
+  if (ok && chessPrepare(st, usuario, CHESS_USER, (uint32_t)utc - (pared % 86400)))
+    Serial.println("sync: cuenta nueva, se vuelven a tomar las marcas");
 
-  String base = String("https://api.chess.com/pub/player/") + CHESS_USER;
+  String base = String("https://api.chess.com/pub/player/") + usuario;
   JsonDocument stats;
   ok = ok && bajarJson(base + "/stats", stats, nullptr);
   if (ok) chessScoreStats(stats.as<JsonVariantConst>(), st, rep);

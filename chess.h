@@ -11,8 +11,16 @@
 // cualquier otro final = 1. Records: nueva mejor rapida o diaria +20, cada
 // centena nueva en rapidas +50, record de tacticas +10, record de Puzzle Rush
 // +10. La primera sincronizacion solo apunta las marcas (no paga el pasado).
+//
+// La cuenta se escribe en el portal Wi-Fi (NVS "chess"/"user"); si no hay,
+// vale la de config_private.h (CHESS_USER). Al cambiar de cuenta se vuelve a
+// empezar como la primera vez.
 
-#include "config.h"  // CHESS_USER (se compara sin mayusculas)
+#include <stddef.h>
+#include "config.h"  // CHESS_USER
+
+#define CHESS_USER_MIN 3   // usuarios de chess.com: de 3 a 25 caracteres
+#define CHESS_USER_MAX 25
 
 #define PTS_GAME 1
 #define PTS_WIN 10
@@ -27,6 +35,7 @@ struct ChessState {
   uint32_t watermark = 0;  // end_time (UTC) de la ultima partida contada
   bool baseline = false;   // ya se tomaron las marcas iniciales de las stats
   uint16_t bestRapid = 0, bestDaily = 0, hundredRapid = 0, tacticsHigh = 0, rushBest = 0;
+  char owner[CHESS_USER_MAX + 1] = "";  // cuenta de la que son estas marcas ("" = de antes de apuntarla)
 };
 
 // resumen de una sincronizacion (se enseña al dia siguiente)
@@ -39,11 +48,30 @@ struct ChessReport {
   int32_t total() const { return gamePts + bonusPts; }
 };
 
+// usuario tal como se escribio -> en minusculas en out (cap >= CHESS_USER_MAX + 1).
+// Solo letras, numeros, _ y -, de CHESS_USER_MIN a CHESS_USER_MAX. false si no vale.
+bool chessNormUser(const char *in, char *out, size_t cap);
+// la cuenta que se sincroniza: la del portal o, si no hay, CHESS_USER. false si ninguna
+bool chessAccount(char *out, size_t cap);
+inline bool chessHasAccount() {
+  char u[CHESS_USER_MAX + 1];
+  return chessAccount(u, sizeof(u));
+}
+// la del portal (ya normalizada); "" la borra y vuelve a valer CHESS_USER
+void chessSaveUser(const char *user);
+// antes de sincronizar. Si las marcas son de otra cuenta, se empieza otra vez
+// como la primera vez (solo se apuntan las marcas, sin pagarlas). Sin marcas
+// tomadas se cuenta desde todayUtc (la medianoche local de hoy, en UTC), pero
+// la marca de agua nunca retrocede: lo ya contado no se paga dos veces. Las
+// marcas de antes de apuntar la cuenta eran de legacyOwner (CHESS_USER).
+// true si la cuenta ha cambiado.
+bool chessPrepare(ChessState &st, const char *user, const char *legacyOwner, uint32_t todayUtc);
+
 // ¿cuenta una partida con este time_control? ("600", "900+10", "1/259200", "-")
 bool chessCountsTimeControl(const char *tc);
 // filtro de ArduinoJson para el archivo mensual (solo los campos que se usan)
 void chessArchiveFilter(JsonDocument &filter);
-// suma las partidas nuevas (end_time > st.watermark) de un archivo mensual
+// suma las partidas nuevas (end_time > st.watermark) de st.owner en un archivo mensual
 void chessScoreArchive(JsonVariantConst archive, const ChessState &st, ChessReport &rep);
 // marcas de /stats: la primera vez solo las apunta; luego paga los records
 void chessScoreStats(JsonVariantConst stats, ChessState &st, ChessReport &rep);
