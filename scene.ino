@@ -271,7 +271,7 @@ void renderStandby() {
   }
   if (w.valid) {
     char tc[8];
-    snprintf(tc, sizeof(tc), "%do", w.tempC);
+    snprintf(tc, sizeof(tc), "%do", tempF ? w.tempF : w.tempC);
     const int b = 6;
     int tw = bigTextW(tc, b);
     int ancho = 66 + 20 + tw;

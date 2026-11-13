@@ -110,9 +110,9 @@ arduino-cli upload --fqbn "$FQBN" -p /dev/cu.usbmodemXXXX --input-dir build .
 ```
 
 Or skip the build: the [web installer](https://mu-muu.github.io/TamaPoke/web/) flashes this fork
-from Chrome or Edge. It has neutral settings (New York time and weather; for
-chess points, enter the chess.com username on the Wi-Fi page), and the SD
-files are `tamapoke-sd.zip` on the
+from Chrome or Edge. It has neutral settings (English UI, New York time and
+weather; for chess points, enter the chess.com username on the Wi-Fi page),
+and the SD files are `tamapoke-sd.zip` on the
 [latest release](https://github.com/Mu-Muu/TamaPoke/releases/latest).
 
 ### Personal settings
@@ -144,12 +144,15 @@ it first.
 ### Wi-Fi
 
 On the settings page tap **Wi-Fi**. The board opens an access point called
-`TamaPoke`; join it with a phone and open `192.168.4.1`. Enter your network
-and password, and optionally your chess.com username and a xiaozhi MCP
-endpoint. They are stored on the board only and never shown again. Leave a
+`TamaPoke`; join it with a phone and open `192.168.4.1` (the page is in the
+board's language). Enter your network and password, and optionally your
+chess.com username. The last field, **Stack-chan voice control**, is only for
+a Stack-chan or another xiaozhi voice assistant (see
+[Stack-chan / xiaozhi](#stack-chan--xiaozhi-optional)); otherwise leave it
+empty. Everything is stored on the board only and never shown again. Leave a
 field empty to keep what was saved before, or enter `-` to remove the
-username or the MCP endpoint. After a new username, the next sync only records
-that account's current marks.
+username or the voice control endpoint. After a new username, the next sync
+only records that account's current marks.
 
 ## How to play
 
@@ -162,7 +165,7 @@ From the main screen:
 | swipe **right** | Pokédex: one cover per region, swipe on to the next region, tap a cover to open its grid (up/down for pages, tap a Pokémon for details) |
 | swipe **left** | farm (album button at the bottom) |
 | swipe **up** | the pet's card: profile, abilities, medals (swipe left/right for pages) |
-| swipe **down** | settings: clock, sound, Wi-Fi, language, restore backup, stats, screen brightness (three levels), sync chess now |
+| swipe **down** | settings: clock, temperature unit (°C/°F), sound, Wi-Fi, language, restore backup, stats, screen brightness (three levels), sync chess now |
 | tap the **points** at the top | shop (items, eggs, accessories) |
 | **long press** the pet | send it to the farm, or release it |
 
@@ -275,7 +278,14 @@ Eggs can only be opened when you have no partner.
 
 ### Stack-chan / xiaozhi (optional)
 
-With a xiaozhi MCP endpoint saved and USB power, the board stays online as an
+The board doesn't talk to the robot or to the language model directly: a
+Stack-chan (or any other xiaozhi device) runs on the xiaozhi voice service,
+and xiaozhi gives each agent an MCP endpoint that outside tools can join. Copy
+it from the MCP page of the assistant's app (it looks like
+`wss://api.xiaozhi.me/mcp/?token=...`) into **Stack-chan voice control** on the
+Wi-Fi page. Which model the agent uses (Qwen, DeepSeek...) makes no difference.
+
+With that endpoint saved and USB power, the board stays online as an
 MCP server. A xiaozhi agent (for example on a Stack-chan) can then check the
 pet's status and feed it, play with it, bathe it, put it to bed or wake it,
 give candy or medicine, report chess points and Pokédex progress, buy cheap

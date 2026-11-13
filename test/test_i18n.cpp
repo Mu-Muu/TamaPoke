@@ -206,11 +206,15 @@ TEST(i18n, el_idioma_se_guarda_y_se_recupera) {
   gLang = LANG_DEFAULT;
 }
 
+// el idioma que no es el de por defecto: los tests de "vuelve al defecto" parten de el
+static const Lang OTRO_IDIOMA = LANG_DEFAULT == LANG_EN ? LANG_ZH : LANG_EN;
+
 TEST(i18n, sin_ajuste_guardado_arranca_en_el_idioma_por_defecto) {
   mockNvsReset();
-  gLang = LANG_EN;
+  gLang = OTRO_IDIOMA;
   loadLang();
   CHECK_EQ((int)gLang, (int)LANG_DEFAULT);
+  CHECK_EQ((int)LANG_DEFAULT, (int)LANG_EN);  // el instalador web arranca en ingles
   gLang = LANG_DEFAULT;
 }
 
@@ -222,7 +226,7 @@ TEST(i18n, la_clave_vieja_de_9_idiomas_se_ignora) {
   p.begin("tamapoke", false);
   p.putUChar("lang", 1);  // era el ingles; hoy el 1 seria el chino
   p.end();
-  gLang = LANG_EN;
+  gLang = OTRO_IDIOMA;
   loadLang();
   CHECK_EQ((int)gLang, (int)LANG_DEFAULT);
   gLang = LANG_DEFAULT;
@@ -234,7 +238,7 @@ TEST(i18n, un_idioma_invalido_en_la_nvs_no_rompe_nada) {
   p.begin("tamapoke", false);
   p.putUChar("lang2", 200);  // valor corrupto
   p.end();
-  gLang = LANG_EN;
+  gLang = OTRO_IDIOMA;
   loadLang();
   CHECK_EQ((int)gLang, (int)LANG_DEFAULT);
   gLang = LANG_DEFAULT;

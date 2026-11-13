@@ -33,8 +33,32 @@ TEST(weather, respuesta_de_open_meteo) {
   CHECK(w.valid);
   CHECK_EQ(w.kind, (uint8_t)WX_SNOW);
   CHECK_EQ(w.tempC, (int8_t)-4);
+  CHECK_EQ(w.tempF, (int16_t)26);  // -3.6 C = 25.5 F
   CHECK_EQ(w.sunriseMin, (int16_t)425);
   CHECK_EQ(w.sunsetMin, (int16_t)1008);
+}
+
+// grados F para enseñar: desde los decimales de Open-Meteo, redondeando una sola vez
+static int16_t enF(const char *temp) {
+  char json[160];
+  snprintf(json, sizeof(json), R"({"current":{"temperature_2m":%s,"weather_code":0}})", temp);
+  JsonDocument doc;
+  deserializeJson(doc, json);
+  Weather w;
+  weatherParse(doc.as<JsonVariantConst>(), w);
+  return w.tempF;
+}
+
+TEST(weather, la_temperatura_tambien_en_fahrenheit) {
+  CHECK_EQ(enF("0"), (int16_t)32);
+  CHECK_EQ(enF("-40"), (int16_t)-40);    // donde las dos escalas coinciden
+  CHECK_EQ(enF("100"), (int16_t)212);
+  CHECK_EQ(enF("21.4"), (int16_t)71);    // 70.5: desde 21 redondeado saldria 70
+  CHECK_EQ(enF("-20"), (int16_t)-4);
+  CHECK_EQ(enF("-17.9"), (int16_t)0);    // -0.2 F
+  CHECK_EQ(enF("-18.3"), (int16_t)-1);   // -0.9 F: bajo cero redondea hacia abajo
+  Weather sin;                           // sin datos (o forzado por consola): 0 C y 32 F
+  CHECK_EQ(sin.tempF, (int16_t)32);
 }
 
 TEST(weather, respuesta_rota_no_vale) {

@@ -105,6 +105,7 @@ bool galleryShowAll = false;
 
 bool screenOff = false;       // pulsacion corta del boton PWR
 uint8_t userDim = 0;          // nivel de brillo elegido en ajustes (power.h): 0 alto, 1 medio, 2 bajo
+bool tempF = false;           // temperatura en grados F (ajustes; solo lo que se enseña)
 bool cardOpen = false;        // ficha del bicho (deslizar vertical)
 bool kbOpen = false;          // teclado para renombrar al bicho
 char nameBuf[12] = "";
@@ -326,10 +327,11 @@ void setup() {
   // QSPI a 80MHz (por defecto 40): el flush del framebuffer es el cuello de
   // botella del fps (~56ms a 40MHz). Si el panel mostrara basura, bajar a 40M.
   if (!gfx->begin(80000000)) Serial.println("gfx->begin() fallo");
-  {  // nivel de brillo guardado (ajustes): ya desde el primer fotograma, sin fogonazo
+  {  // nivel de brillo (ya desde el primer fotograma, sin fogonazo) y unidad de temperatura
     Preferences p;
     p.begin("tamapoke", true);
     userDim = p.getUChar("bri", 0) % BRIGHT_LEVELS;
+    tempF = p.getBool("tempf", false);
     p.end();
   }
   panel->setBrightness((uint8_t)(180 * userBrightPct(userDim) / 100));

@@ -276,7 +276,7 @@ void drawTemp() {
   Weather w = weatherNow();
   if (!w.valid) return;
   char t[8];
-  snprintf(t, sizeof(t), "%d", w.tempC);
+  snprintf(t, sizeof(t), "%d", tempF ? w.tempF : w.tempC);
   setSize(2);
   int x = CX - 26 - textW(t, 2), y = 12;
   gfx->setTextColor(inkColor());

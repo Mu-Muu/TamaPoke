@@ -11,6 +11,7 @@
 #include <esp_sntp.h>
 #include "walltime.h"
 #include "config.h"
+#include "i18n.h"  // gLang: la pagina del portal sale en el idioma de la placa
 
 static WebServer *server = nullptr;
 static DNSServer *dns = nullptr;
@@ -38,7 +39,31 @@ bool mcpConfigured() { return credGet("mcp").length() > 0; }
 
 // ---------- pagina de configuracion ----------
 
-static const char PAGINA[] PROGMEM = R"(<!doctype html><html><head><meta charset="utf-8">
+// La pagina sale en el idioma de la placa (el que se esta leyendo al abrir el
+// portal). No va en i18n.cpp: la pinta el navegador del movil, y los textos
+// chinos de i18n.cpp acaban en la fuente del firmware.
+static const char PAGINA_EN[] PROGMEM = R"(<!doctype html><html><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1"><title>TamaPoke</title>
+<style>body{font-family:sans-serif;max-width:420px;margin:24px auto;padding:0 16px}
+input{width:100%;padding:10px;margin:6px 0 14px;font-size:16px;box-sizing:border-box}
+button{width:100%;padding:12px;font-size:17px}small{color:#666}</style></head><body>
+<h2>TamaPoke Wi-Fi</h2><p>Your home Wi-Fi: the board uses it to sync chess.com points every night
+and to get the weather.</p>
+<form method="post" action="/save"><label>Wi-Fi name</label><input name="ssid">
+<label>Password</label><input name="pass" type="password">
+<label>chess.com username (optional)</label>
+<input name="chess" maxlength="25" autocapitalize="none" autocorrect="off" spellcheck="false">
+<small>Turns your chess.com games into points. The first sync (and the first one after a new
+username) only records your current results; earlier games don't pay.</small><br><br>
+<label>Stack-chan voice control (optional)</label>
+<input name="mcp" placeholder="wss://api.xiaozhi.me/mcp/?token=...">
+<small>Only if you have a Stack-chan or another xiaozhi voice assistant: paste the MCP endpoint
+from its app. Otherwise leave this empty.</small><br><br>
+<small>Leave a field empty to keep what was saved before. To remove the chess.com username or the
+voice control endpoint, enter a single -</small><br><br>
+<button>Save</button></form></body></html>)";
+
+static const char PAGINA_ZH[] PROGMEM = R"(<!doctype html><html><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1"><title>TamaPoke</title>
 <style>body{font-family:sans-serif;max-width:420px;margin:24px auto;padding:0 16px}
 input{width:100%;padding:10px;margin:6px 0 14px;font-size:16px;box-sizing:border-box}
@@ -49,10 +74,26 @@ button{width:100%;padding:12px;font-size:17px}small{color:#666}</style></head><b
 <label>chess.com 用户名（可不填）</label>
 <input name="chess" maxlength="25" autocapitalize="none" autocorrect="off" spellcheck="false">
 <small>用来把 chess.com 上的对局换成积分。第一次同步（或换了用户名后）只记录当前成绩，不补发以前的分。</small><br><br>
-<label>小智 MCP 接入点（可选，给 Stack-chan 用）</label>
+<label>Stack-chan 语音控制（可选）</label>
 <input name="mcp" placeholder="wss://api.xiaozhi.me/mcp/?token=...">
-<small>不改的项留空就行（会保留原来的）。要删掉 chess.com 用户名或 MCP 接入点，填一个减号 -</small><br><br>
+<small>只有 Stack-chan 或其他小智语音设备才需要：把它 App 里 MCP 页面的接入点地址粘贴到这里。没有就留空。</small><br><br>
+<small>不改的项留空就行（会保留原来的）。要删掉 chess.com 用户名或语音控制地址，填一个减号 -</small><br><br>
 <button>保存</button></form></body></html>)";
+
+// respuestas de /save, en el orden de Lang (EN, ZH)
+static const char *const MSG_CHESS[LANG_COUNT] = {
+  "<meta charset=utf-8><p>A chess.com username has only letters, numbers, _ and - (3 to 25 of them). "
+  "Please go back and fix it.</p>",
+  "<meta charset=utf-8><p>chess.com 用户名只能有字母、数字、_ 和 -（3 到 25 个），请返回重填。</p>",
+};
+static const char *const MSG_BAD[LANG_COUNT] = {
+  "<meta charset=utf-8><p>Something isn't right. Please go back and try again.</p>",
+  "<meta charset=utf-8><p>填的不对，请返回重填。</p>",
+};
+static const char *const MSG_SAVED[LANG_COUNT] = {
+  "<meta charset=utf-8><h2>Saved</h2><p>You can leave this hotspot now.</p>",
+  "<meta charset=utf-8><h2>已保存</h2><p>可以断开这个热点了。</p>",
+};
 
 static void paginaGuardado() {
   String ssid = server->arg("ssid");
@@ -64,14 +105,13 @@ static void paginaGuardado() {
   chess.trim();
   char usuario[CHESS_USER_MAX + 1] = "";
   if (chess.length() && chess != "-" && !chessNormUser(chess.c_str(), usuario, sizeof(usuario))) {
-    server->send(400, "text/html; charset=utf-8",
-                 "<meta charset=utf-8><p>chess.com 用户名只能有字母、数字、_ 和 -（3 到 25 个），请返回重填。</p>");
+    server->send(400, "text/html; charset=utf-8", MSG_CHESS[gLang]);
     return;
   }
   bool hayRed = wifiHasCreds();
   if ((ssid.length() == 0 && !hayRed) || ssid.length() > 32 || pass.length() > 64 || mcp.length() > 400 ||
       (mcp.length() > 1 && !mcp.startsWith("wss://") && !mcp.startsWith("ws://"))) {
-    server->send(400, "text/html; charset=utf-8", "<meta charset=utf-8><p>填的不对，请返回重填。</p>");
+    server->send(400, "text/html; charset=utf-8", MSG_BAD[gLang]);
     return;
   }
   Preferences p;
@@ -85,8 +125,7 @@ static void paginaGuardado() {
   p.end();
   if (chess == "-") chessSaveUser("");  // vuelve a valer la de config_private.h (si la hay)
   else if (usuario[0]) chessSaveUser(usuario);
-  server->send(200, "text/html; charset=utf-8",
-               "<meta charset=utf-8><h2>已保存</h2><p>可以断开这个热点了。</p>");
+  server->send(200, "text/html; charset=utf-8", MSG_SAVED[gLang]);
   guardado = true;
 }
 
@@ -112,7 +151,9 @@ void wifiPortalStart() {
   dns->start(53, "*", WiFi.softAPIP());  // cualquier dominio -> la pagina (portal cautivo)
   server = new WebServer(80);
   server->on("/save", HTTP_POST, paginaGuardado);
-  server->onNotFound([]() { server->send_P(200, "text/html; charset=utf-8", PAGINA); });
+  server->onNotFound([]() {
+    server->send_P(200, "text/html; charset=utf-8", gLang == LANG_ZH ? PAGINA_ZH : PAGINA_EN);
+  });
   server->begin();
   guardado = false;
   portalHasta = millis() + PORTAL_MS;

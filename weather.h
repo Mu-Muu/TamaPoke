@@ -19,6 +19,7 @@ struct Weather {
   uint8_t kind = WX_UNKNOWN;
   int16_t sunriseMin = -1, sunsetMin = -1;  // minuto del dia local, -1 = no se sabe
   int8_t tempC = 0;
+  int16_t tempF = 32;  // la misma en Fahrenheit, solo para enseñarla (la logica usa tempC)
 };
 
 // codigo WMO de Open-Meteo -> WX_*

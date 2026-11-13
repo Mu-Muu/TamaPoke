@@ -30,6 +30,8 @@ bool weatherParse(JsonVariantConst doc, Weather &w) {
   w.kind = wxFromWmo(cur["weather_code"] | -1);
   float t = cur["temperature_2m"] | 0.0f;
   w.tempC = (int8_t)(t < 0 ? t - 0.5f : t + 0.5f);
+  float f = t * 1.8f + 32.0f;  // desde los decimales: redondear dos veces podia fallar un grado
+  w.tempF = (int16_t)(f < 0 ? f - 0.5f : f + 0.5f);
   w.sunriseMin = wxMinuteOf(doc["daily"]["sunrise"][0] | (const char *)nullptr);
   w.sunsetMin = wxMinuteOf(doc["daily"]["sunset"][0] | (const char *)nullptr);
   w.valid = true;

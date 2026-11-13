@@ -7,7 +7,9 @@
 enum Lang : uint8_t { LANG_EN = 0, LANG_ZH, LANG_COUNT };
 // idiomas que necesitan una fuente U8g2 y texto UTF-8 en vez de la tabla CP437
 #define LANG_IS_CJK(l) ((l) == LANG_ZH)
-#define LANG_DEFAULT LANG_ZH  // idioma por defecto: chino
+// idioma por defecto (placa nueva o NVS borrada): ingles. El instalador web lo
+// usa gente de fuera; una placa que ya eligio idioma lo tiene en la NVS ("lang2").
+#define LANG_DEFAULT LANG_EN
 
 extern Lang gLang;  // idioma activo (definido en i18n.cpp)
 

@@ -58,6 +58,11 @@ void openClock() { clockOpen = true; }
 #define STATS_BTN_X1 276
 #define BRI_BTN_X 198
 #define BRI_BTN_W 70
+// unidad de la temperatura: una pildora pequeña entre el reloj y los botones
+#define TEMP_PILL_X 193
+#define TEMP_PILL_W 80
+#define TEMP_PILL_Y 155
+#define TEMP_PILL_H 28
 static const char *const LANG_CODES[LANG_COUNT] = { "EN", "ZH" };
 
 // Boton de brillo: un sol y tres barras, encendidas las del nivel de ahora.
@@ -103,8 +108,21 @@ void renderClock() {
   char t[8];
   snprintf(t, sizeof(t), "%02lu:%02lu", (unsigned long)((ahora / 3600) % 24), (unsigned long)((ahora / 60) % 60));
   setSize(10);
-  setCur(centerX(t, 10), 84);
+  setCur(centerX(t, 10), 78);  // algo subido: debajo va la pildora de la temperatura
   printT(t);
+
+  // unidad de la temperatura: "°C >" o "°F >", cicla al tocar
+  gfx->fillRoundRect(TEMP_PILL_X, TEMP_PILL_Y, TEMP_PILL_W, TEMP_PILL_H, 10, UI_WHITE);
+  gfx->drawRoundRect(TEMP_PILL_X, TEMP_PILL_Y, TEMP_PILL_W, TEMP_PILL_H, 10, UI_INK);
+  {
+    const char *u = tempF ? "F >" : "C >";
+    setSize(2);
+    int x0 = TEMP_PILL_X + (TEMP_PILL_W - textW(u, 2) - 8) / 2, y0 = TEMP_PILL_Y + (TEMP_PILL_H - 14) / 2;
+    gfx->drawCircle(x0 + 2, y0 + 2, 2, UI_INK);  // el grado, como en la cabecera
+    gfx->setTextColor(UI_INK);
+    setCur(x0 + 8, y0);
+    printT(u);
+  }
 
   // sonido, wi-fi (verde si ya hay red), idioma, restaurar la copia
   setButton(SET_BTN_X0, SET_BTN_Y0, audioEnabled() ? T(S_SND_ON) : T(S_SND_OFF), audioEnabled(), false);
@@ -243,6 +261,16 @@ void clockTap(int16_t x, int16_t y) {
   }
   if (statsOpen) {  // en las estadisticas, cualquier toque vuelve
     statsOpen = false;
+    return;
+  }
+  if (x >= TEMP_PILL_X && x < TEMP_PILL_X + TEMP_PILL_W && y >= TEMP_PILL_Y - 4 &&
+      y < TEMP_PILL_Y + TEMP_PILL_H + 4) {  // grados C <-> F (por dentro todo sigue en C)
+    tempF = !tempF;
+    Preferences p;
+    p.begin("tamapoke", false);
+    p.putBool("tempf", tempF);
+    p.end();
+    sfxPlay(SFX_TAP);
     return;
   }
   bool col0 = x >= SET_BTN_X0 && x < SET_BTN_X0 + SET_BTN_W, col1 = x >= SET_BTN_X1 && x < SET_BTN_X1 + SET_BTN_W;
