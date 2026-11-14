@@ -775,7 +775,9 @@ void idleWait(PowerCtx c) {
   if (lightSleepAllowed(c) && millis() - lastRender >= 100 && !audioBusy()) {
     c.usb = usbPresentNow();
     if (!lightSleepAllowed(c)) { delay(idleDelayMs(c)); return; }
-    if (digitalRead(TP_INT) == LOW) { gTouchIrq = true; delay(1); return; }  // toque pendiente: no se duerme
+    // apagada con PWR el toque no cuenta: ni impide dormir (un dedo apoyado en el bolsillo) ni despierta
+    bool tactil = touchWakes(c);
+    if (tactil && digitalRead(TP_INT) == LOW) { gTouchIrq = true; delay(1); return; }  // toque pendiente: no se duerme
     uint32_t ms = POWER_SLEEP_MS;
     uint32_t iv = frameIntervalMs(c);
     if (iv) {  // pantalla encendida: hasta el proximo frame
@@ -783,14 +785,18 @@ void idleWait(PowerCtx c) {
       if ((int32_t)due < (int32_t)ms) ms = (int32_t)due > 1 ? due : 1;
     }
     esp_sleep_enable_timer_wakeup((uint64_t)ms * 1000);
-    gpio_wakeup_enable((gpio_num_t)TP_INT, GPIO_INTR_LOW_LEVEL);
-    esp_sleep_enable_gpio_wakeup();
+    if (tactil) {
+      gpio_wakeup_enable((gpio_num_t)TP_INT, GPIO_INTR_LOW_LEVEL);
+      esp_sleep_enable_gpio_wakeup();
+    }
     esp_light_sleep_start();
     // la interrupcion del tactil vuelve a ser por flanco (como la dejo attachInterrupt); un toque
     // que ya haya bajado la linea se registra a mano
-    gpio_wakeup_disable((gpio_num_t)TP_INT);
-    gpio_set_intr_type((gpio_num_t)TP_INT, GPIO_INTR_NEGEDGE);
-    if (digitalRead(TP_INT) == LOW) gTouchIrq = true;
+    if (tactil) {
+      gpio_wakeup_disable((gpio_num_t)TP_INT);
+      gpio_set_intr_type((gpio_num_t)TP_INT, GPIO_INTR_NEGEDGE);
+      if (digitalRead(TP_INT) == LOW) gTouchIrq = true;
+    }
     return;
   }
   delay(idleDelayMs(c));

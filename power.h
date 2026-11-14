@@ -104,6 +104,10 @@ inline bool lightSleepAllowed(const PowerCtx &c) {
 }
 #define POWER_SLEEP_MS 200  // duracion de cada sueno; el toque despierta antes
 
+// el tactil despierta la CPU y enciende la pantalla, salvo si se apago con el boton PWR (o boca
+// abajo): en el bolsillo se encendia sola y gastaba bateria. Entonces solo el boton la enciende
+inline bool touchWakes(const PowerCtx &c) { return !c.screenOff; }
+
 // cada cuanto se lee la bateria por I2C
 inline uint32_t powerCacheMs(const PowerCtx &c) {
   return (c.screenOff || dimStageFor(c.idleMs) == DIM_OFF) ? 10000 : 2000;

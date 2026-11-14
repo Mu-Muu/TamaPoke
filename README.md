@@ -196,7 +196,10 @@ laying it face down puts it to sleep, and a hard shake makes it dizzy.
   sick until you give it one.
 - If all four needs sit at 0 for an hour, a run-away button appears.
 - **Night:** if the light is still on, it falls asleep by itself at 23:00 and
-  wakes at 07:00. Turning the screen off with PWR also puts it to sleep.
+  wakes at 07:00. Turning the screen off with PWR also puts it to sleep, and
+  only another press of PWR turns it back on: touches are ignored then, so it
+  doesn't wake up in a pocket (if you laid it face down, turning it face up
+  works too).
 - **Self-care:** while plugged in and with nobody touching it for 10 minutes,
   it brings any need below 40 back up to 50, one per minute, and it doesn't
   get sick. This doesn't count as your care.

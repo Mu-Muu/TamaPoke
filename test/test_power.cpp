@@ -124,6 +124,20 @@ TEST(power, light_sleep_con_la_pantalla_apagada_o_casi_apagada_y_sin_usb) {
   CHECK_EQ((int)idleDelayMs(c), 1);
 }
 
+TEST(power, apagada_con_pwr_el_toque_no_la_enciende) {
+  PowerCtx c = ctx(0);
+  CHECK(touchWakes(c));      // encendida: el toque cuenta
+  c.idleMs = 400000;
+  CHECK(touchWakes(c));      // casi apagada por inactividad: un toque la despierta
+  c.usb = true;
+  CHECK(touchWakes(c));      // reloj de espera: tambien
+  c = ctx(0);
+  c.screenOff = true;
+  CHECK(!touchWakes(c));     // apagada con PWR: solo el boton
+  c.usb = true;
+  CHECK(!touchWakes(c));
+}
+
 TEST(power, la_bateria_se_lee_menos_veces_con_la_pantalla_apagada) {
   CHECK_EQ((int)powerCacheMs(ctx(0)), 2000);
   CHECK_EQ((int)powerCacheMs(ctx(400000)), 10000);

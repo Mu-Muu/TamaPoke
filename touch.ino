@@ -105,6 +105,13 @@ void handleTouch() {
   // solo tocamos el bus si el chip aviso por INT o si el dedo sigue abajo (hay
   // que detectar el levantamiento). Leer el CST9217 dormido se colgaba ~1s y
   // congelaba el loop entero; SensorLib no respeta el timeout de Wire.
+  // apagada con el boton PWR el toque no la enciende (en el bolsillo se encendia sola): ni se
+  // lee el chip; solo el boton (o darle la vuelta, si se apago boca abajo) vuelve a encenderla
+  if (screenOff) {
+    gTouchIrq = false;
+    wasPressed = false;
+    return;
+  }
   if (!gTouchIrq && !wasPressed) return;
   gTouchIrq = false;
   // Un ciclo de solo direccion antes de leer. Sin esto, getPoint() se colgaba
@@ -138,9 +145,7 @@ void handleTouch() {
     strokeTurns = 0;
     strokeDir = 0;
     strokeLastX = strokeExt = x;
-    swallowGesture = (dimStage > 0) || screenOff;  // si estaba a oscuras, solo despierta
-    if (screenOff) pet.screenNap(false);
-    screenOff = false;
+    swallowGesture = dimStage > 0;  // si estaba atenuada, solo despierta
     wakeUI();
     if (gTouchLog) Serial.printf("down %d,%d swallow=%d pet=%d\n", x, y, swallowGesture, inPetZone(x, y));
   } else if (pressed) {  // sigue apoyado
