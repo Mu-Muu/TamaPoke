@@ -1,6 +1,6 @@
 {
   "name": "TamaPoke (Mu-Muu fork)",
-  "version": "1.18-fork 8cdfab8",
+  "version": "1.18-fork a252eb0",
   "new_install_prompt_erase": true,
   "builds": [
     {

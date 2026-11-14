@@ -77,7 +77,8 @@ static const uint8_t EGG_LEG_PCT[EGG_KINDS] = { 3, 6, 10 };
 // completar la pokedex de una region (todas sus especies criadas alguna vez):
 // puntos, corona en la pokedex y un huevo legendario shiny de esa region
 #define REGION_REWARD_PTS 200
-// pasos (podometro del QMI8658, solo con la placa encendida): un punto por cada
+// pasos (steps.h, con el acelerometro; tambien con la pantalla apagada, pero no con
+// la placa apagada del todo): un punto por cada
 // STEP_PTS_EVERY, como mucho STEP_PTS_MAX al dia; al llegar a STEP_JOY_AT, el
 // compañero se alegra (paseo)
 #define STEP_PTS_EVERY 1000

@@ -5,15 +5,78 @@
 
 // acelerometro cada 20 ms: agitar el huevo cuenta como tocarlo (3 = eclosiona);
 // agitar con ganas al compañero lo marea un rato (no le baja el animo)
+// ---------- acelerometro: FIFO del QMI8658 ----------
+//
+// Se lee a mano y como mucho 30 bytes por transferencia I2C. SensorLib pide
+// hasta 240 de golpe, y una lectura de mas de 32 bytes (la FIFO del controlador
+// I2C) se vacia por interrupcion a mitad: si el otro nucleo escribe en la flash
+// justo entonces (el wifi al conectar), el ESP-IDF aborta (spinlock_release en
+// i2c_isr_receive_handler) y la placa se queda reiniciando. Leyendo de 6 en 6
+// bytes, como antes, eso nunca paso.
+bool imuReg(uint8_t reg, uint8_t *buf, uint8_t n) {
+  Wire.beginTransmission(imuAddr);
+  Wire.write(reg);
+  if (Wire.endTransmission(false) != 0) return false;
+  if (Wire.requestFrom((int)imuAddr, (int)n) != n) return false;
+  for (uint8_t k = 0; k < n; k++) buf[k] = Wire.read();
+  return true;
+}
+static bool imuPut(uint8_t reg, uint8_t v) {
+  Wire.beginTransmission(imuAddr);
+  Wire.write(reg);
+  Wire.write(v);
+  return Wire.endTransmission() == 0;
+}
+// orden CTRL9 con su apreton de manos (STATUSINT.bit7 = hecho; luego ACK)
+static bool imuCtrl9(uint8_t cmd) {
+  if (!imuPut(0x0A, cmd)) return false;
+  bool hecho = false;
+  uint8_t st;
+  for (int k = 0; k < 50 && !hecho; k++) {
+    if (imuReg(0x2D, &st, 1) && (st & 0x80)) hecho = true;
+    else delayMicroseconds(100);
+  }
+  imuPut(0x0A, 0x00);  // CTRL_CMD_ACK
+  for (int k = 0; k < 50; k++) {
+    if (imuReg(0x2D, &st, 1) && !(st & 0x80)) break;
+    delayMicroseconds(100);
+  }
+  return hecho;
+}
+
+// Las muestras de la FIFO, cada una con su instante (la ultima es la de ahora):
+// con la pantalla apagada y en bateria el bucle solo despierta cada 200 ms, y
+// leyendo solo el dato del momento se perdian casi todos los pasos.
 void handleShake(uint32_t now) {
-  static uint32_t last = 0, lastLog = 0;
-  if (!imuOk || now - last < 20) return;
+  static uint32_t last = 0, lastLog = 0, lastT = 0;
+  if (!imuOk || !imuFifoOk || now - last < 50) return;
   last = now;
-  AccelerometerData a;
-  if (!imu.readAccel(a)) return;
-  const float G = 9.80665f;
-  float gx = a.mps2.x / G, gy = a.mps2.y / G, gz = a.mps2.z / G;
-  uint8_t ev = shaker.feed(gx, gy, gz, now);
+  uint8_t c[2];
+  if (!imuReg(0x15, c, 2)) return;  // FIFO_SMPL_CNT y FIFO_STATUS[1:0]: palabras de 2 bytes
+  uint16_t n = (uint16_t)(((c[1] & 0x03) << 8) | c[0]) * 2 / 6;
+  if (!n) return;
+  if (n > 128) n = 128;  // no caben mas: seria una lectura mala
+  bool leido = imuCtrl9(0x05);  // CTRL_CMD_REQ_FIFO: modo lectura (mientras, no entran muestras)
+  uint8_t ev = 0;
+  float gx = 0, gy = 0, gz = 0;
+  uint8_t buf[30];
+  for (uint16_t i = 0; leido && i < n;) {
+    uint8_t k = n - i > 5 ? 5 : (uint8_t)(n - i);
+    if (!imuReg(0x17, buf, k * 6)) break;  // FIFO_DATA
+    for (uint8_t j = 0; j < k; j++, i++) {
+      const uint8_t *b = buf + j * 6;
+      gx = (int16_t)(b[0] | b[1] << 8) / IMU_LSB_PER_G;
+      gy = (int16_t)(b[2] | b[3] << 8) / IMU_LSB_PER_G;
+      gz = (int16_t)(b[4] | b[5] << 8) / IMU_LSB_PER_G;
+      uint32_t t = now - (uint32_t)(n - 1 - i) * IMU_SAMPLE_MS;
+      if ((int32_t)(t - lastT) <= 0) t = lastT + 1;  // sin volver atras entre tandas
+      lastT = t;
+      ev |= shaker.feed(gx, gy, gz, t);
+      stepper.feed(sqrtf(gx * gx + gy * gy + gz * gz), t);
+    }
+  }
+  imuPut(0x14, imuFifoCtrl);  // fuera del modo lectura: vuelven a entrar muestras
+  if (!leido || (gx == 0 && gy == 0 && gz == 0)) return;
   if (gImuLog && (ev || now - lastLog >= 200)) {
     lastLog = now;
     Serial.printf("imu |a|=%.2f x=%.2f y=%.2f z=%.2f ev=%u\n", sqrtf(gx * gx + gy * gy + gz * gz), gx, gy, gz, ev);
@@ -282,8 +345,8 @@ void handleSerial() {
     if (cardOpen) cardPage = n;
     Serial.println("DONE");
   } else if (line == "STEPS") {
-    Serial.printf("pasos hoy=%lu puntos dados=%u chip=%lu\n", (unsigned long)pet.stepsToday, pet.stepPts,
-                  imuOk ? (unsigned long)imu.getStepCount() : 0UL);
+    Serial.printf("pasos hoy=%lu puntos dados=%u detectados=%lu\n", (unsigned long)pet.stepsToday, pet.stepPts,
+                  (unsigned long)stepper.total);
     Serial.println("DONE");
   } else if (line.startsWith("ACT ")) {  // que haga ya una actividad propia (pruebas)
     forceAct = line.substring(4).toInt();

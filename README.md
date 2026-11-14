@@ -145,13 +145,16 @@ it first.
 
 On the settings page tap **Wi-Fi**. The board opens an access point called
 `TamaPoke`; join it with a phone and open `192.168.4.1` (the page is in the
-board's language). Enter your network and password, and optionally your
-chess.com username. The last field, **Stack-chan voice control**, is only for
-a Stack-chan or another xiaozhi voice assistant (see
+board's language). Enter up to three networks (for example home, school and a
+phone hotspot: the board joins the strongest one it can see; 2.4 GHz only, so
+on an iPhone hotspot turn on Maximize Compatibility), and optionally
+your chess.com username. The last field, **Stack-chan voice control**, is only
+for a Stack-chan or another xiaozhi voice assistant (see
 [Stack-chan / xiaozhi](#stack-chan--xiaozhi-optional)); otherwise leave it
-empty. Everything is stored on the board only and never shown again. Leave a
-field empty to keep what was saved before, or enter `-` to remove the
-username or the voice control endpoint. After a new username, the next sync
+empty. Everything is stored on the board only and never shown again (the page
+only marks which networks are saved). Leave a field empty to keep what was
+saved before, or enter `-` to remove a network (in its name), the username or
+the voice control endpoint. After a new username, the next sync
 only records that account's current marks.
 
 ## How to play
@@ -226,7 +229,9 @@ You start with 10 points. Basic care is free.
   count. A new best rapid or daily rating gives 20, each new hundred in rapid
   50, a new tactics or Puzzle Rush best 10. The first sync, and the first after
   changing the username, only records your current marks.
-- **Steps** from the IMU: 1 point per 1000 steps (5 a day at most).
+- **Steps** from the accelerometer, also with the screen off (not while the
+  board is switched off with a long press): 1 point per 1000 steps (5 a day at
+  most).
 - Completing a region's Pokédex: 200 points, a crown and a shiny legendary egg
   from that region.
 - A small daily farm harvest after 07:00.

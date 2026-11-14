@@ -12,6 +12,7 @@
 #include "walltime.h"
 #include "config.h"
 #include "i18n.h"  // gLang: la pagina del portal sale en el idioma de la placa
+#include "wifipick.h"
 
 static WebServer *server = nullptr;
 static DNSServer *dns = nullptr;
@@ -34,7 +35,16 @@ static String credGet(const char *key) {
   return s;
 }
 
-bool wifiHasCreds() { return credGet("ssid").length() > 0; }
+// hasta tres redes; la primera con las claves de siempre ("ssid"/"pass"). Los
+// campos del formulario se llaman igual que las claves.
+static const char *const KEY_SSID[WIFI_SLOTS] = { "ssid", "ssid2", "ssid3" };
+static const char *const KEY_PASS[WIFI_SLOTS] = { "pass", "pass2", "pass3" };
+
+bool wifiHasCreds() {
+  for (uint8_t i = 0; i < WIFI_SLOTS; i++)
+    if (credGet(KEY_SSID[i]).length()) return true;
+  return false;
+}
 bool mcpConfigured() { return credGet("mcp").length() > 0; }
 
 // ---------- pagina de configuracion ----------
@@ -47,10 +57,17 @@ static const char PAGINA_EN[] PROGMEM = R"(<!doctype html><html><head><meta char
 <style>body{font-family:sans-serif;max-width:420px;margin:24px auto;padding:0 16px}
 input{width:100%;padding:10px;margin:6px 0 14px;font-size:16px;box-sizing:border-box}
 button{width:100%;padding:12px;font-size:17px}small{color:#666}</style></head><body>
-<h2>TamaPoke Wi-Fi</h2><p>Your home Wi-Fi: the board uses it to sync chess.com points every night
-and to get the weather.</p>
-<form method="post" action="/save"><label>Wi-Fi name</label><input name="ssid">
-<label>Password</label><input name="pass" type="password">
+<h2>TamaPoke Wi-Fi</h2><p>Your Wi-Fi: the board uses it to sync chess.com points every night and to
+get the weather.</p>
+<form method="post" action="/save"><p><b>Wi-Fi 1</b>{1}</p>
+<label>Name</label><input name="ssid"><label>Password</label><input name="pass" type="password">
+<p><b>Wi-Fi 2</b> (optional){2}</p>
+<label>Name</label><input name="ssid2"><label>Password</label><input name="pass2" type="password">
+<p><b>Wi-Fi 3</b> (optional){3}</p>
+<label>Name</label><input name="ssid3"><label>Password</label><input name="pass3" type="password">
+<small>Up to three networks, e.g. home, school and a phone hotspot: the board joins the
+strongest one it can see. 2.4 GHz only: on an iPhone hotspot, turn on Maximize
+Compatibility.</small><br><br>
 <label>chess.com username (optional)</label>
 <input name="chess" maxlength="25" autocapitalize="none" autocorrect="off" spellcheck="false">
 <small>Turns your chess.com games into points. The first sync (and the first one after a new
@@ -59,8 +76,8 @@ username) only records your current results; earlier games don't pay.</small><br
 <input name="mcp" placeholder="wss://api.xiaozhi.me/mcp/?token=...">
 <small>Only if you have a Stack-chan or another xiaozhi voice assistant: paste the MCP endpoint
 from its app. Otherwise leave this empty.</small><br><br>
-<small>Leave a field empty to keep what was saved before. To remove the chess.com username or the
-voice control endpoint, enter a single -</small><br><br>
+<small>Leave a field empty to keep what was saved before. To remove a Wi-Fi network (in its name),
+the chess.com username or the voice control endpoint, enter a single -</small><br><br>
 <button>Save</button></form></body></html>)";
 
 static const char PAGINA_ZH[] PROGMEM = R"(<!doctype html><html><head><meta charset="utf-8">
@@ -68,16 +85,21 @@ static const char PAGINA_ZH[] PROGMEM = R"(<!doctype html><html><head><meta char
 <style>body{font-family:sans-serif;max-width:420px;margin:24px auto;padding:0 16px}
 input{width:100%;padding:10px;margin:6px 0 14px;font-size:16px;box-sizing:border-box}
 button{width:100%;padding:12px;font-size:17px}small{color:#666}</style></head><body>
-<h2>TamaPoke Wi-Fi</h2><p>填家里的 Wi-Fi，用来每晚同步 chess.com 的积分和更新天气。</p>
-<form method="post" action="/save"><label>Wi-Fi 名称</label><input name="ssid">
-<label>密码</label><input name="pass" type="password">
+<h2>TamaPoke Wi-Fi</h2><p>填 Wi-Fi，用来每晚同步 chess.com 的积分和更新天气。</p>
+<form method="post" action="/save"><p><b>Wi-Fi 1</b>{1}</p>
+<label>名称</label><input name="ssid"><label>密码</label><input name="pass" type="password">
+<p><b>Wi-Fi 2</b>（可不填）{2}</p>
+<label>名称</label><input name="ssid2"><label>密码</label><input name="pass2" type="password">
+<p><b>Wi-Fi 3</b>（可不填）{3}</p>
+<label>名称</label><input name="ssid3"><label>密码</label><input name="pass3" type="password">
+<small>最多三个，比如家里、学校和手机热点：板子会连能看到的、信号最强的那个。只支持 2.4 GHz：iPhone 热点要打开"最大兼容性"。</small><br><br>
 <label>chess.com 用户名（可不填）</label>
 <input name="chess" maxlength="25" autocapitalize="none" autocorrect="off" spellcheck="false">
 <small>用来把 chess.com 上的对局换成积分。第一次同步（或换了用户名后）只记录当前成绩，不补发以前的分。</small><br><br>
 <label>Stack-chan 语音控制（可选）</label>
 <input name="mcp" placeholder="wss://api.xiaozhi.me/mcp/?token=...">
 <small>只有 Stack-chan 或其他小智语音设备才需要：把它 App 里 MCP 页面的接入点地址粘贴到这里。没有就留空。</small><br><br>
-<small>不改的项留空就行（会保留原来的）。要删掉 chess.com 用户名或语音控制地址，填一个减号 -</small><br><br>
+<small>不改的项留空就行（会保留原来的）。要删掉某个 Wi-Fi（在它的名称里填）、chess.com 用户名或语音控制地址，填一个减号 -</small><br><br>
 <button>保存</button></form></body></html>)";
 
 // respuestas de /save, en el orden de Lang (EN, ZH)
@@ -95,12 +117,25 @@ static const char *const MSG_SAVED[LANG_COUNT] = {
   "<meta charset=utf-8><h2>已保存</h2><p>可以断开这个热点了。</p>",
 };
 
+// la pagina con cada red marcada si ya hay una guardada (sin decir cual)
+static void paginaPortal() {
+  String page(gLang == LANG_ZH ? PAGINA_ZH : PAGINA_EN);
+  for (uint8_t i = 0; i < WIFI_SLOTS; i++) {
+    char marca[4] = { '{', (char)('1' + i), '}', 0 };
+    page.replace(marca, credGet(KEY_SSID[i]).length() ? (gLang == LANG_ZH ? "（已保存）" : " - saved") : "");
+  }
+  server->send(200, "text/html; charset=utf-8", page);
+}
+
 static void paginaGuardado() {
-  String ssid = server->arg("ssid");
-  String pass = server->arg("pass");
+  String ssid[WIFI_SLOTS], pass[WIFI_SLOTS];
+  for (uint8_t i = 0; i < WIFI_SLOTS; i++) {
+    ssid[i] = server->arg(KEY_SSID[i]);
+    pass[i] = server->arg(KEY_PASS[i]);
+    ssid[i].trim();
+  }
   String mcp = server->arg("mcp");
   String chess = server->arg("chess");
-  ssid.trim();
   mcp.trim();
   chess.trim();
   char usuario[CHESS_USER_MAX + 1] = "";
@@ -108,17 +143,28 @@ static void paginaGuardado() {
     server->send(400, "text/html; charset=utf-8", MSG_CHESS[gLang]);
     return;
   }
-  bool hayRed = wifiHasCreds();
-  if ((ssid.length() == 0 && !hayRed) || ssid.length() > 32 || pass.length() > 64 || mcp.length() > 400 ||
+  // como quedan las redes: "-" la borra, un nombre la pone, vacio la deja como estaba;
+  // tiene que quedar al menos una
+  bool quedaRed = false, mal = false;
+  for (uint8_t i = 0; i < WIFI_SLOTS; i++) {
+    if (ssid[i].length() > 32 || pass[i].length() > 64) mal = true;
+    if (ssid[i] != "-" && (ssid[i].length() || credGet(KEY_SSID[i]).length())) quedaRed = true;
+  }
+  if (mal || !quedaRed || mcp.length() > 400 ||
       (mcp.length() > 1 && !mcp.startsWith("wss://") && !mcp.startsWith("ws://"))) {
     server->send(400, "text/html; charset=utf-8", MSG_BAD[gLang]);
     return;
   }
   Preferences p;
   p.begin("wifi", false);
-  if (ssid.length()) {
-    p.putString("ssid", ssid);
-    p.putString("pass", pass);
+  for (uint8_t i = 0; i < WIFI_SLOTS; i++) {
+    if (ssid[i] == "-") {
+      p.remove(KEY_SSID[i]);
+      p.remove(KEY_PASS[i]);
+    } else if (ssid[i].length()) {
+      p.putString(KEY_SSID[i], ssid[i]);
+      p.putString(KEY_PASS[i], pass[i]);
+    }
   }
   if (mcp == "-") p.remove("mcp");
   else if (mcp.length()) p.putString("mcp", mcp);
@@ -151,9 +197,7 @@ void wifiPortalStart() {
   dns->start(53, "*", WiFi.softAPIP());  // cualquier dominio -> la pagina (portal cautivo)
   server = new WebServer(80);
   server->on("/save", HTTP_POST, paginaGuardado);
-  server->onNotFound([]() {
-    server->send_P(200, "text/html; charset=utf-8", gLang == LANG_ZH ? PAGINA_ZH : PAGINA_EN);
-  });
+  server->onNotFound(paginaPortal);
   server->begin();
   guardado = false;
   portalHasta = millis() + PORTAL_MS;
@@ -185,14 +229,71 @@ void netSetUsb(bool usb) { usbPower = usb; }
 // en cualquier momento); con bateria solo se conecta un momento
 static bool keepOnline() { return usbPower && mcpConfigured(); }
 
+static int8_t redBuena = -1;  // hueco de la ultima red con la que se conecto (en RAM)
+
+static bool probarRed(const String &ssid, const String &pass, uint32_t ms) {
+  WiFi.begin(ssid.c_str(), pass.c_str());
+  for (uint32_t t = 0; t < ms && WiFi.status() != WL_CONNECTED; t += 100) delay(100);
+  if (WiFi.status() == WL_CONNECTED) return true;
+  WiFi.disconnect();
+  return false;
+}
+
 static bool conectar() {
   if (WiFi.status() == WL_CONNECTED) return true;
-  String ssid = credGet("ssid"), pass = credGet("pass");
-  if (ssid.length() == 0) return false;
+  String ssid[WIFI_SLOTS], pass[WIFI_SLOTS];
+  uint8_t guardadas = 0, unica = 0;
+  for (uint8_t i = 0; i < WIFI_SLOTS; i++) {
+    ssid[i] = credGet(KEY_SSID[i]);
+    pass[i] = credGet(KEY_PASS[i]);
+    if (ssid[i].length()) {
+      guardadas++;
+      unica = i;
+    }
+  }
+  if (!guardadas) return false;
   WiFi.mode(WIFI_STA);
-  WiFi.begin(ssid.c_str(), pass.c_str());
-  for (int i = 0; i < 150 && WiFi.status() != WL_CONNECTED; i++) delay(100);  // 15 s
-  return WiFi.status() == WL_CONNECTED;
+  if (guardadas == 1) {  // una sola: como siempre, sin escanear (vale tambien para una red oculta)
+    if (!probarRed(ssid[unica], pass[unica], 15000)) return false;
+    redBuena = (int8_t)unica;
+    return true;
+  }
+  // varias: se escanea (unos 2-3 s) y se prueban las que se ven, de mas a menos senal
+  int16_t n = WiFi.scanNetworks();
+  if (n < 0) n = 0;
+  if (n > 32) n = 32;
+  String vistas[32];
+  const char *seen[32];
+  int16_t rssi[32];
+  for (int16_t j = 0; j < n; j++) {
+    vistas[j] = WiFi.SSID(j);
+    seen[j] = vistas[j].c_str();
+    rssi[j] = (int16_t)WiFi.RSSI(j);
+  }
+  WiFi.scanDelete();
+  // que redes guardadas se ven y con cuanta senal (sin nombres en el registro)
+  Serial.printf("wifi: escaneo %d redes;", n);
+  for (uint8_t i = 0; i < WIFI_SLOTS; i++) {
+    if (!ssid[i].length()) continue;
+    int16_t mejor = INT16_MIN;
+    for (int16_t j = 0; j < n; j++)
+      if (vistas[j] == ssid[i] && rssi[j] > mejor) mejor = rssi[j];
+    if (mejor == INT16_MIN) Serial.printf(" red %u no se ve;", i + 1);
+    else Serial.printf(" red %u %d dBm;", i + 1, mejor);
+  }
+  Serial.println();
+  const char *saved[WIFI_SLOTS];
+  for (uint8_t i = 0; i < WIFI_SLOTS; i++) saved[i] = ssid[i].c_str();
+  uint8_t orden[WIFI_SLOTS];
+  uint8_t m = wifiOrder(saved, seen, rssi, n, redBuena, orden);
+  for (uint8_t k = 0; k < m; k++) {
+    if (probarRed(ssid[orden[k]], pass[orden[k]], 12000)) {
+      redBuena = (int8_t)orden[k];
+      Serial.printf("wifi: conectado (red %u de %u)\n", orden[k] + 1, guardadas);  // sin nombres
+      return true;
+    }
+  }
+  return false;
 }
 
 static void desconectarSiSobra() {
@@ -615,6 +716,9 @@ static void netTask(void *) {
 
 void netBegin() {
   if (netMx) return;
+  // las credenciales se pasan siempre: que el wifi no las vuelva a escribir en la
+  // NVS en cada intento (con varias redes, cada cambio era una escritura en flash)
+  WiFi.persistent(false);
   netMx = xSemaphoreCreateMutex();
   cmdQ = xQueueCreate(1, sizeof(NetCmd));
   resQ = xQueueCreate(1, sizeof(NetRes));

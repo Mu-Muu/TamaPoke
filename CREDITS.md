@@ -37,5 +37,6 @@ Huge thanks to that whole community for an enormous amount of work.
 | U8g2 (CJK font data only) | [olikraus](https://github.com/olikraus/u8g2) |
 | Board and pinout | [Waveshare ESP32-S3-Touch-AMOLED-1.75](https://www.waveshare.com/wiki/ESP32-S3-Touch-AMOLED-1.75) |
 | Web installer | [ESP Web Tools](https://esphome.github.io/esp-web-tools/) (Nabu Casa) |
+| Step detection (`steps.h`) | adapted from `imu.cpp` in [ShadowEnemyx/TamaPoke](https://github.com/ShadowEnemyx/TamaPoke/tree/tamapoke-expanded-update) (MIT) |
 
 TamaPoke's own code (firmware and tools) is original work.

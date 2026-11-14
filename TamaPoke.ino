@@ -33,6 +33,7 @@
 #include "chess.h"
 #include "wifisync.h"
 #include "shake.h"
+#include "steps.h"
 #include "stackchan.h"
 #include "holiday.h"
 #include "memoir.h"
@@ -180,6 +181,14 @@ SensorQMI8658 imu;
 bool imuOk = false;
 bool gImuLog = false;  // IMULOG (consola): modulo de la aceleracion, para afinar umbrales
 ShakeDetector shaker;
+StepDetector stepper;
+// FIFO del QMI8658: las muestras se guardan aunque la CPU duerma (light sleep:
+// solo despierta cada 200 ms) y se procesan todas al leerlas (console.ino)
+#define IMU_SAMPLE_MS 16     // 62,5 Hz
+#define IMU_LSB_PER_G 4096.0f  // +-8 g
+uint8_t imuAddr = 0;         // direccion I2C del QMI8658 (0x6B o 0x6A)
+uint8_t imuFifoCtrl = 0;     // FIFO_CTRL tal como lo deja SensorLib (stream, 128)
+bool imuFifoOk = false;
 uint32_t dizzyUntil = 0;  // mareado (solo visual: no cambia ninguna estadistica)
 #define DIZZY_MS 4000
 uint8_t gPhase = PH_DAY;  // PH_DAY / PH_TWILIGHT / PH_NIGHT (por la salida y la puesta del sol)
@@ -353,13 +362,21 @@ void setup() {
   pinMode(TP_INT, INPUT_PULLUP);
   attachInterrupt(digitalPinToInterrupt(TP_INT), touchIsr, FALLING);
 
-  imuOk = imu.begin(Wire, QMI8658_L_SLAVE_ADDRESS, IIC_SDA, IIC_SCL) ||
-          imu.begin(Wire, QMI8658_H_SLAVE_ADDRESS, IIC_SDA, IIC_SCL);
+  if (imu.begin(Wire, QMI8658_L_SLAVE_ADDRESS, IIC_SDA, IIC_SCL)) imuAddr = QMI8658_L_SLAVE_ADDRESS;
+  else if (imu.begin(Wire, QMI8658_H_SLAVE_ADDRESS, IIC_SDA, IIC_SCL)) imuAddr = QMI8658_H_SLAVE_ADDRESS;
+  imuOk = imuAddr != 0;
   if (imuOk) {
-    imu.configAccel(AccelFullScaleRange::FS_8G, 125.0f, SensorQMI8658::LpfMode::MODE_0);
+    // 62,5 Hz: SensorLib elige el codigo por la tabla de 6DOF (56 -> 0x7), que con
+    // solo el acelerometro son 62,5 Hz (pedir 125 daba 250). Filtro al 13 % del
+    // ODR (~8 Hz): el de por defecto (2,7 %) se comeria aqui pisadas y sacudidas.
+    imu.configAccel(AccelFullScaleRange::FS_8G, 56.0f, SensorQMI8658::LpfMode::MODE_3);
     imu.enableAccel();
-    // podometro del propio chip (cuenta solo, sin gastar CPU): se lee cada 5 s
-    if (!imu.configPedometerDefault(125.0f) || !imu.enablePedometer()) Serial.println("podometro no disponible");
+    // los pasos los cuenta steps.h con estas muestras (el podometro del chip no
+    // cuenta); la FIFO guarda las ultimas 128 (2 s) y se lee a mano (console.ino)
+    imuFifoOk = imu.configFifo(SensorQMI8658::FifoMode::STREAM, SensorQMI8658::FifoSamples::SAMPLES_128) &&
+                imuReg(0x14, &imuFifoCtrl, 1);
+    imuFifoCtrl &= 0x7F;  // sin FIFO_rd_mode
+    if (!imuFifoOk) Serial.println("FIFO del QMI8658 no disponible");
   } else {
     Serial.println("QMI8658 no detectado");
   }
@@ -658,14 +675,11 @@ void loop() {
     }
   }
 
-  // pasos (podometro del QMI8658) cada 5 s; tambien cambia de dia la cuenta
-  static uint32_t lastStepRead = 0, stepCount = 0;
+  // pasos (steps.h, con las muestras de la FIFO) cada 5 s; tambien cambia de dia la cuenta
+  static uint32_t lastStepRead = 0;
   if (imuOk && now - lastStepRead > 5000) {
     lastStepRead = now;
-    uint32_t c = imu.getStepCount();
-    uint32_t nuevos = c >= stepCount ? c - stepCount : c;  // el chip se reinicio: cuenta desde 0
-    stepCount = c;
-    pet.addSteps(nuevos);
+    pet.addSteps(stepper.take());
   }
 
   // album: cada final se apunta en la SD
