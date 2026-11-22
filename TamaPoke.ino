@@ -17,6 +17,7 @@
 #include <U8g2lib.h>  // formato de fuente U8g2 (la china es la recortada de zhfont.h)
 #include "zhfont.h"   // fuente china recortada (tools/make_zh_font.py)
 #include <esp_sleep.h>
+#include <nvs.h>  // nvs_get_stats (HEALTH)
 #include <driver/gpio.h>
 #include "pin_config.h"
 #include "species.h"
@@ -450,6 +451,12 @@ void setup() {
   }
 
   pet.begin();
+  {  // la NVS al arrancar (ver printMemHealth): si va casi llena, que se vea en el registro
+    nvs_stats_t nv = {};
+    if (nvs_get_stats(nullptr, &nv) == ESP_OK)
+      Serial.printf("nvs: %u de %u entradas usadas%s\n", (unsigned)nv.used_entries, (unsigned)nv.total_entries,
+                    nv.free_entries < nv.total_entries / 8 ? " (CASI LLENA: los guardados pueden fallar)" : "");
+  }
   sdBegin();
   thumbs.load();
   farmLoad(pet);  // especies de la granja: no salen de huevo ni de evolucion
@@ -517,6 +524,18 @@ void ensureMon() {
     if (!pmd.loaded) pmd.load(pet.speciesId, pet.shiny);       // principal: PMD
     if (!pmd.loaded) mon.load(pet.speciesId, pet.shiny);  // respaldo: B/N
   }
+}
+
+// el resto de HEALTH (el latido y la consola), para ver en la placa lo que va justo: lo minimo que
+// les ha quedado libre a la pila del bucle (8 KB; la sincronizacion del ajedrez hace TLS aqui) y a
+// la de la tarea de red, la PSRAM libre (sprites, fondo, descargas) y las entradas usadas de la NVS:
+// con esta tabla de particiones son 20 KB, y si se llena los guardados fallan sin avisar
+void printMemHealth() {
+  nvs_stats_t nv = {};
+  nvs_get_stats(nullptr, &nv);
+  Serial.printf(" stk=%u net=%u psram=%u psmin=%u nvs=%u/%u\n", (unsigned)uxTaskGetStackHighWaterMark(nullptr),
+                (unsigned)netStackFree(), (unsigned)ESP.getFreePsram(), (unsigned)ESP.getMinFreePsram(),
+                (unsigned)nv.used_entries, (unsigned)nv.total_entries);
 }
 
 void loop() {
@@ -829,10 +848,11 @@ void loop() {
   static uint32_t lastHealth = 0;
   if (now - lastHealth > 300000) {
     lastHealth = now;
-    Serial.printf("HEALTH up=%lus heap=%u min=%u bat=%d%% mv=%d chg=%d usb=%d dim=%u off=%d\n",
+    Serial.printf("HEALTH up=%lus heap=%u min=%u bat=%d%% mv=%d chg=%d usb=%d dim=%u off=%d",
                   (unsigned long)(now / 1000), ESP.getFreeHeap(), ESP.getMinFreeHeap(),
                   batPercent(), batMillivolts(), batCharging() ? 1 : 0,
                   usbPresent() ? 1 : 0, dimStage, screenOff ? 1 : 0);
+    printMemHealth();
   }
 
   // Ritmo de dibujo (power.h): 10 fps con el bicho en uso, menos cuanto mas rato sin tocar,

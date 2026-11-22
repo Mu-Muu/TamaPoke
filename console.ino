@@ -550,9 +550,10 @@ void handleSerial() {
     Serial.println();
     Serial.println("DONE");
   } else if (line == "HEALTH") {
-    Serial.printf("up=%lus heap=%u min=%u sd=%d mon=%d\n",
+    Serial.printf("up=%lus heap=%u min=%u sd=%d mon=%d",
                   (unsigned long)(millis() / 1000), ESP.getFreeHeap(),
                   ESP.getMinFreeHeap(), sdReady, pmd.loaded || mon.loaded);
+    printMemHealth();
     Serial.println("DONE");
   } else if (line == "STATS") {
     Serial.printf("spec=%d nv=%u com=%u fel=%u ene=%u lim=%u desc=%u sd=%d mon=%d bat=%d usb=%d rtc=%u\n",

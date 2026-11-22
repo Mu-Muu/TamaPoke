@@ -331,11 +331,16 @@ bool SdBg::load(int r, uint8_t luz) {
     f.close();
     return false;
   }
-  if (!px || (uint32_t)w * h != n) {
+  // la reserva se compara con lo que cabe, no con w*h: si una lectura fallaba, w y h se quedaban
+  // con la medida de antes y la reserva ya era la nueva, y el siguiente fondo de esa medida vieja
+  // se leia en un bufer mas pequeño (fuera de la reserva)
+  if (!px || cap != n) {
     if (px) free(px);
     px = (uint16_t *)ps_malloc(n * 2);
+    cap = px ? n : 0;
     if (!px) { f.close(); w = h = 0; return false; }
   }
+  w = h = 0;  // a medio leer no vale (bgIsSky mira w y h)
   bool ok = f.read((uint8_t *)px, n * 2) == n * 2;
   f.close();
   if (!ok) return false;

@@ -63,6 +63,7 @@ extern SdThumbs thumbs;
 enum : uint8_t { BG_DAY = 0, BG_TWILIGHT, BG_NIGHT };
 struct SdBg {
   uint16_t *px = nullptr;
+  uint32_t cap = 0;  // pixeles que caben en px (la reserva; w*h es lo que hay ahora)
   uint16_t w = 0, h = 0;
   int8_t region = -1;  // region cargada (0-8), -1 = ninguna
   uint8_t tint = BG_DAY;

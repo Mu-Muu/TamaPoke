@@ -51,6 +51,7 @@ bool netTimeTake(uint32_t &utc);
 uint8_t netPlaceNews();
 bool mcpConfigured();
 bool mcpOnline();           // xiaozhi conectado ahora mismo
+uint32_t netStackFree();    // lo minimo que le ha quedado libre a la pila de la tarea de red (bytes; HEALTH)
 
 // orden de Stack-chan para el bucle principal: tool = MCP_* (stackchan.h)
 struct NetCmd {

@@ -431,8 +431,13 @@ static bool bajarJson(const String &url, JsonDocument &doc, JsonDocument *filtro
   // chess.com pide que el user-agent diga como contactar con quien lo hizo (API publica, desde 2023)
   http.setUserAgent("TamaPoke/2026.11 (+https://github.com/Mu-Muu/TamaPoke)");
   if (!http.begin(cliente, url)) return false;
-  int q = url.indexOf('?');
-  String sitio = q < 0 ? url : url.substring(0, q);  // en el registro sin la consulta: ni la ciudad ni las coordenadas
+  // en el registro solo el servidor: ni la consulta (la ciudad, las coordenadas) ni la ruta (la de
+  // chess.com lleva el usuario)
+  int h0 = url.indexOf("://");
+  h0 = h0 < 0 ? 0 : h0 + 3;
+  int h1 = url.indexOf('/', h0), q = url.indexOf('?', h0);
+  if (h1 < 0 || (q >= 0 && q < h1)) h1 = q;
+  String sitio = h1 < 0 ? url.substring(h0) : url.substring(h0, h1);
   int code = http.GET();
   bool ok = false;
   if (code == 200) {
@@ -889,6 +894,9 @@ static void mcpStop() {
 
 // ---------- tarea de red ----------
 
+#define NET_STACK 16384  // bytes: TLS (chess.com, el tiempo, el correo, xiaozhi) va en esta tarea
+static TaskHandle_t netTaskH = nullptr;
+
 static void netTask(void *) {
   uint32_t nextWx = 0, nextJoin = 0;
   for (;;) {
@@ -897,6 +905,14 @@ static void netTask(void *) {
       continue;
     }
     netLock();
+    // otra vez, ya con el cerrojo: el portal o "见面" pueden haberlo cogido mientras se esperaba
+    // (miramos los avisos, se pusieron y nos lo soltaron). Sin esto la tarea volvia a conectar a
+    // casa justo cuando ellos acababan de dejar la radio a su gusto
+    if (portalOn || linkOn) {
+      netUnlock();
+      vTaskDelay(pdMS_TO_TICKS(2000));
+      continue;
+    }
     uint32_t now = millis();
     bool keep = keepOnline();
     if (keep) {
@@ -976,5 +992,7 @@ void netBegin() {
   netMx = xSemaphoreCreateMutex();
   cmdQ = xQueueCreate(1, sizeof(NetCmd));
   resQ = xQueueCreate(1, sizeof(NetRes));
-  xTaskCreatePinnedToCore(netTask, "net", 16384, nullptr, 1, nullptr, 0);
+  xTaskCreatePinnedToCore(netTask, "net", NET_STACK, nullptr, 1, &netTaskH, 0);
 }
+
+uint32_t netStackFree() { return netTaskH ? (uint32_t)uxTaskGetStackHighWaterMark(netTaskH) : 0; }

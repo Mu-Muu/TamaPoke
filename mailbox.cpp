@@ -174,7 +174,8 @@ void mailSetFriendBox(uint64_t pid, const MailBox &b) {
       fr[i].hasBox = true;
     }
   unlock();
-  if (!igual) Serial.printf("correo: buzon de un amigo apuntado (%s)\n", b.url);
+  // sin la direccion: la de un Worker propio es de ese amigo (MAIL INFO la enseña si hace falta)
+  if (!igual) Serial.printf("correo: buzon de un amigo apuntado (%s)\n", strncmp(b.url, "https://ntfy.sh", 15) ? "propio" : "ntfy.sh");
 }
 
 bool mailFriendReady(uint64_t pid) {

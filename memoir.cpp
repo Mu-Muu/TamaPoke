@@ -30,6 +30,7 @@ bool memoirGet(int i, MemRec &r) {
   if (!f) return false;
   bool ok = f.seek((uint32_t)(n - 1 - i) * sizeof(MemRec)) && f.read((uint8_t *)&r, sizeof(r)) == sizeof(r) &&
             r.ver == MEM_REC_VER && r.speciesId >= 1 && r.speciesId <= PET_DEX_MAX;
+  r.nick[sizeof(r.nick) - 1] = 0;  // el fichero de la SD puede venir roto: el apodo se pinta con %s
   f.close();
   return ok;
 }
