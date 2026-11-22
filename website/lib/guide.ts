@@ -57,7 +57,7 @@ export const GUIDE: Chapter[] = [
           t("A **Waveshare ESP32-S3-Touch-AMOLED-1.75** board (standard or -G; the -B comes in its own case and the 1.75C is a different board).", "一块 **Waveshare ESP32-S3-Touch-AMOLED-1.75** 板子（标准版或 -G 版；-B 版自带外壳，1.75C 是另一块板子）。"),
           t("A **microSD card** formatted as FAT32. It holds the sprites, the farm, the album and the backups.", "一张格式化成 FAT32 的 **microSD 卡**，用来存精灵图、农场、相册和备份。"),
           t("A USB-C cable and a computer with **Chrome or Edge**.", "一根 USB-C 线，一台装了 **Chrome 或 Edge** 的电脑。"),
-          t("Optional: a 3.7 V battery (MX1.25 plug, check the polarity first), a small speaker, and the printed Poké Ball case with 3 M2×5 self-tapping screws and 6 magnets (6×2 mm).", "可选：3.7 V 锂电池（MX1.25 插头，先确认正负极）、小喇叭，以及 3D 打印的精灵球外壳（另需 3 颗 M2×5 自攻螺丝和 6 颗 6×2 mm 磁铁）。"),
+          t("Optional: a 3.7 V battery (MX1.25 plug, check the polarity first), a small speaker, and the printed Poké Ball case with 3 M2×4 mm screws and 4 magnets (6×2 mm).", "可选：3.7 V 锂电池（MX1.25 插头，先确认正负极）、小喇叭，以及 3D 打印的精灵球外壳（另需 3 颗 M2×4 mm 螺丝和 4 颗 6×2 mm 磁铁）。"),
         ],
       },
       {
