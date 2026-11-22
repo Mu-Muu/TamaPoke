@@ -492,9 +492,6 @@ locked while the phone is locked, so pick a time when it's usually in use (or
 run the shortcut by hand). The board keeps the higher of the phone's count and
 its own, so nothing is counted twice.
 
-After 5 wrong codes in a row the board refuses every request (even with the right
-code) for 5 minutes, so another device on the network can't try all 9000 codes.
-
 ### Hockey practice from an iPhone
 
 A second shortcut sends minutes of hockey practice (on a SuperDeker or anything
