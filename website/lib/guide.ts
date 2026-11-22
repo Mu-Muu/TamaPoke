@@ -281,7 +281,7 @@ export const GUIDE: Chapter[] = [
       {
         k: "list",
         items: [
-          t("**Level**: one level for every hour of its life, asleep or awake.", "**等级**：每活一小时升一级，睡着醒着都算。"),
+          t("**Level** follows evolution: in each stage it climbs to the level that species evolves at in the games (Bulbasaur 16, Ivysaur 32) right when it is due to evolve. In a final form, or while it waits to evolve, it gains a level every 4 hours, up to 100.", "**等级**跟着进化走：每个阶段在该进化的时候，正好升到这种宝可梦在正作里的进化等级（妙蛙种子 16 级、妙蛙草 32 级）。最终形态或等着进化时，每 4 小时升 1 级，最高 100 级。"),
           t("**Evolution** goes by age, the same for every Pokémon: the first at **3 days**, the second at **5 days**. All four needs must be at 40 or more, and each care mistake adds 2 hours.", "**进化**看天数，所有宝可梦都一样：第一次在**第 3 天**，第二次在**第 5 天**。四项需求都要在 40 以上，每次照顾失误多等 2 小时。"),
           t("When it is ready a button appears: evolve, or keep the form you like. An **evolution potion** skips the wait.", "时间到了会出现按钮：可以进化，也可以保持喜欢的样子。**进化药水**可以跳过等待。"),
           t("**Retiring**: 7 days after reaching its final form it asks to retire (you can stay together a while longer). It moves to the farm, the album keeps its page, and you open a new egg.", "**养老**：到达最终形态满 7 天后，它会想去农场养老（也可以再陪它一段时间）。它搬进农场，相册里留下一页，然后你开一颗新蛋。"),

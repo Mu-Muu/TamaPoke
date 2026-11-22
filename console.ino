@@ -166,7 +166,8 @@ void handleSerial() {
     }
     Serial.println("DONE");
   } else if (line.startsWith("LVL ")) {
-    pet.ageMinutes = (uint32_t)line.substring(4).toInt() * MINUTES_PER_LEVEL;
+    uint32_t a = ageForLevel(pet.speciesId, pet.evoCount, (uint16_t)line.substring(4).toInt());
+    if (a != UINT32_MAX) pet.ageMinutes = a;  // la primera edad con ese nivel
     Serial.println("DONE");
   } else if (line.startsWith("TIME ")) {
     uint32_t e = (uint32_t)line.substring(5).toInt();
@@ -345,7 +346,7 @@ void handleSerial() {
       Serial.println("copia: no se puede leer");
     } else {
       Serial.printf("copia: dex=%d nv=%u edad=%lu min genes=%u/%u/%u tr=%u/%u/%u vinculo=%u medallas=0x%X shiny=%u apodo=%s\n",
-                    r.speciesId, levelOfAge(r.ageMinutes), (unsigned long)r.ageMinutes, r.geneAtk, r.geneDef,
+                    r.speciesId, levelOf(r.speciesId, r.ver >= 4 ? r.evoCount : 0, r.ageMinutes), (unsigned long)r.ageMinutes, r.geneAtk, r.geneDef,
                     r.geneSpe, r.trAtk, r.trDef, r.trSpe, r.bond, r.medals, r.shiny, r.nick);
       if (line.endsWith(" 1")) {
         bool ya = pet.speciesId == r.speciesId;

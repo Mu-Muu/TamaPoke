@@ -116,21 +116,19 @@ TEST(dex, toda_especie_es_alcanzable) {
       CHECK_MSG(reach[d], std::string("inalcanzable: ") + DEX_TBL[d].name);
 }
 
-// con la despedida a los 3 dias (nivel 72), toda linea tiene que poder llegar a
-// su forma final antes de que la mascota cumpla el ciclo
+// se evoluciona por edad (a los 3 y a los 5 dias) y la despedida es a los 7: toda linea tiene
+// que llegar a su forma final con dos evoluciones como mucho
 TEST(dex, toda_linea_se_completa_antes_de_la_despedida) {
-  const uint32_t maxLevel = FAREWELL_AGE_MIN / MINUTES_PER_LEVEL;
   for (int d = 1; d <= N; d++) {
     if (DEX_TBL[d].rarity == R_EVO || DEX_TBL[d].rarity == R_NONE) continue;
-    int cur = d, guard = 0;
-    uint32_t need = 0;
-    while (DEX_TBL[cur].evolvesTo != 0 && guard++ < 6) {
-      if (DEX_TBL[cur].evolveLevel > need) need = DEX_TBL[cur].evolveLevel;
+    int cur = d, pasos = 0;
+    while (DEX_TBL[cur].evolvesTo != 0 && pasos < 6) {
       cur = DEX_TBL[cur].evolvesTo;
+      pasos++;
     }
-    CHECK_MSG(need <= maxLevel,
-              std::string("la linea de ") + DEX_TBL[d].name + " no llega a forma final a tiempo");
+    CHECK_MSG(pasos <= 2, std::string("la linea de ") + DEX_TBL[d].name + " no llega a forma final a tiempo");
   }
+  CHECK(EVO2_AGE_MIN < FAREWELL_AGE_MIN);
 }
 
 TEST(dex, las_stats_base_son_plausibles) {

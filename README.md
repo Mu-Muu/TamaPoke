@@ -70,7 +70,7 @@ potions → the next morning the pet cheers about yesterday's games.**
 |---|---|---|
 | Species | Gen 1 (151) | Gen 1-9 (1025), one Pokédex page per region |
 | Languages | 8 | English + Simplified Chinese |
-| Growing up | +1 level per hour, evolution by level, battle stats, ball minigame | evolution by age, a day of Mega Evolution, natures, sickness, abilities, no battles |
+| Growing up | +1 level per hour, evolution by level, battle stats, ball minigame | evolution by age with levels that match it, a day of Mega Evolution, natures, sickness, abilities, no battles |
 | Tournament | — | eleven events against two random Pokémon (track, pool, jumps, weights, climbing, diving, skating, torch run, trail run), played by stats and type, no fighting |
 | Gyms | — | 8 gyms per region (72), 3-on-3 team events against the leaders and their anime Pokémon, badges, Elite Four and Champion |
 | Fun | — | orchard, fishing, mining and treasure hunts by type; cost chess points, give fruits that raise training, eggs and Mega Stone shards |
@@ -315,6 +315,10 @@ laying it face down puts it to sleep, and a hard shake makes it dizzy.
   be at 40 or more. When it's ready, a button lets you evolve or keep the
   current form. An **evolution potion** (100 points) skips the wait in days; the
   needs still have to be at 40 or more.
+- The **level** follows evolution: in each stage it climbs to the level that
+  species evolves at in the games (Bulbasaur 16, Ivysaur 32) right when it is
+  due to evolve. In a final form, or while it waits to evolve, it gains a level
+  every 4 hours, up to 100. Level medals at 10, 20 and 30.
 - In its final form, after **7 days** it asks to retire (you can choose to stay
   together for a while). It then moves to the **farm**, where you can take it
   back any time; the album keeps the page, and you open a new egg.
