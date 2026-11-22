@@ -663,9 +663,18 @@ void consoleMail(String a) {
       m.sticker = (uint8_t)(arg % MAIL_STICKERS);
       m.item = (uint8_t)(arg < ITEM_COUNT ? arg : 0);
       m.qty = 1;
-      bool ok = mailSend(linkFriendAt(fi).pid, m);
-      if (ok && m.type == MT_GIFT && !friendTestMode() && pet.bag[m.item]) { pet.bag[m.item]--; pet.markDirty(); }
-      Serial.println(ok ? "correo: a la cola (sale en la proxima vuelta de la red)" : "correo: cola llena");
+      bool deMochila = m.type == MT_GIFT && !friendTestMode();
+      if (deMochila && !pet.bag[m.item]) {  // si no, el regalo salia de la nada (y a los 14 dias volvia)
+        Serial.println("correo: ese objeto no esta en la mochila (FRIENDTEST 1 para probar sin gastarlo)");
+      } else {
+        bool ok = mailSend(linkFriendAt(fi).pid, m);
+        if (ok && deMochila) {
+          pet.bag[m.item]--;
+          pet.markDirty();
+          pet.flushSave();
+        }
+        Serial.println(ok ? "correo: a la cola (sale en la proxima vuelta de la red)" : "correo: cola llena");
+      }
     }
   } else {
     Serial.println("MAIL INFO | SYNC | FAKE v|c|g | SEND v|c|g amigo [frase|objeto]");

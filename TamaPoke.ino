@@ -615,7 +615,10 @@ void loop() {
   linkEra = linkActive();
   uint8_t devuelto;
   if (mailTakeRefund(devuelto)) {
-    if (!friendTestMode() && devuelto < ITEM_COUNT) pet.give(devuelto, 1);
+    if (!friendTestMode() && devuelto < ITEM_COUNT) {
+      pet.give(devuelto, 1);
+      pet.flushSave();  // ya salio de la cola en la NVS: que no se pierda con un reinicio
+    }
     toast(T(S_ML_BACK));
   }
   mailVisitTick(now);

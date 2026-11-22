@@ -207,6 +207,7 @@ enum StrId : uint16_t {  // mas de 256 textos
   S_PLACE_OK, S_PLACE_BAD,
   S_ITEM_POTION_END,
   S_VOL_HIGH, S_VOL_MED, S_VOL_LOW,
+  S_ML_NO_WIFI,  // amigos lejos: sin Wi-Fi configurado el correo no sale nunca
   STR_COUNT
 };
 

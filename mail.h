@@ -31,6 +31,10 @@ struct MailMsg {
 #define MAIL_MSG_LEN 28
 size_t mailEncode(uint8_t *b, const MailMsg &m);
 bool mailDecode(const uint8_t *b, size_t n, MailMsg &m);  // false: version o tipo que no se conoce
+// ¿se puede enseñar tal cual? (un objeto o una frase que esta placa no tiene, de un amigo con un
+// firmware mas nuevo, o un mensajero que no existe). Si no, ni se guarda ni se confirma: quien lo
+// manda lo repite y, a los 14 dias, un regalo vuelve a su mochila en vez de perderse
+bool mailMsgUsable(const MailMsg &m, uint16_t itemCount, int16_t dexMax);
 
 // sellar: nonce (12) | cifrado | etiqueta (16). Cifrado: SHA-256 en modo contador con una clave
 // sacada de la de la pareja; etiqueta: HMAC-SHA256 (otra clave) de nonce y cifrado
@@ -48,7 +52,9 @@ size_t b64Decode(const char *in, uint8_t *out, size_t cap);            // bytes;
 bool mailBoxValid(const char *box);
 
 // salida: postales y regalos se repiten hasta el acuse; una visita sale una vez. A los 14 dias
-// sin acuse se deja (un regalo vuelve a la mochila). Tiempos en segundos (hora de pared del RTC)
+// sin salir o sin acuse se deja (un regalo vuelve a la mochila); tambien una visita o un acuse que
+// no pudo salir (un amigo olvidado, un buzon que no contesta): si no, ocupaban la cola para siempre.
+// Tiempos en segundos (hora de pared del RTC)
 #define MAIL_RESEND_S (4UL * 3600)   // ntfy.sh guarda 12 h: se repite antes
 #define MAIL_GIVEUP_S (14UL * 86400)
 struct MailOut {
@@ -59,9 +65,18 @@ struct MailOut {
   MailMsg msg;
 };
 bool mailOutDue(const MailOut &o, uint32_t now);
+// la hora de pared no siempre avanza: 0 si aun no se sabia (RTC sin pila) y hacia atras si el NTP
+// corrige un reloj adelantado o se cambia de ciudad. Un plazo desde 0, o "now - firstAt" en
+// negativo (sin signo da la vuelta), daba el regalo por perdido al momento y volvia a la mochila
+// mientras aun salia: regalo repetido. Esto lo recoloca a "now"; true si cambio algo
+bool mailOutFixClock(MailOut &o, uint32_t now);
 bool mailOutExpired(const MailOut &o, uint32_t now);
 void mailOutSent(MailOut &o, uint32_t now);  // ya salio: la visita acaba; lo demas espera el acuse
 bool mailOutAcked(MailOut &o, uint32_t ackOf);
+// pone en la cola q[n] el acuse de `ackOf` para `to`, si no hay ya uno esperando (cada repeticion
+// del amigo, cada 4 h, añadia otro, y con su buzon sin contestar llenaban la cola: "信太多了").
+// 1: puesto; 0: ya habia uno; -1: cola llena
+int mailQueueAck(MailOut *q, int n, uint64_t to, uint64_t from, uint32_t ackOf, uint32_t id, uint32_t now);
 
 // ids ya recibidos (un repetido se vuelve a confirmar pero no se enseña otra vez)
 #define MAIL_SEEN 32
@@ -70,6 +85,7 @@ struct MailSeen {
   uint8_t n = 0, pos = 0;
   bool seen(uint32_t id) const;
   void add(uint32_t id);
+  bool repair();  // leido de la NVS: n o pos fuera de rango (estropeado) leerian o escribirian fuera; true si se vacio
 };
 
 // una linea de la respuesta de ntfy (o del Worker): {"id":..,"time":..,"event":"message","message":"..."}.

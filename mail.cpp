@@ -36,6 +36,14 @@ bool mailDecode(const uint8_t *b, size_t n, MailMsg &m) {
   return true;
 }
 
+bool mailMsgUsable(const MailMsg &m, uint16_t itemCount, int16_t dexMax) {
+  if (m.type == MT_ACK) return true;
+  if (m.species < 1 || m.species > dexMax) return false;
+  if (m.type == MT_CARD) return m.phrase < MAIL_PHRASES && m.sticker < MAIL_STICKERS;
+  if (m.type == MT_GIFT) return m.item < itemCount;
+  return m.type == MT_VISIT;
+}
+
 // ---------- cifrado y firma ----------
 
 static void subKey(const uint8_t key[16], const char *tag, uint8_t out[32]) {
@@ -157,7 +165,21 @@ bool mailBoxValid(const char *box) {
 bool mailOutDue(const MailOut &o, uint32_t now) { return o.on && (int32_t)(now - o.nextAt) >= 0; }
 
 bool mailOutExpired(const MailOut &o, uint32_t now) {
-  return o.on && o.msg.type != MT_VISIT && now - o.firstAt >= MAIL_GIVEUP_S;
+  return o.on && now && o.firstAt && (int32_t)(now - o.firstAt) >= (int32_t)MAIL_GIVEUP_S;
+}
+
+bool mailOutFixClock(MailOut &o, uint32_t now) {
+  if (!o.on || !now) return false;
+  bool cambio = false;
+  if (!o.firstAt || (int32_t)(o.firstAt - now) > 0) {  // sin hora, o "en el futuro"
+    o.firstAt = now;
+    cambio = true;
+  }
+  if ((int32_t)(o.nextAt - now) > (int32_t)MAIL_RESEND_S) {  // la proxima vez, mas lejos que un reintento
+    o.nextAt = now;
+    cambio = true;
+  }
+  return cambio;
 }
 
 void mailOutSent(MailOut &o, uint32_t now) {
@@ -175,6 +197,25 @@ bool mailOutAcked(MailOut &o, uint32_t ackOf) {
   return true;
 }
 
+int mailQueueAck(MailOut *q, int n, uint64_t to, uint64_t from, uint32_t ackOf, uint32_t id, uint32_t now) {
+  for (int i = 0; i < n; i++)
+    if (q[i].on && q[i].msg.type == MT_ACK && q[i].to == to && q[i].msg.ackOf == ackOf) return 0;
+  for (int i = 0; i < n; i++) {
+    if (q[i].on) continue;
+    MailOut &o = q[i];
+    o = MailOut();
+    o.on = true;
+    o.to = to;
+    o.firstAt = o.nextAt = now;
+    o.msg.type = MT_ACK;
+    o.msg.from = from;
+    o.msg.id = id;
+    o.msg.ackOf = ackOf;
+    return 1;
+  }
+  return -1;
+}
+
 bool MailSeen::seen(uint32_t id) const {
   for (uint8_t i = 0; i < n; i++)
     if (ids[i] == id) return true;
@@ -186,6 +227,12 @@ void MailSeen::add(uint32_t id) {
   ids[pos] = id;
   pos = (uint8_t)((pos + 1) % MAIL_SEEN);
   if (n < MAIL_SEEN) n++;
+}
+
+bool MailSeen::repair() {
+  if (n <= MAIL_SEEN && pos < MAIL_SEEN) return false;
+  *this = MailSeen();
+  return true;
 }
 
 bool mailParseLine(const char *line, uint32_t &time, char *message, size_t cap) {

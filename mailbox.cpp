@@ -1,6 +1,7 @@
 #include "mailbox.h"
 #include "link.h"
 #include "config.h"
+#include "pet.h"  // ITEM_COUNT, PET_DEX_MAX: lo que llega tiene que existir en esta placa
 #include <WiFi.h>
 #include <WiFiClientSecure.h>
 #include <HTTPClient.h>
@@ -76,6 +77,7 @@ void mailBegin() {
   inN = p.getUChar("inN", 0);
   if (inN > MAIL_INQ) inN = 0;
   if (p.getBytes("seen", &seen, sizeof(seen)) != sizeof(seen)) seen = MailSeen();
+  if (seen.repair()) Serial.println("correo: lista de vistos estropeada, vaciada");
   p.end();
   Preferences l;
   l.begin("link", true);
@@ -244,12 +246,15 @@ bool mailFakeArrival(const MailMsg &m) {
   return ok;
 }
 
-// en el bucle principal: lo que lleva 14 dias sin acuse se deja; un regalo vuelve a la mochila
+// en el bucle principal: lo que lleva 14 dias sin acuse se deja; un regalo vuelve a la mochila.
+// Antes, los plazos de lo que salio sin hora (0) o con el reloj adelantado se recolocan a ahora
 bool mailTakeRefund(uint8_t &item) {
   uint32_t now = wallNow;
   if (!now) return false;
-  bool got = false;
+  bool got = false, recolocado = false;
   lock();
+  for (auto &o : outq) recolocado |= mailOutFixClock(o, now);
+  if (recolocado) saveOut();
   for (auto &o : outq) {
     if (!mailOutExpired(o, now)) continue;
     o.on = false;
@@ -284,8 +289,11 @@ static void leerCuerpo(HTTPClient &h, String &out) {
   out = "";
   int len = h.getSize();  // -1: sin Content-Length, hasta que cierren (HTTP/1.0: nunca troceado)
   WiFiClient *st = h.getStreamPtr();
-  if (!st || len > MAIL_BODY_MAX) return;
-  if (len > 0) out.reserve(len);
+  if (!st) return;
+  // mas de MAIL_BODY_MAX (el Worker guarda 30 dias y la primera vez lo da todo): antes no se leia
+  // nada, el cursor no avanzaba y el buzon se quedaba atascado para siempre. Ahora se leen los
+  // primeros MAIL_BODY_MAX (las lineas enteras) y lo demas, la proxima vez desde el nuevo cursor
+  if (len > 0) out.reserve(len < MAIL_BODY_MAX ? len : MAIL_BODY_MAX + 256);
   uint8_t buf[256];
   uint32_t t0 = millis();
   while (len != 0 && millis() - t0 < MAIL_BODY_MS && out.length() <= MAIL_BODY_MAX) {
@@ -390,6 +398,12 @@ static void received(uint32_t now, const char *b64, bool otraVez) {
     unlock();
     return;
   }
+  if (!mailMsgUsable(m, ITEM_COUNT, PET_DEX_MAX)) {  // de un firmware mas nuevo: sin acuse, que no se pierda
+    unlock();
+    Serial.printf("correo: tipo %u de %08lx con algo que esta placa no tiene: no se confirma\n", m.type,
+                  (unsigned long)(m.from >> 32));
+    return;
+  }
   bool cambio = false;
   if (m.type == MT_ACK) {
     for (auto &o : outq) cambio |= mailOutAcked(o, m.ackOf);
@@ -409,19 +423,9 @@ static void received(uint32_t now, const char *b64, bool otraVez) {
     Serial.printf("correo: llega tipo %u de %08lx\n", m.type, (unsigned long)(m.from >> 32));
   }
   if (m.type != MT_VISIT && (!nuevo || seen.seen(m.id))) {  // acuse (tambien a un repetido: se perdio el anterior)
-    for (auto &o : outq)
-      if (!o.on) {
-        o = MailOut();
-        o.on = true;
-        o.to = m.from;
-        o.firstAt = o.nextAt = now;
-        o.msg.type = MT_ACK;
-        o.msg.from = self;
-        do o.msg.id = esp_random(); while (!o.msg.id);
-        o.msg.ackOf = m.id;
-        saveOut();
-        break;
-      }
+    uint32_t id;
+    do id = esp_random(); while (!id);
+    if (mailQueueAck(outq, MAIL_OUTQ, m.from, self, m.id, id, now) > 0) saveOut();
   }
   unlock();
 }
