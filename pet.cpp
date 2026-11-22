@@ -49,6 +49,7 @@ void Pet::begin() {
 
 void Pet::newEgg(uint8_t kind) {
   if (kind >= EGG_KINDS) kind = EGG_COMMON;
+  lvFloor = 0;
   vacant = false;
   ceremony = CER_NONE;
   neglectTicks = 0;
@@ -152,6 +153,7 @@ void Pet::tick() {
                             // tiempo corriera aqui, el huevo eclosionaria solo a
                             // los 3 min con la especie sorteada y se perderia la
                             // eleccion del jugador
+  const uint16_t lvAntes = level();  // para el sonido de subir de nivel
   ageMinutes++;
 
   if (isEgg()) {
@@ -182,7 +184,7 @@ void Pet::tick() {
     return;
   }
 
-  if (ageMinutes % MINUTES_PER_LEVEL == 0) sfxPlay(SFX_LEVEL);  // subio de nivel (despierto)
+  if (level() > lvAntes) sfxPlay(SFX_LEVEL);  // subio de nivel (despierto)
 
   fullness = clamp100(fullness - 2);
   // aguante: algunos minutos la energia no baja (staminaPct de cada 100)
@@ -479,8 +481,8 @@ void Pet::checkMedals(uint16_t earned) {
   uint16_t before = medals;
   medals |= earned;
   if (level() >= 10) medals |= MED_LV10;
-  if (level() >= 25) medals |= MED_LV25;
-  if (level() >= 50) medals |= MED_LV50;
+  if (level() >= 20) medals |= MED_LV20;
+  if (level() >= 30) medals |= MED_LV30;
   if (streak >= 7) medals |= MED_STREAK7;
   if (streak >= 30) medals |= MED_STREAK30;
   if (bond >= 100) medals |= MED_BOND;
@@ -504,6 +506,66 @@ void Pet::rename(const char *name) {
   strncpy(nick, name, sizeof(nick) - 1);
   nick[sizeof(nick) - 1] = 0;
   save();
+}
+
+// ---------- nivel ----------
+// forma anterior de una especie (0 si es la primera): por evolvesTo o por una rama
+static int16_t prevForm(int16_t dex) {
+  for (int16_t p = 1; p <= DEX_COUNT; p++)
+    if (DEX_TBL[p].evolvesTo == dex) return p;
+  for (int i = 0; i < NUM_DEX_BRANCHES; i++)
+    if (DEX_BRANCHES[i].to == dex) return (int16_t)DEX_BRANCHES[i].from;
+  return 0;
+}
+
+// nivel de evolucion de la forma anterior de la ultima especie pedida (buscarla recorre la
+// pokedex). En una sola palabra (especie | nivel << 11) porque el nivel lo leen la tarea de
+// red y el loop.
+static volatile uint32_t gAnterior = 0;
+
+uint16_t levelOf(int16_t dex, uint8_t evoCount, uint32_t age) {
+  if (dex < 1 || dex > DEX_COUNT) return 1;
+  uint32_t c = gAnterior;
+  if ((int16_t)(c & 0x7FF) != dex) {
+    int16_t p = prevForm(dex);
+    c = (uint32_t)dex | (uint32_t)(p ? DEX_TBL[p].evolveLevel : 0) << 11;
+    gAnterior = c;
+  }
+  // etapa del individuo y nivel con el que empieza: 1 si es la primera (salio asi del huevo),
+  // si no el de evolucion de la forma anterior
+  uint32_t etapa = evoCount > 2 ? 2 : evoCount, desde = etapa ? (c >> 11) & 0x7F : 1;
+  if (desde < 1) desde = 1;
+  static const uint32_t T[4] = { 0, EVO1_AGE_MIN, EVO2_AGE_MIN, EVO3_AGE_MIN };
+  uint32_t t0 = T[etapa], t1 = T[etapa + 1];
+  uint32_t hasta = DEX_TBL[dex].evolvesTo ? DEX_TBL[dex].evolveLevel : 0;  // su nivel de evolucion
+  uint32_t lv;
+  if (age <= t0) lv = desde;  // evoluciono antes de tiempo (pocion): empieza en su nivel
+  else if (hasta > desde && age < t1) lv = desde + (uint32_t)((uint64_t)(age - t0) * (hasta - desde) / (t1 - t0));
+  else if (hasta > desde) lv = hasta + (age - t1) / LEVEL_SLOW_MIN;  // ya le tocaba evolucionar
+  else lv = desde + (age - t0) / LEVEL_SLOW_MIN;                      // forma final
+  return lv > LEVEL_MAX ? LEVEL_MAX : (uint16_t)lv;
+}
+
+uint32_t ageForLevel(int16_t dex, uint8_t evoCount, uint16_t level) {
+  uint32_t lo = 0, hi = 60u * 24 * 60;
+  if (levelOf(dex, evoCount, hi) < level) return UINT32_MAX;
+  while (lo < hi) {  // el nivel nunca baja con la edad: busqueda binaria
+    uint32_t mid = lo + (hi - lo) / 2;
+    if (levelOf(dex, evoCount, mid) >= level) hi = mid;
+    else lo = mid + 1;
+  }
+  return lo;
+}
+
+void Pet::levelSpan(uint32_t &into, uint32_t &span) const {
+  into = span = 0;
+  uint16_t lv = level();
+  if (isEgg() || lv >= LEVEL_MAX) return;
+  uint32_t a0 = ageForLevel(speciesId, evoCount, lv), a1 = ageForLevel(speciesId, evoCount, lv + 1);
+  if (a1 == UINT32_MAX || a1 <= ageMinutes) return;
+  if (a0 > ageMinutes) a0 = ageMinutes;  // sujeto por lvFloor: la barra empieza ahora
+  into = ageMinutes - a0;
+  span = a1 - a0;
 }
 
 static uint16_t calcStat(uint8_t base, uint8_t gene, uint16_t lvl, uint8_t tr) {
@@ -837,6 +899,7 @@ void Pet::importRec(const PetRec &r) {
   neglectTicks = 0;
   mistakeCooldown = 0;
   goodTicks = 0;
+  lvFloor = 0;  // el suelo era del compañero de antes
   newMedal = 0;
   eatUntil = heartUntil = evolveUntil = 0;
   lastTick = millis();
@@ -925,6 +988,7 @@ void Pet::evolve() {
   int n = 0;
   for (int i = 0; i < nAll; i++)
     if (!isRegistered(all[i])) opts[n++] = all[i];
+  lvFloor = level();  // la forma nueva no baja de nivel (si evoluciono tarde a una etapa lenta)
   speciesId = n > 0 ? opts[random(n)] : all[random(nAll)];
   megaUntil = 0;  // la nueva forma no es mega
   evoCount++;
@@ -1452,6 +1516,7 @@ void Pet::save() {
   prefs.putBool("asl", autoSlept);
   prefs.putBool("nap", napping);  // si no, tras un reinicio no despertaria al encender
   prefs.putUShort("gtk", goodTicks);  // la racha de la resistencia: un reinicio no la tira
+  prefs.putUShort("lvf", lvFloor);
   prefs.putUInt("hday", harvestDay);
   prefs.putUChar("evoc", evoCount);
   prefs.putBool("evob", evoBoost);
@@ -1542,6 +1607,7 @@ void Pet::load() {
   autoSlept = prefs.getBool("asl", false);
   napping = prefs.getBool("nap", false);
   goodTicks = prefs.getUShort("gtk", 0);
+  lvFloor = prefs.getUShort("lvf", 0);
   harvestDay = prefs.getUInt("hday", 0);
   evoCount = prefs.getUChar("evoc", 0);
   evoBoost = prefs.getBool("evob", false);

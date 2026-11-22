@@ -161,6 +161,8 @@ static const char *const STRINGS[LANG_COUNT][STR_COUNT] = {
     "City updated", "City not found",
     "END POTION",
     "HIGH", "MEDIUM", "LOW",
+    "%uh %umin to Lv.%u",
+    "Set up WI-FI first",
   },
   // ---------------- ZH ----------------
   // Chino simplificado. Los especificadores van en el orden de la fila
@@ -358,27 +360,29 @@ static const char *const STRINGS[LANG_COUNT][STR_COUNT] = {
     "城市已更新", "没查到这个城市",
     "耐力药剂",
     "大声", "中等", "小声",
+    "%u小时%u分钟后 Lv.%u",
+    "先设置 Wi-Fi",
   },
 };
 
 // Nombres de medalla en sus tres longitudes [idioma][medalla].
 static const char *const MED_NAME[LANG_COUNT][MED_COUNT] = {
-  { "Lv.10", "Lv.25", "Lv.50", "7 STREAK", "BOND", "TOP FORM", "IN SHAPE",
+  { "Lv.10", "Lv.20", "Lv.30", "7 STREAK", "BOND", "TOP FORM", "IN SHAPE",
     "CURED", "SHINY", "LEGEND", "STRONG", "SPEEDY", "30 STREAK", "CHESS WIN", "CHESS RECORD" },
-  { "Lv.10", "Lv.25", "Lv.50", "连续7天", "羁绊", "最终形态", "精神饱满",
+  { "Lv.10", "Lv.20", "Lv.30", "连续7天", "羁绊", "最终形态", "精神饱满",
     "康复", "异色", "传说", "大力士", "飞毛腿", "连续30天", "棋局胜利", "棋艺新高" },
 };
 static const char *const MED_LBL[LANG_COUNT][MED_COUNT] = {
-  { "Lv10", "Lv25", "Lv50", "7DAYS", "BOND", "TOP", "FIT",
+  { "Lv10", "Lv20", "Lv30", "7DAYS", "BOND", "TOP", "FIT",
     "CURED", "SHINY", "LEGEND", "STR", "SPD", "30DAYS", "WIN", "RECORD" },
-  { "Lv10", "Lv25", "Lv50", "7天", "羁绊", "最终", "健康",
+  { "Lv10", "Lv20", "Lv30", "7天", "羁绊", "最终", "健康",
     "康复", "异色", "传说", "力量", "速度", "30天", "胜利", "新高" },
 };
 static const char *const MED_DSC[LANG_COUNT][MED_COUNT] = {
-  { "LEVEL 10", "LEVEL 25", "LEVEL 50", "7 DAY STREAK", "MAX BOND", "FINAL FORM", "IN SHAPE",
+  { "LEVEL 10", "LEVEL 20", "LEVEL 30", "7 DAY STREAK", "MAX BOND", "FINAL FORM", "IN SHAPE",
     "GOT CURED", "SHINY FORM", "LEGENDARY", "STRENGTH 50", "SPEED 50",
     "30DAY STREAK", "WON CHESS", "CHESS RECORD" },
-  { "等级 10", "等级 25", "等级 50", "连续 7 天", "羁绊 MAX", "最终进化", "精神饱满",
+  { "等级 10", "等级 20", "等级 30", "连续 7 天", "羁绊 MAX", "最终进化", "精神饱满",
     "吃药治好病", "异色伙伴", "传说宝可梦", "力量练到 50", "速度练到 50",
     "连续 30 天", "陪伴时下棋赢了", "陪伴时棋艺新高" },
 };

@@ -45,6 +45,7 @@ static FarmEntry entryOf(const PetRec &r) {
   e.shiny = r.shiny;
   e.ageMinutes = r.ageMinutes;
   e.farmEpoch = r.farmEpoch;
+  e.evoCount = r.ver >= 4 ? r.evoCount : 0;  // como importRec
   memcpy(e.nick, r.nick, sizeof(e.nick));
   e.nick[sizeof(e.nick) - 1] = 0;
   return e;

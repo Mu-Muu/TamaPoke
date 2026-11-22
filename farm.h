@@ -13,9 +13,12 @@ struct FarmEntry {
   bool shiny;
   uint32_t ageMinutes, farmEpoch;  // edad al entrar y cuando entro (crece alli, ver farmAge)
   char nick[12];
+  uint8_t evoCount;  // veces que ha evolucionado (para su nivel)
 };
 // nivel de hoy (a la hora local `now`): en la granja tambien sube, mas despacio
-static inline uint16_t farmLevel(const FarmEntry &e, uint32_t now) { return levelOfAge(farmAge(e.ageMinutes, e.farmEpoch, now)); }
+static inline uint16_t farmLevel(const FarmEntry &e, uint32_t now) {
+  return levelOf(e.speciesId, e.evoCount, farmAge(e.ageMinutes, e.farmEpoch, now));
+}
 
 bool farmLoad(Pet &p);                 // lee el indice de la SD y rellena p.farmReg
 bool farmReady();                      // hay SD (y por tanto granja)

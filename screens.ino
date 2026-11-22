@@ -564,14 +564,19 @@ void renderCardProgress() {
   setCur(centerX(lv, 5), 86);
   printT(lv);
 
-  // barra de progreso al siguiente nivel (1 nivel = 60 min de juego)
-  uint8_t into = pet.ageMinutes % MINUTES_PER_LEVEL;
+  // barra de progreso al siguiente nivel (cada nivel dura distinto: ver levelOf)
+  uint32_t into = 0, span = 0;
+  pet.levelSpan(into, span);
   int bx = 93, bw = 280, by = 158, bh = 22;
   gfx->fillRoundRect(bx, by, bw, bh, 6, UI_TRACK);
-  int fw = (bw - 4) * into / MINUTES_PER_LEVEL;
+  int fw = span ? (int)((uint64_t)(bw - 4) * into / span) : bw - 4;  // sin siguiente (nivel 100): llena
   if (fw > 0) gfx->fillRoundRect(bx + 2, by + 2, fw, bh - 4, 5, UI_BAR_OK);
-  char nx[32];
-  snprintf(nx, sizeof(nx), T(S_NEXT_LVL_FMT), MINUTES_PER_LEVEL - into, pet.level() + 1);
+  char nx[40] = "";
+  uint32_t left = span - into;
+  if (span && left >= 60)
+    snprintf(nx, sizeof(nx), T(S_NEXT_LVL_H_FMT), (unsigned)(left / 60), (unsigned)(left % 60), pet.level() + 1);
+  else if (span)
+    snprintf(nx, sizeof(nx), T(S_NEXT_LVL_FMT), (unsigned)left, pet.level() + 1);
   gfx->setTextColor(UI_INK);
   setSize(2);
   setCur(centerX(nx, 2), by + 32);

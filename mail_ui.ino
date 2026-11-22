@@ -253,10 +253,14 @@ static void muSend() {
     m.item = muItem;
     m.qty = 1;
   }
+  if (!wifiHasCreds()) { toast(T(S_ML_NO_WIFI)); return; }  // sin Wi-Fi no saldria nunca (y el regalo, 14 dias fuera)
   if (!mailSend(muPid(), m)) { toast(T(S_ML_FULL)); return; }
   if (muKind == MT_GIFT && !friendTestMode()) {  // sale de la mochila ya (si no llega en 14 dias, vuelve)
     pet.bag[muItem]--;
     pet.markDirty();
+    // guardado ya, no al atenuar: la cola de salida ya esta en la NVS, y un reinicio antes de guardar
+    // la mochila dejaba el objeto en las dos (regalo repetido)
+    pet.flushSave();
   }
   if (muKind == MT_VISIT) muVisits[muFi]++;
   sfxPlay(SFX_MEDAL);
@@ -272,8 +276,9 @@ void friendsTap(int16_t x, int16_t y) {
   }
   bool footer = y >= 384 && abs(x - CX) < 110;
   if ((muStage == MU_LIST || muStage == MU_FRIEND) && footer) {  // "立即收发"
-    mailSyncSoon();
     sfxPlay(SFX_TAP);
+    if (!wifiHasCreds()) { toast(T(S_ML_NO_WIFI)); return; }  // la tarea de red no hace nada sin Wi-Fi
+    mailSyncSoon();
     toast(T(S_ML_SYNCING));
     return;
   }
@@ -295,6 +300,7 @@ void friendsTap(int16_t x, int16_t y) {
     if (row >= MUR_ROWS || y - HUB_ROW_Y0 - row * HUB_ROW_STEP > HUB_ROW_H) return;
     sfxPlay(SFX_TAP);
     muPage = 0;
+    if (!wifiHasCreds()) { toast(T(S_ML_NO_WIFI)); return; }  // antes de elegir nada: sin Wi-Fi no saldria
     if (row == MUR_VISIT) {
       if (pet.isEgg()) { toast(T(S_NO_PARTNER)); return; }
       if (muVisitDay != pet.dayNow()) {
@@ -611,9 +617,10 @@ bool mailVisitorTap(int16_t x, int16_t y) {
   bool cerca = abs(x - (int)mv.x) < 70 && y > 120 && y < PET_GROUND + 10;
   if (!cerca) return false;
   if (mv.phase == MV_WAIT) {  // abrirlo: lo que trae, ahora (un regalo, a la mochila)
-    if (mv.m.type == MT_GIFT && mv.m.item < ITEM_COUNT && !friendTestMode())
-      pet.give(mv.m.item, mv.m.qty ? (mv.m.qty > 5 ? 5 : mv.m.qty) : 1);
+    bool regalo = mv.m.type == MT_GIFT && mv.m.item < ITEM_COUNT && !friendTestMode();
+    if (regalo) pet.give(mv.m.item, mv.m.qty ? (mv.m.qty > 5 ? 5 : mv.m.qty) : 1);
     mailPopArrival();
+    if (regalo) pet.flushSave();  // la llegada ya se borro de la NVS: si no, un reinicio perdia el regalo
     mv.phase = MV_OPEN;
     mv.until = now + 8000;
     sfxPlay(SFX_MEDAL);

@@ -13,7 +13,7 @@ Play chess, earn points, and spend them on candy, eggs and potions for a compani
 [![Board](https://img.shields.io/badge/board-ESP32--S3%20AMOLED%201.75-E7352C?logo=espressif&logoColor=white)](#hardware)
 [![UI](https://img.shields.io/badge/UI-English%20%7C%20%E7%AE%80%E4%BD%93%E4%B8%AD%E6%96%87-4C9BE8)](README.zh-CN.md)
 
-**[chess.com points](#why-this-fork)** · **[What's different](#whats-different-from-upstream)** · **[Hardware](#hardware)** · **[Build and flash](#build-and-flash)** · **[How to play](#how-to-play)**
+**[chess.com points](#why-this-fork)** · **[What's different](#whats-different-from-upstream)** · **[Hardware](#hardware)** · **[Case](#3d-printed-case)** · **[Build and flash](#build-and-flash)** · **[How to play](#how-to-play)**
 
 **English** · [简体中文](README.zh-CN.md)
 
@@ -70,7 +70,7 @@ potions → the next morning the pet cheers about yesterday's games.**
 |---|---|---|
 | Species | Gen 1 (151) | Gen 1-9 (1025), one Pokédex page per region |
 | Languages | 8 | English + Simplified Chinese |
-| Growing up | +1 level per hour, evolution by level, battle stats, ball minigame | evolution by age, a day of Mega Evolution, natures, sickness, abilities, no battles |
+| Growing up | +1 level per hour, evolution by level, battle stats, ball minigame | evolution by age with levels that match it, a day of Mega Evolution, natures, sickness, abilities, no battles |
 | Tournament | — | eleven events against two random Pokémon (track, pool, jumps, weights, climbing, diving, skating, torch run, trail run), played by stats and type, no fighting |
 | Gyms | — | 8 gyms per region (72), 3-on-3 team events against the leaders and their anime Pokémon, badges, Elite Four and Champion |
 | Fun | — | orchard, fishing, mining and treasure hunts by type; cost chess points, give fruits that raise training, eggs and Mega Stone shards |
@@ -91,9 +91,82 @@ potions → the next morning the pet cheers about yesterday's games.**
   speaker on the MX1.25 speaker connector.
 - Optional: the 3D-printed Poké Ball case from upstream
   ([MakerWorld](https://makerworld.com/es/models/2937822-tamapoke-a-pokemon-pokeball-tamagotchi)),
-  with 3 M2×5 self-tapping screws and 6 magnets (6×2 mm).
+  with 3 M2×4 mm screws and 4 disc magnets (6×2 mm). See
+  [3D-printed case](#3d-printed-case).
+
+### 3D-printed case
+
+The case is upstream's Poké Ball on
+[MakerWorld](https://makerworld.com/es/models/2937822-tamapoke-a-pokemon-pokeball-tamagotchi),
+a remix of [“Pokeball” by yoyothechicken](https://makerworld.com/es/models/839922-pokeball).
+The board sits in the red top half with the screen tilted toward you; the
+optional battery and speaker go in the white bottom half. The print files and
+print settings are on the MakerWorld page. Its firmware steps are for the
+original project: for this fork, use the [web installer](#web-installer).
+
+Besides the printed parts (two halves, a hinge ring, the power-button cover, the
+button and the 4 alignment pins), you need:
+
+- 3 M2×4 mm screws and a small Phillips screwdriver
+- 4 disc magnets, 6×2 mm
+- a little glue for the button
+- optional: a LiPo of about 42 × 25.5 × 11 mm and a speaker of about
+  30.5 × 20.5 × 6.7 mm (the sizes the MakerWorld page gives); a straight USB-C
+  cable charges it through the slot in the side, without opening the ball
+
+Putting it together:
+
+1. **Flash and prepare the SD card first**, while the board is easy to reach
+   (see [Build and flash](#build-and-flash)).
+2. **Board:** lay it in the top half with the screen facing out through the
+   window and fix it with the 3 M2×4 mm screws. Tighten only until the board
+   no longer wobbles. Seat it gently: never bend or pull the screen's flex
+   cable, or the panel can die.
+3. **Power button** (only on the "external power button" print): fit the
+   printed cover over the board's PWR button.
+4. **Battery and speaker** (optional): put them in their pockets in the bottom
+   half and plug them into the board's BAT and SPK connectors.
+5. **Alignment pins:** push the 4 pins into the holes in the rim, the two 8 mm
+   ones at the back and the two 6 mm ones at the front.
+6. **Magnets:** press the 4 magnets into their recesses. Check that the two
+   halves attract before you glue anything.
+7. **Hinge:** clip each half onto the hinge ring. The print-in-place ring is the
+   easy one; if it doesn't turn freely, print the other ring and push a short
+   piece of 1.75 mm filament through it as the hinge pin. The ball now opens
+   like a clamshell and the magnets keep it shut.
+8. **Button:** push the inner button into the outer one and glue it onto one of
+   the halves.
 
 ## Build and flash
+
+The easiest way is the [web installer](#web-installer): a browser is all you
+need. To build the firmware yourself, see [Build with Arduino](#build-with-arduino).
+
+### Web installer
+
+1. On a computer, open the [web installer](https://mu-muu.github.io/TamaPoke/web/)
+   in **Chrome** or **Edge** (other browsers can't talk to USB devices).
+2. Plug the board in with a USB-C cable, press **Install TamaPoke** and pick the
+   board's port. It takes about a minute.
+3. **Erase device:** tick it only on a new board or one that ran other
+   firmware. **When updating, leave it unticked:** the installer then only
+   writes the program, so your pet, points, friends and Wi-Fi stay. Ticking it
+   wipes the board, pet included.
+4. No port shows up? Try another cable (some only charge), or hold **BOOT**
+   while plugging it in.
+5. **SD card:** press **Download the SD files** on the same page (or get
+   `tamapoke-sd.zip` from the
+   [latest release](https://github.com/Mu-Muu/TamaPoke/releases/latest)),
+   unzip it, copy the `mons` folder to the root of a FAT32 microSD card, put
+   the card in the board and restart it. See [SD card](#sd-card).
+6. **Wi-Fi:** swipe down to settings and tap **Wi-Fi** (see [Wi-Fi](#wi-fi)).
+
+The installer build has neutral settings: an English UI (switch to Chinese in
+settings), time and weather for wherever your internet connection is (found
+once the board is online) or for a city you enter on the Wi-Fi page, and
+chess.com points once you enter a username on that same page.
+
+### Build with Arduino
 
 Arduino core **esp32 3.3.x** (tested with 3.3.10) and these libraries
 (tested versions):
@@ -116,14 +189,6 @@ arduino-cli compile --fqbn "$FQBN" --output-dir build .
 arduino-cli upload --fqbn "$FQBN" -p /dev/cu.usbmodemXXXX --input-dir build .
 ```
 
-Or skip the build: the [web installer](https://mu-muu.github.io/TamaPoke/web/) flashes this fork
-from Chrome or Edge. It has neutral settings (English UI; time and weather for
-wherever your internet connection is, found once the board is online, or for a
-city you enter on the Wi-Fi page; for chess points, enter the chess.com username
-there too),
-and the SD files are `tamapoke-sd.zip` on the
-[latest release](https://github.com/Mu-Muu/TamaPoke/releases/latest).
-
 ### Personal settings
 
 Owner name, chess.com username, weather coordinates and time zone go in
@@ -145,8 +210,10 @@ only from the Wi-Fi page).
 
 ### SD card
 
-Copy the folder [`tools/sdcard/mons`](tools/sdcard/mons) to the root of the
-card, so the files end up in `/mons/` (about 290 MB: sprites, shiny sprites,
+Copy the folder [`tools/sdcard/mons`](tools/sdcard/mons) (also in
+`tamapoke-sd.zip` on the
+[latest release](https://github.com/Mu-Muu/TamaPoke/releases/latest)) to the
+root of the card, so the files end up in `/mons/` (about 290 MB: sprites, shiny sprites,
 Pokédex thumbnails and the 9 region landscapes). `python3 tools/send_sd.py`
 can also send them over USB, but that is slow for the full set.
 
@@ -248,6 +315,10 @@ laying it face down puts it to sleep, and a hard shake makes it dizzy.
   be at 40 or more. When it's ready, a button lets you evolve or keep the
   current form. An **evolution potion** (100 points) skips the wait in days; the
   needs still have to be at 40 or more.
+- The **level** follows evolution: in each stage it climbs to the level that
+  species evolves at in the games (Bulbasaur 16, Ivysaur 32) right when it is
+  due to evolve. In a final form, or while it waits to evolve, it gains a level
+  every 4 hours, up to 100. Level medals at 10, 20 and 30.
 - In its final form, after **7 days** it asks to retire (you can choose to stay
   together for a while). It then moves to the **farm**, where you can take it
   back any time; the album keeps the page, and you open a new egg.
@@ -445,16 +516,28 @@ With a friend nearby:
 - **Race and gyms together**: a tournament race with a third random rival; at a gym the one who invites brings two and the friend's companion is the third.
 - **Photo**: one per friend per day, the first time you meet, kept on the SD card and shown on the friend page. The Pokédex also marks species a friend has raised (they don't count as raised by you).
 
-**Mail (when apart)**: after meeting once, pick the friend in the list and send:
+**Mail (when apart)**: after meeting once, both boards know each other's mailbox. In the **FRIENDS** list a
+friend you can write to says "Visit, card, gift"; one that says "Meet once to mail" (for example a friend made
+before mail existed) needs one more **MEET** first. Tap the friend and pick:
 
-- **Visit**: your companion goes to their screen, says hello and stays a few minutes.
-- **Postcard**: a messenger (your companion or a farm Pokémon) carries one of 12 phrases and one of 8 pictures.
-- **Gift**: an item from the bag, taken from the bag when sent.
+- **VISIT**: your companion goes to their screen. Their board says whose Pokémon came to see them, and your
+  companion stays there 3 minutes. You need a companion (not an egg), and you can visit each friend up to 3 times a day.
+- **POSTCARD**: pick a messenger (your companion or any Pokémon on your farm; it only carries the card and
+  doesn't leave your farm), then one of 12 phrases and one of 8 pictures. The phrases: Hello! · Miss you! ·
+  Let's play! · See you tomorrow! · Good morning! · Sweet dreams! · Thank you! · You can do it! · Happy
+  birthday! · Had a great day! · Won at chess today! · My Pokemon evolved!
+- **GIFT**: pick a messenger, then an item from the bag. It leaves your bag when you send it.
 
-Mail arrives at the next sync: every 15 minutes on USB, with the weather on battery, or with **SYNC NOW**. The
-messenger walks onto the friend's main screen and waits with an envelope or a gift box until it is tapped; a
-gift goes into the bag. Mail is resent every 4 hours until the friend's board confirms it, and a gift that
-never arrives comes back after 14 days. Meeting and mail **give no points**.
+The board asks before anything goes, then says "Sent! Arrives at the next sync". Both boards need Wi-Fi. Mail
+goes out and comes in at the next sync: every 15 minutes on USB, with the weather on battery, or sooner with
+**SYNC NOW** at the bottom of the friends page. The friend's row shows how many postcards and gifts are
+still on the way; with too many waiting, the board asks you to wait a bit.
+
+On the friend's board the messenger walks onto the main screen and waits with an envelope or a gift box until
+someone taps it ("Tap to open"). It shows the postcard or the gift, stays 3 minutes and leaves; a gift goes
+into the bag. Postcards and gifts are resent every 4 hours until the friend's board confirms them; a visit is
+sent only once. A gift that isn't confirmed within 14 days comes back to your bag ("A gift came back to your
+bag"). You can have up to 4 friends. Meeting and mail **give no points**.
 
 Mail goes through an internet mailbox, [ntfy.sh](https://ntfy.sh) by default (free, no account). Everything is
 encrypted and signed with the key made when the two boards paired, so the mailbox only sees noise. To use your

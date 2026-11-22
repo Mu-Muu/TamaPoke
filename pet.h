@@ -6,9 +6,12 @@
 // 1 tick = 1 minuto de juego. Baja este valor para probar mas rapido
 // (p. ej. 5000UL = las estadisticas caen 12x mas rapido).
 #define PET_TICK_MS 60000UL
-// Minutos de juego por nivel. Con 60, CHARMANDER evoluciona a las ~16 h
-// de juego con cuidado perfecto. Baja a 1 para ver evoluciones al momento.
-#define MINUTES_PER_LEVEL 60
+// Nivel (issue #8): va con la evolucion. En cada etapa sube hasta el nivel de evolucion de la
+// especie (el de los juegos: Bulbasaur 16, Ivysaur 32) justo a la edad en que le toca
+// evolucionar; si no evoluciona entonces, y en las formas finales, +1 cada LEVEL_SLOW_MIN.
+// Ver levelOf.
+#define LEVEL_SLOW_MIN 240
+#define LEVEL_MAX 100
 #define EAT_ANIM_MS 2500UL
 #define HEART_MS 1500UL
 #define EVOLVE_ANIM_MS 5200UL              // animacion de evolucion (mas larga = mas epica)
@@ -192,10 +195,12 @@ struct PetRec {
 static inline uint32_t farmAge(uint32_t ageMinutes, uint32_t farmEpoch, uint32_t now) {
   return ageMinutes + ((farmEpoch && now > farmEpoch) ? (now - farmEpoch) / 60 / FARM_GROWTH_DIV : 0);
 }
-static inline uint16_t levelOfAge(uint32_t ageMinutes) {
-  uint32_t lv = 1 + ageMinutes / MINUTES_PER_LEVEL;
-  return lv > 999 ? 999 : (uint16_t)lv;
-}
+// nivel de un individuo (especie, veces que ha evolucionado y edad en minutos de juego): el
+// del compañero y el de la granja. La etapa es la del individuo, no la de la especie: un
+// Pikachu o un Snorlax que salen del huevo empiezan en el 1 aunque tengan forma anterior
+uint16_t levelOf(int16_t dex, uint8_t evoCount, uint32_t ageMinutes);
+// primera edad con ese nivel (UINT32_MAX si no llega en 60 dias)
+uint32_t ageForLevel(int16_t dex, uint8_t evoCount, uint16_t level);
 
 // una pagina del album de recuerdos: como acabo cada compañero (SD /memoir.bin)
 #define MEM_REC_VER 1
@@ -214,7 +219,7 @@ enum : uint8_t { FOOD_BERRY = 0, FOOD_CANDY, FOOD_PILL };
 // ya no existe: no se reutiliza, para que una ficha guardada antes (NVS o
 // granja) no aparezca con una medalla nueva que no gano; se borra al cargar.
 enum : uint16_t {
-  MED_LV10 = 1 << 0, MED_LV25 = 1 << 1, MED_LV50 = 1 << 2,
+  MED_LV10 = 1 << 0, MED_LV20 = 1 << 1, MED_LV30 = 1 << 2,  // 20 y 30: antes 25 y 50 (nivel a 1/h)
   MED_RETIRED = 1 << 3, MED_STREAK7 = 1 << 4, MED_BOND = 1 << 5,
   MED_FINAL = 1 << 6, MED_FIT = 1 << 7,
   MED_CURED = 1 << 8,      // curado con medicina
@@ -486,14 +491,13 @@ public:
     fullness = clamp100(f); joy = clamp100(j); energy = clamp100(e); hygiene = clamp100(h);
     save();
   }
-  // uint16_t, no uint8_t: con MINUTES_PER_LEVEL=60 el nivel son las horas, asi
-  // que un uint8_t da la vuelta a 0 en el nivel 256, a los ~10,6 dias. Y eso se
-  // alcanza jugando normal, porque "quedaros juntos" permite posponer la
-  // despedida indefinidamente. Se topa en 999 en vez de desbordar.
+  // el de su especie y edad, pero nunca por debajo del que tenia al evolucionar (lvFloor:
+  // evolucionar tarde a una etapa lenta, como Caterpie -> Metapod, lo bajaria)
   uint16_t level() const {
-    uint32_t lv = 1 + ageMinutes / MINUTES_PER_LEVEL;
-    return lv > 999 ? 999 : (uint16_t)lv;
+    uint16_t lv = levelOf(speciesId, evoCount, ageMinutes);
+    return lv < lvFloor ? lvFloor : lv;
   }
+  void levelSpan(uint32_t &into, uint32_t &span) const;  // minutos dentro del nivel y lo que dura
   bool isRegistered(int16_t dex) const {
     return dex >= 1 && dex <= PET_DEX_MAX && (dexReg[(dex - 1) >> 3] & (1 << ((dex - 1) & 7)));
   }
@@ -551,6 +555,7 @@ private:
   bool starterPick = false;     // primera partida: esperando que el jugador elija inicial
   uint8_t neglectTicks = 0;
   uint16_t goodTicks = 0;  // racha bien cuidado: forja la DEF (se guarda)
+  uint16_t lvFloor = 0;    // nivel al evolucionar por ultima vez: el nivel no baja de ahi (se guarda)
   void forgeEndurance();   // un minuto mas de racha (o se rompe si algo baja de 40)
   uint32_t ceremonyUntil = 0;
   uint8_t bondToday = 0;       // tope diario de subida de vinculo

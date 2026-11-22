@@ -311,27 +311,99 @@ TEST(tick, la_racha_de_resistencia_sobrevive_a_un_reinicio) {
 }
 
 // ---------------------------------------------------------------- niveles
-TEST(level, un_nivel_por_hora_de_juego) {
-  Pet p;
-  makePet(p, 4);
-  CHECK_EQ(p.level(), (uint8_t)1);
-  p.ageMinutes = 59;
-  CHECK_EQ(p.level(), (uint8_t)1);
-  p.ageMinutes = 60;
-  CHECK_EQ(p.level(), (uint8_t)2);
-  p.ageMinutes = 24 * 60;
-  CHECK_EQ(p.level(), (uint8_t)25);
+// El nivel va con la evolucion (issue #8: un Bulbasaur de nivel 70 sin evolucionar no tenia
+// sentido): en cada etapa sube hasta el nivel de evolucion de la especie (el de los juegos)
+// justo cuando le toca evolucionar; despues, y en las formas finales, +1 cada 4 h hasta el 100.
+TEST(level, llega_al_nivel_de_evolucion_cuando_toca_evolucionar) {
+  CHECK_EQ(levelOf(1, 0, 0), (uint16_t)1);                    // Bulbasaur evoluciona al 16
+  CHECK_EQ(levelOf(1, 0, EVO1_AGE_MIN - 1), (uint16_t)15);
+  CHECK_EQ(levelOf(1, 0, EVO1_AGE_MIN), (uint16_t)16);
+  CHECK_EQ(levelOf(2, 1, EVO1_AGE_MIN), (uint16_t)16);        // Ivysaur: del 16 al 32 en 2 dias
+  CHECK_EQ(levelOf(2, 1, EVO2_AGE_MIN), (uint16_t)32);
+  CHECK_EQ(levelOf(3, 2, EVO2_AGE_MIN), (uint16_t)32);        // Venusaur, forma final
+  CHECK_EQ(levelOf(3, 2, EVO2_AGE_MIN + LEVEL_SLOW_MIN), (uint16_t)33);
+  CHECK_EQ(levelOf(3, 2, FAREWELL_AGE_MIN), (uint16_t)44);     // a los 7 dias, al despedirse
+  // sin evolucionar a su hora (descuidos, "mantener forma"): sigue subiendo despacio
+  CHECK_EQ(levelOf(1, 0, EVO1_AGE_MIN + 2 * LEVEL_SLOW_MIN), (uint16_t)18);
+  // los que no evolucionan nunca (Mewtwo): +1 cada 4 h desde el 1, con tope en el 100
+  CHECK_EQ(levelOf(150, 0, 71 * 60), (uint16_t)18);
+  CHECK_EQ(levelOf(150, 0, 400u * 24 * 60), (uint16_t)LEVEL_MAX);
+  // ageForLevel: la primera edad con ese nivel
+  CHECK_EQ(ageForLevel(150, 0, 2), (uint32_t)LEVEL_SLOW_MIN);
+  CHECK_EQ(levelOf(1, 0, ageForLevel(1, 0, 10)), (uint16_t)10);
+  CHECK_EQ(levelOf(1, 0, ageForLevel(1, 0, 10) - 1), (uint16_t)9);
 }
 
-// Arreglado en v1.8: level() era uint8_t y daba la vuelta a 0 a los ~10,6 dias
-TEST(level, no_desborda_con_mascotas_longevas) {
+// en ninguna especie ni etapa baja al crecer, y al evolucionar a su hora la forma nueva empieza
+// donde acabo la anterior
+TEST(level, nunca_baja_con_la_edad_ni_al_evolucionar_a_su_hora) {
+  static const uint32_t T[3] = { EVO1_AGE_MIN, EVO2_AGE_MIN, EVO3_AGE_MIN };
+  int fallos = 0;
+  for (int d = 1; d <= DEX_COUNT && fallos < 5; d++) {
+    for (uint8_t k = 0; k <= 2; k++) {
+      uint16_t antes = 0;
+      for (uint32_t m = 0; m <= 12u * 24 * 60; m += 30) {
+        uint16_t l = levelOf(d, k, m);
+        if (l < antes || l < 1 || l > LEVEL_MAX) {
+          CHECK_MSG(false, std::string("baja o se sale: ") + DEX_TBL[d].name);
+          fallos++;
+          break;
+        }
+        antes = l;
+      }
+      int16_t sig[1 + NUM_DEX_BRANCHES];
+      int n = 0;
+      if (DEX_TBL[d].evolvesTo) sig[n++] = DEX_TBL[d].evolvesTo;
+      for (int i = 0; i < NUM_DEX_BRANCHES; i++)
+        if (DEX_BRANCHES[i].from == d) sig[n++] = DEX_BRANCHES[i].to;
+      for (int i = 0; i < n && k < 2; i++)
+        if (levelOf(sig[i], k + 1, T[k]) < levelOf(d, k, T[k]) && levelOf(d, k, T[k]) == DEX_TBL[d].evolveLevel) {
+          CHECK_MSG(false, std::string("baja al evolucionar: ") + DEX_TBL[d].name);
+          fallos++;
+        }
+    }
+  }
+  // del huevo empieza en el 1 aunque la especie tenga forma anterior (Pichu -> Pikachu)
+  CHECK_EQ(levelOf(25, 0, 0), (uint16_t)1);
+  CHECK_EQ(levelOf(25, 1, EVO1_AGE_MIN), (uint16_t)DEX_TBL[172].evolveLevel);
+}
+
+// evolucionar tarde (Caterpie al 7 y Metapod al 10: una etapa lenta) o con la pocion: el
+// nivel no baja nunca, y el suelo se guarda
+TEST(level, al_evolucionar_tarde_o_con_pocion_no_baja) {
   Pet p;
-  makePet(p, 4);
-  p.ageMinutes = 254 * 60;
-  uint8_t before = p.level();
-  CHECK_EQ(before, (uint8_t)255);
-  p.ageMinutes = 255 * 60;  // nivel 256 -> deberia seguir subiendo (o saturar)
-  CHECK_MSG(p.level() >= before, "el nivel nunca deberia bajar al envejecer");
+  makePet(p, 10);  // Caterpie
+  p.ageMinutes = EVO1_AGE_MIN + 24 * 60;  // un dia tarde
+  setStats(p, 100, 100, 100, 100);
+  uint16_t antes = p.level();
+  CHECK_EQ(antes, (uint16_t)13);
+  CHECK(p.canEvolveNow());
+  p.evolve();
+  CHECK_EQ(p.speciesId, (int16_t)11);
+  CHECK(p.level() >= antes);
+  Pet q;
+  q.begin();
+  CHECK_EQ(q.level(), p.level());
+  Pet r;
+  makePet(r, 1);  // Bulbasaur, con un dia y la pocion de evolucion
+  r.ageMinutes = 24 * 60;
+  r.bag[ITEM_POTION_EVO] = 1;
+  CHECK(r.useEvoPotion());
+  setStats(r, 100, 100, 100, 100);
+  r.evolve();
+  CHECK_EQ(r.speciesId, (int16_t)2);
+  CHECK_EQ(r.level(), (uint16_t)16);  // salta al nivel con el que Bulbasaur evoluciona
+}
+
+// la barra de la ficha: minutos dentro del nivel y cuanto dura
+TEST(level, la_barra_del_siguiente_nivel) {
+  Pet p;
+  makePet(p, 150);
+  p.ageMinutes = 60;
+  uint32_t dentro = 0, tramo = 0;
+  p.levelSpan(dentro, tramo);
+  CHECK_EQ(dentro, (uint32_t)60);
+  CHECK_EQ(tramo, (uint32_t)LEVEL_SLOW_MIN);
 }
 
 // ---------------------------------------------------------------- evolucion
@@ -508,7 +580,7 @@ TEST(evolve, boton_de_evolucion_se_pospone_al_declinar) {
   p.declineEvolve();
   CHECK_MSG(!p.wantEvolveButton(), "'mantener forma' quita el boton");
   CHECK_MSG(p.canEvolveNow(), "pero la evolucion sigue disponible");
-  p.ageMinutes = EVO1_AGE_MIN + 60;  // sube de nivel: se re-ofrece
+  p.ageMinutes = EVO1_AGE_MIN + LEVEL_SLOW_MIN;  // sube de nivel: se re-ofrece
   CHECK(p.wantEvolveButton());
 }
 
@@ -522,7 +594,7 @@ TEST(stats, formula_base_por_genes_mas_nivel_y_entreno) {
   CHECK_EQ(p.atkStat(), (uint16_t)(52 + 1));
   CHECK_EQ(p.defStat(), (uint16_t)(43 + 1));
   CHECK_EQ(p.speStat(), (uint16_t)(65 + 1));
-  p.ageMinutes = 9 * 60;  // nivel 10
+  p.ageMinutes = ageForLevel(4, 0, 10);  // nivel 10
   p.trAtk = 20;
   CHECK_EQ(p.atkStat(), (uint16_t)(52 + 10 + 20));
   p.geneAtk = 110;
@@ -1317,10 +1389,25 @@ TEST(medals, nivel_10_da_medalla) {
   Pet p;
   makePet(p, 4);
   CHECK(!p.hasMedal(MED_LV10));
-  p.ageMinutes = 9 * 60 - 1;
+  p.ageMinutes = ageForLevel(4, 0, 10) - 1;
   advance(p, 1);
   CHECK(p.hasMedal(MED_LV10));
   CHECK(p.showMedal());
+}
+
+// con el nivel nuevo (mas lento) las de nivel son 10, 20 y 30
+TEST(medals, nivel_20_y_30_dan_medalla) {
+  Pet p;
+  makePet(p, 4);
+  setStats(p, 100, 100, 100, 100);
+  p.ageMinutes = ageForLevel(4, 0, 20) - 1;
+  advance(p, 1);
+  CHECK(p.hasMedal(MED_LV20));
+  CHECK(!p.hasMedal(MED_LV30));
+  p.ageMinutes = ageForLevel(4, 0, 30) - 1;
+  setStats(p, 100, 100, 100, 100);
+  advance(p, 1);
+  CHECK(p.hasMedal(MED_LV30));
 }
 
 // sin sobrepeso, nivel 5 y cero descuidos
@@ -1328,7 +1415,7 @@ TEST(medals, en_forma_llega_al_nivel_5) {
   Pet p;
   makePet(p, 4);
   p.weight = 0;
-  p.ageMinutes = 4 * 60 - 1;
+  p.ageMinutes = ageForLevel(4, 0, 5) - 1;
   advance(p, 1);
   CHECK(p.hasMedal(MED_FIT));
   CHECK_EQ(p.totalMedals, (uint16_t)1);
@@ -1336,7 +1423,7 @@ TEST(medals, en_forma_llega_al_nivel_5) {
   Pet q;
   makePet(q, 4);
   q.careMistakes = 1;   // un descuido la deja fuera
-  q.ageMinutes = 4 * 60 - 1;
+  q.ageMinutes = ageForLevel(4, 0, 5) - 1;
   advance(q, 1);
   CHECK(!q.hasMedal(MED_FIT));
 }
@@ -1345,7 +1432,7 @@ TEST(medals, cada_medalla_nueva_suma_al_total) {
   Pet p;
   makePet(p, 4);
   p.weight = 0;
-  p.ageMinutes = 9 * 60 - 1;
+  p.ageMinutes = ageForLevel(4, 0, 10) - 1;
   advance(p, 1);  // cruza nivel 10: MED_LV10 + MED_FIT de golpe
   CHECK(p.hasMedal(MED_LV10));
   CHECK(p.hasMedal(MED_FIT));
@@ -2608,7 +2695,7 @@ TEST(farm, en_la_granja_crece_a_un_decimo_y_vuelve_sano) {
   Pet a;
   makePet(a, 4);
   a.lastSeenEpoch = 1000u * 86400;
-  a.ageMinutes = 7 * 60;  // Lv.8
+  a.ageMinutes = 7 * 60;
   a.sick = true;
   a.fullness = 5;
   a.poops = 3;
@@ -2622,7 +2709,7 @@ TEST(farm, en_la_granja_crece_a_un_decimo_y_vuelve_sano) {
   b.lastSeenEpoch = 1000u * 86400 + 3 * 86400;
   b.importRec(r);
   CHECK_EQ(b.ageMinutes, (uint32_t)(7 * 60 + 3 * 24 * 60 / FARM_GROWTH_DIV));
-  CHECK_EQ(b.level(), (uint16_t)15);
+  CHECK_EQ(b.level(), levelOf(4, 0, 7 * 60 + 3 * 24 * 60 / FARM_GROWTH_DIV));  // Charmander: Lv.3
   CHECK(!b.sick);
   CHECK(b.fullness >= 80);
   CHECK_EQ(b.poops, (uint8_t)0);
@@ -2632,7 +2719,7 @@ TEST(farm, en_la_granja_crece_a_un_decimo_y_vuelve_sano) {
 TEST(farm, el_nivel_de_la_granja_se_calcula_con_la_hora) {
   CHECK_EQ(farmAge(600, 0, 2000000), (uint32_t)600);  // sin fecha de entrada: no crece
   CHECK_EQ(farmAge(600, 1000000, 1000000 + 36000), (uint32_t)(600 + 60));  // 10 h -> 1 h
-  CHECK_EQ(levelOfAge(farmAge(0, 1000000, 1000000 + 10 * 3600 * 5)), (uint16_t)6);
+  CHECK_EQ(levelOf(150, 0, farmAge(0, 1000000, 1000000 + 10 * 3600 * 8)), (uint16_t)3);  // 80 h en la granja = 8 h de edad
 }
 
 TEST(farm, sacarlo_enseguida_no_lo_cambia) {

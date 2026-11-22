@@ -166,7 +166,8 @@ void handleSerial() {
     }
     Serial.println("DONE");
   } else if (line.startsWith("LVL ")) {
-    pet.ageMinutes = (uint32_t)line.substring(4).toInt() * MINUTES_PER_LEVEL;
+    uint32_t a = ageForLevel(pet.speciesId, pet.evoCount, (uint16_t)line.substring(4).toInt());
+    if (a != UINT32_MAX) pet.ageMinutes = a;  // la primera edad con ese nivel
     Serial.println("DONE");
   } else if (line.startsWith("TIME ")) {
     uint32_t e = (uint32_t)line.substring(5).toInt();
@@ -345,7 +346,7 @@ void handleSerial() {
       Serial.println("copia: no se puede leer");
     } else {
       Serial.printf("copia: dex=%d nv=%u edad=%lu min genes=%u/%u/%u tr=%u/%u/%u vinculo=%u medallas=0x%X shiny=%u apodo=%s\n",
-                    r.speciesId, levelOfAge(r.ageMinutes), (unsigned long)r.ageMinutes, r.geneAtk, r.geneDef,
+                    r.speciesId, levelOf(r.speciesId, r.ver >= 4 ? r.evoCount : 0, r.ageMinutes), (unsigned long)r.ageMinutes, r.geneAtk, r.geneDef,
                     r.geneSpe, r.trAtk, r.trDef, r.trSpe, r.bond, r.medals, r.shiny, r.nick);
       if (line.endsWith(" 1")) {
         bool ya = pet.speciesId == r.speciesId;
@@ -664,9 +665,18 @@ void consoleMail(String a) {
       m.sticker = (uint8_t)(arg % MAIL_STICKERS);
       m.item = (uint8_t)(arg < ITEM_COUNT ? arg : 0);
       m.qty = 1;
-      bool ok = mailSend(linkFriendAt(fi).pid, m);
-      if (ok && m.type == MT_GIFT && !friendTestMode() && pet.bag[m.item]) { pet.bag[m.item]--; pet.markDirty(); }
-      Serial.println(ok ? "correo: a la cola (sale en la proxima vuelta de la red)" : "correo: cola llena");
+      bool deMochila = m.type == MT_GIFT && !friendTestMode();
+      if (deMochila && !pet.bag[m.item]) {  // si no, el regalo salia de la nada (y a los 14 dias volvia)
+        Serial.println("correo: ese objeto no esta en la mochila (FRIENDTEST 1 para probar sin gastarlo)");
+      } else {
+        bool ok = mailSend(linkFriendAt(fi).pid, m);
+        if (ok && deMochila) {
+          pet.bag[m.item]--;
+          pet.markDirty();
+          pet.flushSave();
+        }
+        Serial.println(ok ? "correo: a la cola (sale en la proxima vuelta de la red)" : "correo: cola llena");
+      }
     }
   } else {
     Serial.println("MAIL INFO | SYNC | FAKE v|c|g | SEND v|c|g amigo [frase|objeto]");
