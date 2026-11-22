@@ -28,12 +28,27 @@ uint16_t phoneStepsCode() {
   return code;
 }
 
+static PhoneCodeGuard guard;  // solo la tarea de red (los tres manejadores)
+
+// el codigo de la peticion; si no vale (o hay que esperar), ya contesta el error
+static bool codigoBueno() {
+  uint32_t now = millis();
+  if (!guard.open(now)) {
+    srv->send(429, "application/json", "{\"ok\":false,\"error\":\"wait\"}");
+    return false;
+  }
+  bool ok = srv->hasArg("k") && srv->arg("k").toInt() == phoneStepsCode();
+  guard.result(ok, now);
+  if (!ok) {
+    srv->send(403, "application/json", "{\"ok\":false,\"error\":\"code\"}");
+    if (!guard.open(now)) Serial.println("pasos del movil: demasiados codigos malos, 5 min sin aceptar ninguno");
+  }
+  return ok;
+}
+
 // GET /steps?n=8123&k=1234 (n puede venir con decimales: la suma de Salud)
 static void pasos() {
-  if (!srv->hasArg("k") || srv->arg("k").toInt() != phoneStepsCode()) {
-    srv->send(403, "application/json", "{\"ok\":false,\"error\":\"code\"}");
-    return;
-  }
+  if (!codigoBueno()) return;
   float n = srv->hasArg("n") ? srv->arg("n").toFloat() : -1;
   if (n < 0 || n > 200000) {
     srv->send(400, "application/json", "{\"ok\":false,\"error\":\"n\"}");
@@ -50,10 +65,7 @@ static void pasos() {
 
 // GET /hockey?min=15&k=1234: minutos de practica de hockey (SuperDeker)
 static void hockey() {
-  if (!srv->hasArg("k") || srv->arg("k").toInt() != phoneStepsCode()) {
-    srv->send(403, "application/json", "{\"ok\":false,\"error\":\"code\"}");
-    return;
-  }
+  if (!codigoBueno()) return;
   long m = srv->hasArg("min") ? srv->arg("min").toInt() : 0;
   if (m < 1 || m > 180) {
     srv->send(400, "application/json", "{\"ok\":false,\"error\":\"min\"}");
@@ -70,10 +82,7 @@ static void hockey() {
 // GET /reward?pts=5&k=1234: premio de casa (un padre, por lo que quiera); el tope del dia lo
 // pone la mascota (Pet::reward)
 static void premio() {
-  if (!srv->hasArg("k") || srv->arg("k").toInt() != phoneStepsCode()) {
-    srv->send(403, "application/json", "{\"ok\":false,\"error\":\"code\"}");
-    return;
-  }
+  if (!codigoBueno()) return;
   long n = srv->hasArg("pts") ? srv->arg("pts").toInt() : 0;
   if (n < 1 || n > REWARD_PTS_REQ) {
     srv->send(400, "application/json", "{\"ok\":false,\"error\":\"pts\"}");
