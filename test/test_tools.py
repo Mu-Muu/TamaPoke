@@ -3,6 +3,7 @@
 
   python3 test/test_tools.py
 """
+import importlib.util
 import os
 import re
 import shutil
@@ -61,6 +62,7 @@ class TestVoice(unittest.TestCase):
         self.assertNotEqual(r.returncode, 0)
 
 
+@unittest.skipUnless(importlib.util.find_spec('serial'), 'sin pyserial')  # send_sd.py lo importa al empezar
 class TestSendSd(unittest.TestCase):
     def test_dir_sin_ficheros_no_sube_los_sprites(self):
         # sin *.wav, "--dir voice/<amigo>" subia todos los sprites a esa carpeta: ahora para antes de abrir el puerto

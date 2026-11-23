@@ -2499,15 +2499,17 @@ TEST(points, premio_de_casa_sin_tope_diario) {
   makePet(p, 4);
   p.lastSeenEpoch = SAB * 86400 + 43200;
   p.points = 0;
+  CHECK_EQ((int)p.reward(REWARD_PTS_REQ), REWARD_PTS_REQ);  // una vez, todo lo que deja el Atajo (100)
+  CHECK_EQ((int)p.reward(0), 0);                            // 0: nada
   CHECK_EQ((int)p.reward(5), 5);
   CHECK_EQ((int)p.reward(10), 10);
   CHECK_EQ((int)p.reward(10), 10);
   CHECK_EQ((int)p.reward(10), 10);  // pasados los 20 de antes
-  CHECK_EQ((int)p.points, 35);
-  CHECK_EQ((int)p.rewardPts, 35);
-  CHECK_EQ((int)p.ptNow.cat[PT_REWARD], 35);  // su propia linea en el libro
+  CHECK_EQ((int)p.points, 135);
+  CHECK_EQ((int)p.rewardPts, 135);
+  CHECK_EQ((int)p.ptNow.cat[PT_REWARD], 135);  // su propia linea en el libro
   CHECK_EQ((int)p.ptNow.cat[PT_OTHER], 0);
-  CHECK_EQ((int)p.ptNow.dayIn[5], 35);        // cuenta como ganado
+  CHECK_EQ((int)p.ptNow.dayIn[5], 135);        // cuenta como ganado
   p.lastSeenEpoch += 86400;  // otro dia: la cuenta de hoy vuelve a empezar
   CHECK_EQ((int)p.reward(4), 4);
   CHECK_EQ((int)p.rewardPts, 4);

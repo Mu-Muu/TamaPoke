@@ -598,7 +598,7 @@ Same conditions as the steps: board plugged in, phone on the home Wi-Fi.
 ### Rewards from a parent's iPhone
 
 A third shortcut lets a parent give points for anything they like (chores, reading,
-a good day): **1 to 10 points at a time, with no daily limit**. The board wakes up and
+a good day): **0 to 100 points at a time, with no daily limit**. The board wakes up and
 shows "REWARD" with the points, and the points book has a "reward" line. Keep it on
 a parent's phone.
 

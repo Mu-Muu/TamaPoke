@@ -15,6 +15,6 @@ bool phoneStepsTake(uint32_t &n);  // bucle principal: los pasos que llegaron (u
 // http://tamapoke.local/hockey?min=MINUTOS&k=CODIGO (el mismo codigo). Se van sumando
 bool phoneHockeyTake(uint16_t &min);  // bucle principal: los minutos que llegaron desde la ultima vez
 // Premio de casa: el Atajo del movil de un padre pregunta cuantos puntos y llama a
-// http://tamapoke.local/reward?pts=PUNTOS&k=CODIGO (de 1 a REWARD_PTS_REQ, pet.h; el mismo codigo)
+// http://tamapoke.local/reward?pts=PUNTOS&k=CODIGO (de 0 a REWARD_PTS_REQ, pet.h; el mismo codigo)
 bool phoneRewardTake(uint8_t &pts);   // bucle principal: los puntos que llegaron desde la ultima vez
 uint16_t phoneStepsCode();         // el codigo (se crea al azar la primera vez, NVS "phone")

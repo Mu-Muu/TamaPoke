@@ -112,9 +112,9 @@ enum : uint8_t { PT_CHESS = 0, PT_STEPS, PT_HOCKEY, PT_REWARD, PT_OTHER, PT_SHOP
 // Un punto cada HOCKEY_MIN_PER_PT minutos del dia, como mucho HOCKEY_PTS_MAX al dia
 #define HOCKEY_MIN_PER_PT 5
 #define HOCKEY_PTS_MAX 6
-// premio de casa: un Atajo del movil de un padre manda puntos (de 1 a REWARD_PTS_REQ cada vez,
-// phonesteps.h); sin tope al dia (issue #13: lo decide el padre)
-#define REWARD_PTS_REQ 10
+// premio de casa: un Atajo del movil de un padre manda puntos (de 0 a REWARD_PTS_REQ cada vez, 0 no
+// da nada; phonesteps.h); sin tope al dia ni por vez pequeño (issue #13: lo decide el padre)
+#define REWARD_PTS_REQ 100
 struct PtsWeek {
   uint16_t week;                   // (dia + 3) / 7: semanas que empiezan en lunes
   uint16_t dayIn[7], dayOut[7];    // por dia (0 = lunes): ganados y gastados

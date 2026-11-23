@@ -75,13 +75,15 @@ static void premio() {
     return;
   }
   long n = srv->hasArg("pts") ? srv->arg("pts").toInt() : 0;
-  if (n < 1 || n > REWARD_PTS_REQ) {
+  if (n < 0 || n > REWARD_PTS_REQ) {
     srv->send(400, "application/json", "{\"ok\":false,\"error\":\"pts\"}");
     return;
   }
-  portENTER_CRITICAL(&mux);
-  pendReward = pendReward + n > 100 ? 100 : pendReward + n;
-  portEXIT_CRITICAL(&mux);
+  if (n > 0) {  // 0: bien, pero nada que dar
+    portENTER_CRITICAL(&mux);
+    pendReward = pendReward + n > 250 ? 250 : pendReward + n;  // uint8_t: dos de 100 seguidos caben
+    portEXIT_CRITICAL(&mux);
+  }
   char r[40];
   snprintf(r, sizeof(r), "{\"ok\":true,\"pts\":%ld}", n);
   srv->send(200, "application/json", r);
