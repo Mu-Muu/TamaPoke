@@ -113,9 +113,8 @@ enum : uint8_t { PT_CHESS = 0, PT_STEPS, PT_HOCKEY, PT_REWARD, PT_OTHER, PT_SHOP
 #define HOCKEY_MIN_PER_PT 5
 #define HOCKEY_PTS_MAX 6
 // premio de casa: un Atajo del movil de un padre manda puntos (de 1 a REWARD_PTS_REQ cada vez,
-// phonesteps.h); como mucho REWARD_PTS_DAY al dia
+// phonesteps.h); sin tope al dia (issue #13: lo decide el padre)
 #define REWARD_PTS_REQ 10
-#define REWARD_PTS_DAY 20
 struct PtsWeek {
   uint16_t week;                   // (dia + 3) / 7: semanas que empiezan en lunes
   uint16_t dayIn[7], dayOut[7];    // por dia (0 = lunes): ganados y gastados
@@ -138,6 +137,7 @@ static inline uint8_t ptWeekday(uint32_t day) { return (uint8_t)((day + 3) % 7);
 // completar la pokedex de una region (todas sus especies criadas alguna vez):
 // puntos, corona en la pokedex y un huevo legendario shiny de esa region
 #define REGION_REWARD_PTS 200
+#define EASY_REGION_REG 10  // regiones faciles: con 10 registradas de una se abre la siguiente
 // pasos (steps.h, con el acelerometro; tambien con la pantalla apagada, pero no con
 // la placa apagada del todo): un punto por cada
 // STEP_PTS_EVERY, como mucho STEP_PTS_MAX al dia; al llegar a STEP_JOY_AT, el
@@ -270,6 +270,7 @@ public:
   int32_t points = START_POINTS;
   uint16_t bag[ITEM_COUNT] = { 0 };
   uint16_t regionDone = 0;    // regiones con la pokedex completa (bit r, orden de regions.h)
+  bool easyRegions = false;   // regiones faciles (casilla del portal Wi-Fi): setEasyRegions
   uint16_t regionEggs = 0;    // huevos legendarios shiny de region sin abrir (bit r)
   uint8_t regionJustDone = 0; // region recien completada + 1 (para celebrarlo)
   uint32_t bornEpoch = 0;     // hora local a la que salio del huevo (0 = no se sabe)
@@ -303,7 +304,7 @@ public:
   uint16_t hockeyDay = 0, hockeyMin = 0;   // hockey: dia y minutos de hoy
   uint8_t hockeyPts = 0;                   // y los puntos ya dados hoy por ellos
   uint16_t rewardDay = 0;                  // premio de casa: dia
-  uint8_t rewardPts = 0;                   // y los puntos ya dados ese dia
+  uint8_t rewardPts = 0;                   // y los puntos ya dados ese dia (se queda en 255)
   bool ptReport = false;                   // hay resumen de la semana pasada por enseñar
   // para la animacion: que comio la ultima vez (FOOD_*) y cuantas veces ha jugado
   uint8_t lastFood = 0;
@@ -348,10 +349,12 @@ public:
   void dbgRegionBanner(int r) { regionJustDone = r + 1; regionUntil = millis() + 6000; }  // consola REGTEST
   void checkRegionOf(int16_t dex);  // ¿completa su region? (al registrar; la consola REGTEST)
   // Las regiones se abren en orden: la siguiente cuando estan registradas todas
-  // las que pueden salir de un huevo (comunes y raras) de la anterior. Los
+  // las que pueden salir de un huevo (comunes y raras) de la anterior, o, con las
+  // regiones faciles, EASY_REGION_REG especies cualesquiera de ella (issue #13). Los
   // huevos solo traen especies de las regiones abiertas.
   bool regionHatchDone(int r) const;
   uint8_t unlockedRegions() const;  // 1..REGION_COUNT (la 0 siempre esta abierta)
+  void setEasyRegions(bool on);     // al quitarlas, lo que ya estaba abierto sigue abierto
   void setWeather(uint8_t pw) { weather = pw; }
   int8_t weatherFeel() const;  // +1 le gusta el tiempo, -1 no (o tiene frio), 0 le da igual
   bool feelsCold() const { return weather == PW_SNOW && weatherFeel() < 0; }
@@ -556,6 +559,7 @@ private:
   uint8_t neglectTicks = 0;
   uint16_t goodTicks = 0;  // racha bien cuidado: forja la DEF (se guarda)
   uint16_t lvFloor = 0;    // nivel al evolucionar por ultima vez: el nivel no baja de ahi (se guarda)
+  uint8_t regionsOpen = 1; // regiones abiertas al quitar las faciles: no se vuelven a cerrar (se guarda)
   void forgeEndurance();   // un minuto mas de racha (o se rompe si algo baja de 40)
   uint32_t ceremonyUntil = 0;
   uint8_t bondToday = 0;       // tope diario de subida de vinculo

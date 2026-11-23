@@ -88,6 +88,7 @@ static const char PAGINA_EN[] PROGMEM = R"(<!doctype html><html><head><meta char
 <meta name="viewport" content="width=device-width,initial-scale=1"><title>TamaPoke</title>
 <style>body{font-family:sans-serif;max-width:420px;margin:24px auto;padding:0 16px}
 input{width:100%;padding:10px;margin:6px 0 14px;font-size:16px;box-sizing:border-box}
+input[type=checkbox]{width:auto;margin:0 8px 0 0}
 button{width:100%;padding:12px;font-size:17px}small{color:#666}</style></head><body>
 <h2>TamaPoke Wi-Fi</h2><p>Your Wi-Fi: the board uses it to sync chess.com points every night and to
 get the weather.</p>
@@ -108,6 +109,10 @@ name, add the state or country after a comma (Springfield, IL). Now: {P}</small>
 <input name="chess" maxlength="25" autocapitalize="none" autocorrect="off" spellcheck="false">
 <small>Turns your chess.com games into points. The first sync (and the first one after a new
 username) only records your current results; earlier games don't pay.</small><br><br>
+<label><input type="checkbox" name="easy" value="1"{E}>Easy regions</label><br>
+<small>For a faster game: the next region opens once 10 Pokémon of a region are registered,
+instead of every common and rare one. If you turn it off later, regions already open stay
+open.</small><br><br>
 <label>Stack-chan voice control (optional)</label>
 <input name="mcp" placeholder="wss://api.xiaozhi.me/mcp/?token=...">
 <small>Only if you have a Stack-chan or another xiaozhi voice assistant: paste the MCP endpoint
@@ -122,6 +127,7 @@ static const char PAGINA_ZH[] PROGMEM = R"(<!doctype html><html><head><meta char
 <meta name="viewport" content="width=device-width,initial-scale=1"><title>TamaPoke</title>
 <style>body{font-family:sans-serif;max-width:420px;margin:24px auto;padding:0 16px}
 input{width:100%;padding:10px;margin:6px 0 14px;font-size:16px;box-sizing:border-box}
+input[type=checkbox]{width:auto;margin:0 8px 0 0}
 button{width:100%;padding:12px;font-size:17px}small{color:#666}</style></head><body>
 <h2>TamaPoke Wi-Fi</h2><p>填 Wi-Fi，用来每晚同步 chess.com 的积分和更新天气。</p>
 <form method="post" action="/save"><p><b>Wi-Fi 1</b>{1}</p>
@@ -137,6 +143,8 @@ button{width:100%;padding:12px;font-size:17px}small{color:#666}</style></head><b
 <label>chess.com 用户名（可不填）</label>
 <input name="chess" maxlength="25" autocapitalize="none" autocorrect="off" spellcheck="false">
 <small>用来把 chess.com 上的对局换成积分。第一次同步（或换了用户名后）只记录当前成绩，不补发以前的分。</small><br><br>
+<label><input type="checkbox" name="easy" value="1"{E}>轻松地区</label><br>
+<small>想玩得快一点：一个地区登记 10 只宝可梦，下一个地区就开放，不用把普通和稀有的都登记齐。之后再取消，已经开放的地区也不会关上。</small><br><br>
 <label>Stack-chan 语音控制（可选）</label>
 <input name="mcp" placeholder="wss://api.xiaozhi.me/mcp/?token=...">
 <small>只有 Stack-chan 或其他小智语音设备才需要：把它 App 里 MCP 页面的接入点地址粘贴到这里。没有就留空。</small><br><br>
@@ -159,6 +167,9 @@ static const char *const MSG_SAVED[LANG_COUNT] = {
   "<meta charset=utf-8><h2>Saved</h2><p>You can leave this hotspot now.</p>",
   "<meta charset=utf-8><h2>已保存</h2><p>可以断开这个热点了。</p>",
 };
+
+// regiones faciles (issue #13): la casilla sale como la tiene el juego y queda como la dejen
+static bool easyPortal = false;
 
 // la pagina con cada red marcada si ya hay una guardada (sin decir cual)
 static void paginaPortal() {
@@ -184,6 +195,7 @@ static void paginaPortal() {
                              : (zh ? "固件里的默认地点" : "the built-in default");
   }
   page.replace("{P}", lugar);
+  page.replace("{E}", easyPortal ? " checked" : "");
   server->send(200, "text/html; charset=utf-8", page);
 }
 
@@ -252,6 +264,7 @@ static void paginaGuardado() {
     p.end();
   }
 #endif
+  easyPortal = server->arg("easy") == "1";  // la casilla: sin marcar no llega
   server->send(200, "text/html; charset=utf-8", MSG_SAVED[gLang]);
   guardado = true;
 }
@@ -265,7 +278,8 @@ static void portalCleanup() {
 
 static void mcpStop();
 
-void wifiPortalStart() {
+void wifiPortalStart(bool easyRegions) {
+  easyPortal = easyRegions;
   netLock();  // espera a que la tarea de red suelte la radio
   portalOn = true;
   mcpStop();
@@ -286,6 +300,7 @@ void wifiPortalStart() {
 }
 
 bool wifiPortalActive() { return server != nullptr; }
+bool wifiPortalEasy() { return easyPortal; }
 
 bool wifiPortalLoop() {
   if (!server) return false;

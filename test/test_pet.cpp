@@ -2492,28 +2492,34 @@ TEST(points, hockey_un_punto_cada_5_minutos_y_tope_diario) {
   CHECK_EQ((int)b.hockey(10), 2);   // sigue sumando desde los 10 guardados
 }
 
-// premio de casa: un Atajo del movil de un padre (phonesteps.h) da puntos; tope diario
-TEST(points, premio_de_casa_con_tope_diario) {
+// premio de casa: un Atajo del movil de un padre (phonesteps.h) da puntos; sin tope al dia
+// (issue #13: antes 20 como mucho)
+TEST(points, premio_de_casa_sin_tope_diario) {
   Pet p;
   makePet(p, 4);
   p.lastSeenEpoch = SAB * 86400 + 43200;
   p.points = 0;
   CHECK_EQ((int)p.reward(5), 5);
   CHECK_EQ((int)p.reward(10), 10);
-  CHECK_EQ((int)p.reward(10), REWARD_PTS_DAY - 15);  // solo lo que falta hasta el tope
-  CHECK_EQ((int)p.reward(3), 0);                     // hoy ya no
-  CHECK_EQ((int)p.points, REWARD_PTS_DAY);
-  CHECK_EQ((int)p.ptNow.cat[PT_REWARD], REWARD_PTS_DAY);  // su propia linea en el libro
+  CHECK_EQ((int)p.reward(10), 10);
+  CHECK_EQ((int)p.reward(10), 10);  // pasados los 20 de antes
+  CHECK_EQ((int)p.points, 35);
+  CHECK_EQ((int)p.rewardPts, 35);
+  CHECK_EQ((int)p.ptNow.cat[PT_REWARD], 35);  // su propia linea en el libro
   CHECK_EQ((int)p.ptNow.cat[PT_OTHER], 0);
-  CHECK_EQ((int)p.ptNow.dayIn[5], REWARD_PTS_DAY);        // cuenta como ganado
-  p.lastSeenEpoch += 86400;  // otro dia: vuelve a dar
+  CHECK_EQ((int)p.ptNow.dayIn[5], 35);        // cuenta como ganado
+  p.lastSeenEpoch += 86400;  // otro dia: la cuenta de hoy vuelve a empezar
   CHECK_EQ((int)p.reward(4), 4);
+  CHECK_EQ((int)p.rewardPts, 4);
   p.rename("X");  // guarda
   Pet b;
   b.begin();
   b.lastSeenEpoch = p.lastSeenEpoch;
   CHECK_EQ((int)b.rewardPts, 4);
-  CHECK_EQ((int)b.reward(REWARD_PTS_DAY), REWARD_PTS_DAY - 4);  // sigue desde los 4 guardados
+  CHECK_EQ((int)b.reward(10), 10);
+  CHECK_EQ((int)b.rewardPts, 14);  // sigue desde los 4 guardados
+  for (int i = 0; i < 30; i++) CHECK_EQ((int)b.reward(10), 10);
+  CHECK_EQ((int)b.rewardPts, 255);  // la cuenta de hoy (solo para el cartel) se queda en 255
 }
 
 // el libro guardado antes de los premios (6 apartados) se lee con cada numero en su sitio
@@ -3057,6 +3063,58 @@ TEST(unlock, en_orden_aunque_se_registre_algo_de_mas_adelante) {
   registrarHuevosDe(p, 0);
   registrarHuevosDe(p, 1);
   CHECK_EQ(p.unlockedRegions(), (uint8_t)4);  // Kanto, Johto, Hoenn hechas: abre Sinnoh
+}
+
+// regiones faciles (issue #13, casilla del portal Wi-Fi): con 10 registradas de una region,
+// de cualquier rareza, se abre la siguiente; al quitarlas no se cierra nada
+static void registrarN(Pet &p, int16_t desde, int n) {
+  for (int16_t d = desde; d < desde + n; d++) p.dexReg[(d - 1) >> 3] |= (1 << ((d - 1) & 7));
+}
+
+TEST(unlock, regiones_faciles_abren_con_diez) {
+  Pet p;
+  makePet(p, 4);
+  registrarN(p, 1, 10);  // 10 de Kanto (con la de makePet)
+  CHECK_EQ(p.unlockedRegions(), (uint8_t)1);  // sin la casilla: faltan comunes y raras
+  p.setEasyRegions(true);
+  CHECK(p.easyRegions);
+  CHECK_EQ(p.unlockedRegions(), (uint8_t)2);
+  registrarN(p, 152, 9);
+  CHECK_EQ(p.unlockedRegions(), (uint8_t)2);  // 9 de Johto: aun no
+  registrarN(p, 243, 1);                      // la decima, un legendario: tambien cuenta
+  CHECK_EQ(p.unlockedRegions(), (uint8_t)3);
+  bool hoenn = false;
+  for (int i = 0; i < 400; i++) {
+    randomSeed(i * 13 + 7);
+    int16_t d = p.pickEggSpecies(EGG_COMMON);
+    CHECK(d <= REGIONS[2].last);
+    hoenn |= d >= REGIONS[2].first;
+  }
+  CHECK_MSG(hoenn, "con Hoenn abierta, ningun huevo trajo una de Hoenn");
+}
+
+TEST(unlock, al_quitar_las_faciles_lo_abierto_sigue_abierto) {
+  Pet p;
+  makePet(p, 4);
+  registrarN(p, 1, 10);
+  registrarN(p, 152, 10);
+  p.setEasyRegions(true);
+  CHECK_EQ(p.unlockedRegions(), (uint8_t)3);
+  Pet b;  // se guarda al cambiarla
+  b.begin();
+  CHECK(b.easyRegions);
+  CHECK_EQ(b.unlockedRegions(), (uint8_t)3);
+  p.setEasyRegions(false);
+  CHECK(!p.easyRegions);
+  CHECK_EQ(p.unlockedRegions(), (uint8_t)3);  // Johto y Hoenn siguen abiertas
+  registrarN(p, 252, 10);
+  CHECK_EQ(p.unlockedRegions(), (uint8_t)3);  // pero la siguiente ya va por la regla normal
+  Pet c;
+  c.begin();
+  CHECK(!c.easyRegions);
+  CHECK_EQ(c.unlockedRegions(), (uint8_t)3);  // y tras reiniciar
+  registrarHuevosDe(c, 2);
+  CHECK_EQ(c.unlockedRegions(), (uint8_t)4);  // Hoenn completa (comunes y raras): abre Sinnoh
 }
 
 // ---------------------------------------------------------------- capacidades

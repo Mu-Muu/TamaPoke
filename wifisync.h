@@ -25,9 +25,10 @@
 #define WIFI_AP_NAME "TamaPoke"
 
 bool wifiHasCreds();
-void wifiPortalStart();
+void wifiPortalStart(bool easyRegions);  // la casilla de las regiones faciles sale como esta
 bool wifiPortalActive();
 bool wifiPortalLoop();  // atiende la pagina; true justo cuando se guardo una red
+bool wifiPortalEasy();  // tras guardar: como dejaron la casilla de las regiones faciles (issue #13)
 void wifiPortalStop();
 
 // sincroniza ya: true si fue bien (rep = lo ganado, ya sumado a p.points)

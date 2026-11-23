@@ -368,6 +368,12 @@ int16_t Pet::pickEggSpecies(uint8_t kind) {
 
 bool Pet::regionHatchDone(int r) const {
   if (r < 0 || r >= REGION_COUNT) return false;
+  if (easyRegions) {  // regiones faciles: basta con unas cuantas, de cualquier rareza
+    int n = 0;
+    for (int d = REGIONS[r].first; d <= REGIONS[r].last; d++)
+      if (isRegistered(d) && ++n >= EASY_REGION_REG) return true;
+    return false;
+  }
   for (int d = REGIONS[r].first; d <= REGIONS[r].last; d++) {
     uint8_t ra = DEX_TBL[d].rarity;
     if ((ra == R_COMUN || ra == R_RARO) && !isRegistered(d)) return false;
@@ -376,9 +382,17 @@ bool Pet::regionHatchDone(int r) const {
 }
 
 uint8_t Pet::unlockedRegions() const {
-  uint8_t n = 1;
+  uint8_t n = regionsOpen;  // 1, salvo si se quitaron las regiones faciles: desde la ultima abierta
   while (n < REGION_COUNT && regionHatchDone(n - 1)) n++;
   return n;
+}
+
+void Pet::setEasyRegions(bool on) {
+  if (on == easyRegions) return;
+  uint8_t n = unlockedRegions();  // las abiertas hasta ahora no se cierran al quitarlas
+  if (n > regionsOpen) regionsOpen = n;
+  easyRegions = on;
+  save();
 }
 
 void Pet::registerSpecies(int16_t dex) {
@@ -1235,10 +1249,9 @@ uint8_t Pet::hockey(uint16_t min) {
 uint8_t Pet::reward(uint8_t pts) {
   uint16_t hoy = dayNow();
   if (rewardDay != hoy) { rewardDay = hoy; rewardPts = 0; }
-  uint8_t queda = rewardPts < REWARD_PTS_DAY ? REWARD_PTS_DAY - rewardPts : 0;
-  uint8_t dar = pts < queda ? pts : queda;
+  uint8_t dar = pts;
   if (!dar) return 0;
-  rewardPts += dar;
+  rewardPts = rewardPts + dar > 255 ? 255 : rewardPts + dar;
   earn(dar, PT_REWARD);
   if (!isEgg() && !vacant && ceremony == CER_NONE) joy = clamp100(joy + 5);  // le alegra que lo feliciten
   pendingSave = true;
@@ -1501,6 +1514,8 @@ void Pet::save() {
   prefs.putInt("pts", points);
   prefs.putBytes("bag", bag, sizeof(bag));
   prefs.putUShort("rgdone", regionDone);
+  prefs.putBool("ezreg", easyRegions);
+  prefs.putUChar("rgopen", regionsOpen);
   prefs.putUShort("rgegg", regionEggs);
   prefs.putUInt("born", bornEpoch);
   prefs.putUInt("stp", stepsToday);
@@ -1591,6 +1606,9 @@ void Pet::load() {
   points = prefs.getInt("pts", START_POINTS);  // partida anterior a la tienda: START_POINTS
   prefs.getBytes("bag", bag, sizeof(bag));
   regionDone = prefs.getUShort("rgdone", 0);
+  easyRegions = prefs.getBool("ezreg", false);
+  regionsOpen = prefs.getUChar("rgopen", 1);
+  if (regionsOpen < 1 || regionsOpen > REGION_COUNT) regionsOpen = 1;
   regionEggs = prefs.getUShort("rgegg", 0);
   bornEpoch = prefs.getUInt("born", 0);
   stepsToday = prefs.getUInt("stp", 0);

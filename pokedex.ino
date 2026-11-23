@@ -167,6 +167,13 @@ void drawRegionDots() {
 // las de huevo (comunes y raras) de una region: cuantas hay y cuantas registradas
 static void regionHatchCount(int r, unsigned &got, unsigned &total) {
   got = total = 0;
+  if (pet.easyRegions) {  // regiones faciles: unas cuantas de cualquier rareza
+    for (int d = REGIONS[r].first; d <= REGIONS[r].last; d++)
+      if (pet.isRegistered(d)) got++;
+    total = EASY_REGION_REG;
+    if (got > total) got = total;
+    return;
+  }
   for (int d = REGIONS[r].first; d <= REGIONS[r].last; d++) {
     uint8_t ra = DEX_TBL[d].rarity;
     if (ra != R_COMUN && ra != R_RARO) continue;
@@ -237,7 +244,7 @@ void renderRegionCover() {
   setSize(3);
   setCur(centerX(T(S_REGION_LOCKED), 3), bajo + 14);
   printT(T(S_REGION_LOCKED));
-  const char *pista = T(S_UNLOCK_HINT);
+  const char *pista = T(pet.easyRegions ? S_UNLOCK_EASY_HINT : S_UNLOCK_HINT);
   setSize(2);
   int ps = textW(pista, 2) <= 330 ? 2 : 1;  // mas abajo el circulo se estrecha
   setSize(ps);

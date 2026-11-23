@@ -76,7 +76,7 @@ const en = {
   regions_go: "On to {r} →",
   regions_back: "← Back",
   regions_done: "You have seen all nine regions!",
-  regions_rule: "On the board, {next} opens once every common and rare Pokémon of {cur} is in the Pokédex.",
+  regions_rule: "On the board, {next} opens once every common and rare Pokémon of {cur} is in the Pokédex (any 10 with Easy regions on the Wi-Fi page).",
 
   live_kicker: "04 · A living companion",
   live_title: "Feed it. Play. Sleep. Grow.",
@@ -207,7 +207,7 @@ const zh: typeof en = {
   regions_go: "前往{r} →",
   regions_back: "← 往回走",
   regions_done: "九个地区都走到了！",
-  regions_rule: "在板子上，把{cur}的普通和稀有宝可梦都登记进图鉴，{next}才会开放。",
+  regions_rule: "在板子上，把{cur}的普通和稀有宝可梦都登记进图鉴，{next}才会开放（在 Wi-Fi 设置页勾选「轻松地区」的话，任意 10 只就行）。",
 
   live_kicker: "04 · 活生生的伙伴",
   live_title: "喂它、陪它玩、哄它睡，看它长大。",

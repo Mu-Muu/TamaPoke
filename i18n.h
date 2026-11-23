@@ -200,7 +200,7 @@ enum StrId : uint16_t {  // mas de 256 textos
   S_PH_HELLO, S_PH_MISS, S_PH_PLAY, S_PH_TOMORROW, S_PH_MORNING, S_PH_DREAMS,
   S_PH_THANKS, S_PH_CHEER, S_PH_BIRTHDAY, S_PH_HAPPY, S_PH_CHESS, S_PH_EVOLVED,
   S_BACKUP, S_BK_SAVE, S_BK_SAVE_Q, S_BK_SAVED, S_BK_FAIL,
-  S_REWARD_BANNER, S_REWARD_FMT, S_REWARD_MAX_FMT, S_BOOK_EXTRA_FMT,
+  S_REWARD_BANNER, S_REWARD_FMT, S_BOOK_EXTRA_FMT,
   // ficha "成长": por que el boton de evolucionar esta apagado
   S_EVO_ASLEEP, S_EVO_FARM,
   // la ciudad del portal Wi-Fi, al buscarla
@@ -209,6 +209,7 @@ enum StrId : uint16_t {  // mas de 256 textos
   S_VOL_HIGH, S_VOL_MED, S_VOL_LOW,
   S_NEXT_LVL_H_FMT,
   S_ML_NO_WIFI,  // amigos lejos: sin Wi-Fi configurado el correo no sale nunca
+  S_UNLOCK_EASY_HINT,  // region cerrada con las regiones faciles del portal (issue #13)
   STR_COUNT
 };
 

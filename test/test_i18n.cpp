@@ -90,7 +90,6 @@ static const ExpectedFmt EXPECTED[] = {
   { S_BOOK_IN_FMT,     "%u,%u" },
   { S_BOOK_EXTRA_FMT,  "%u,%u" },
   { S_REWARD_FMT,      "%u,%u" },
-  { S_REWARD_MAX_FMT,  "%u" },
   { S_HOCKEY_FMT,      "%u,%u" },
   { S_HOCKEY_MAX_FMT,  "%u" },
   { S_LINK_ASK_FMT,    "%s" },

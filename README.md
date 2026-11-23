@@ -242,7 +242,9 @@ page reads it from the phone's settings), because the internet provider's exit
 can be far away, even in another time zone; in that case the weather comes from
 the city the phone's time zone is named after (`America/Chicago` → Chicago). On
 a VPN or some phone hotspots the place can be wrong, and then a city entered
-here takes priority. The last field, **Stack-chan voice control**, is only
+here takes priority. The **Easy regions** box is for a faster game: a region
+opens the next one once any 10 of its Pokémon are registered, instead of every
+common and rare one (regions already open stay open if it's turned off). The last field, **Stack-chan voice control**, is only
 for a Stack-chan or another xiaozhi voice assistant (see
 [Stack-chan / xiaozhi](#stack-chan--xiaozhi-optional)); otherwise leave it
 empty. Everything is stored on the board only and never shown again (the page
@@ -354,7 +356,7 @@ You start with 10 points. Basic care is free.
   from that region.
 - A small daily farm harvest after 07:00.
 - **Rewards from home**: a parent's iPhone can give points for anything (chores,
-  reading, a good day), up to 20 a day (see [Rewards from a parent's iPhone](#rewards-from-a-parents-iphone)).
+  reading, a good day), as many as the parent likes (see [Rewards from a parent's iPhone](#rewards-from-a-parents-iphone)).
 
 | Item | Points |
 |---|---|
@@ -396,7 +398,9 @@ never give points.
 
 - The 9 regions open in order: the next one opens once every common and rare
   species of the previous one has been registered. Eggs only bring species
-  from open regions.
+  from open regions. With **Easy regions** ticked on the Wi-Fi page, any 10
+  registered species of a region open the next one; if it's turned off later,
+  regions already open stay open.
 - The **farm** keeps companions you send there on the SD card. They keep
   growing at a tenth of the speed (without evolving), come back healthy, and
   sometimes walk across the main screen. Species in the farm don't come out of
@@ -594,7 +598,7 @@ Same conditions as the steps: board plugged in, phone on the home Wi-Fi.
 ### Rewards from a parent's iPhone
 
 A third shortcut lets a parent give points for anything they like (chores, reading,
-a good day): **1 to 10 points at a time, up to 20 a day**. The board wakes up and
+a good day): **1 to 10 points at a time, with no daily limit**. The board wakes up and
 shows "REWARD" with the points, and the points book has a "reward" line. Keep it on
 a parent's phone.
 

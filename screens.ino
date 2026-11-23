@@ -355,7 +355,7 @@ void clockTap(int16_t x, int16_t y) {
   } else if (row0 && col1) {  // configurar wi-fi
     clockOpen = false;
     if (linkActive()) linkStop();  // la radio no puede estar en las dos cosas
-    wifiPortalStart();
+    wifiPortalStart(pet.easyRegions);
   } else if (row1 && col0) {  // cicla idioma
     setLang((Lang)((gLang + 1) % LANG_COUNT));
     applyLangFont();  // la fuente cambia con el idioma

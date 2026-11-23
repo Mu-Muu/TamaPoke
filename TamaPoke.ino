@@ -56,7 +56,7 @@
 // Version del firmware. Subir este numero en cada release (y manifest.json para
 // el instalador web). Se muestra en la pantalla de ajustes y por serie al arrancar.
 // version de esta fork: la fecha en que se publica (la base es la v1.18 de socquique)
-#define FW_VERSION "2026.11.22"
+#define FW_VERSION "2026.11.23"
 
 Arduino_DataBus *bus = new Arduino_ESP32QSPI(
   LCD_CS, LCD_SCLK, LCD_SDIO0, LCD_SDIO1, LCD_SDIO2, LCD_SDIO3);
@@ -664,6 +664,7 @@ void loop() {
   if (wifiPortalActive() && wifiPortalLoop()) {
     delay(1500);  // que el movil reciba la pagina de "guardado"
     wifiPortalStop();
+    pet.setEasyRegions(wifiPortalEasy());
     toast(T(S_WIFI_SAVED));
     syncRequested = true;
   }
@@ -777,8 +778,7 @@ void loop() {
   uint8_t premioCasa;
   if (phoneRewardTake(premioCasa)) {  // premio de casa (Atajo del movil de un padre)
     uint8_t pts = pet.reward(premioCasa);
-    if (pts) snprintf(hockeyMsg, sizeof(hockeyMsg), T(S_REWARD_FMT), pts, pet.rewardPts);
-    else snprintf(hockeyMsg, sizeof(hockeyMsg), T(S_REWARD_MAX_FMT), (unsigned)REWARD_PTS_DAY);
+    snprintf(hockeyMsg, sizeof(hockeyMsg), T(S_REWARD_FMT), pts, pet.rewardPts);
     phoneBanner = S_REWARD_BANNER;
     hockeyUntil = now + 8000;
     wakeScreen(now);  // que se vea: con USB la pantalla suele estar en el reloj de espera
