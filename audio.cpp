@@ -25,7 +25,14 @@ static bool gIdle = false;          // sin interaccion reciente (ver power.h): e
 static uint32_t gAmpHoldUntil = 0;  // un efecto pedido en reposo mantiene el amplificador encendido hasta aqui
 static bool gAmpHold = false;       // (indicador aparte: asi la comparacion no falla al dar la vuelta millis())
 static uint32_t gAmpOnAt = 0;       // cuando se encendio el amplificador
+static uint32_t gVoiceUntil = 0;    // una voz de un amigo: amplificador encendido hasta aqui, aun durmiendo
+static bool gVoiceHold = false;
 static QueueHandle_t gQ = nullptr;
+struct AudioReq {
+  uint8_t id;    // efecto (SFX_*)
+  int16_t *pcm;  // o una voz: muestras mono en PSRAM, que se liberan al acabar
+  uint32_t n;
+};
 
 // El NS4150B tarda bastante mas de 8 ms en estabilizarse tras cada apagado, asi
 // que encenderlo justo antes de cada efecto se comia los cortos: el jingle de
@@ -36,9 +43,10 @@ static void updateAmplifierPower() {
   // gReady evita encenderlo en una placa donde el codec no arranco: ahi el
   // amplificador solo aportaria siseo, porque no va a sonar nada.
   if (gAmpHold && (int32_t)(gAmpHoldUntil - millis()) <= 0) gAmpHold = false;
+  if (gVoiceHold && (int32_t)(gVoiceUntil - millis()) <= 0) gVoiceHold = false;
   bool idleOff = gIdle && !gAmpHold;
   static int last = -1;  // solo se escribe el pin si cambia
-  int want = (gReady && gOn && !gSleeping && !idleOff) ? HIGH : LOW;
+  int want = (gReady && gOn && ((!gSleeping && !idleOff) || gVoiceHold)) ? HIGH : LOW;
   if (want != last) {
     last = want;
     if (want == HIGH) gAmpOnAt = millis();
@@ -147,17 +155,41 @@ static void playTone(uint16_t f, uint16_t ms) {
   }
 }
 
+// una voz grabada (16 kHz mono): al volumen de ajustes (el mismo escalon que los efectos, sfxAmp
+// sobre el alto) y con rampa al principio y al final, que no chasque. Se corta si se silencia
+static void playPcm(const int16_t *s, uint32_t total) {
+  const int32_t amp = sfxAmp(gVol);
+  for (uint32_t done = 0; done < total && gOn;) {
+    uint32_t n = total - done;
+    if (n > 256) n = 256;
+    for (uint32_t i = 0; i < n; i++) {
+      uint32_t idx = done + i;
+      int32_t v = (int32_t)s[idx] * amp / 5000;
+      if (idx < 64) v = v * (int32_t)idx / 64;
+      else if (idx + 64 > total) v = v * (int32_t)(total - idx) / 64;
+      buf[i * 2] = (int16_t)v;
+      buf[i * 2 + 1] = (int16_t)v;
+    }
+    i2s.write((uint8_t *)buf, n * 4);
+    done += n;
+  }
+}
+
 static void audioTask(void *) {
-  uint8_t id;
+  AudioReq r;
   for (;;) {
-    if (xQueueReceive(gQ, &id, portMAX_DELAY) && gOn && !gSleeping && gReady &&
-        id < SFX_COUNT) {
-      const SfxDef &d = SFX[id];
+    if (!xQueueReceive(gQ, &r, portMAX_DELAY)) continue;
+    // los efectos callan con la mascota dormida; la voz de un amigo no: la pide quien abre su correo
+    bool suena = gOn && gReady && (r.pcm ? true : !gSleeping && r.id < SFX_COUNT);
+    if (suena) {
       // el NS4150B tarda mas de 8 ms en estabilizarse: si se acaba de encender, el efecto espera
       int32_t since = (int32_t)(millis() - gAmpOnAt);
       if (since >= 0 && since < 50) vTaskDelay(pdMS_TO_TICKS(50 - since));
-      for (uint8_t i = 0; i < d.len; i++) playTone(d.n[i].f, d.n[i].ms);
+      if (r.pcm) playPcm(r.pcm, r.n);
+      else
+        for (uint8_t i = 0; i < SFX[r.id].len; i++) playTone(SFX[r.id].n[i].f, SFX[r.id].n[i].ms);
     }
+    free(r.pcm);  // la voz se libera siempre (tambien si al final no sono)
   }
 }
 
@@ -182,12 +214,15 @@ void audioBegin() {
 
   gReady = true;
   updateAmplifierPower();
-  gQ = xQueueCreate(8, sizeof(uint8_t));
+  gQ = xQueueCreate(8, sizeof(AudioReq));
   xTaskCreatePinnedToCore(audioTask, "audio", 4096, nullptr, 1, nullptr, 0);
   sfxPlay(SFX_HATCH);  // jingle de arranque (confirma que suena)
 }
 
-bool audioBusy() { return gAmpHold && (int32_t)(gAmpHoldUntil - millis()) > 0; }
+bool audioBusy() {
+  return (gAmpHold && (int32_t)(gAmpHoldUntil - millis()) > 0) ||
+         (gVoiceHold && (int32_t)(gVoiceUntil - millis()) > 0);  // una voz sonando tampoco deja dormir la CPU
+}
 
 void sfxPlay(uint8_t id) {
   if (gReady && gOn && gQ) {
@@ -196,8 +231,26 @@ void sfxPlay(uint8_t id) {
       gAmpHold = true;
       updateAmplifierPower();
     }
-    xQueueSend(gQ, &id, 0);  // descarta si la cola esta llena
+    AudioReq r = { id, nullptr, 0 };
+    xQueueSend(gQ, &r, 0);  // descarta si la cola esta llena
   }
+}
+
+bool voicePlay(int16_t *pcm, uint32_t n) {
+  if (!pcm || !n || !gReady || !gOn || !gQ) return false;
+  // en reposo, o con la mascota dormida, el amplificador esta apagado: que se encienda lo que dura
+  // la voz, contando desde lo que ya tenga por delante (otra voz en cola: nunca se acorta)
+  uint32_t now = millis(), antes = gVoiceUntil;
+  bool habia = gVoiceHold && (int32_t)(gVoiceUntil - now) > 0;
+  gVoiceUntil = (habia ? gVoiceUntil : now) + n / (SAMPLE_RATE / 1000) + 1500;
+  gVoiceHold = true;
+  updateAmplifierPower();
+  AudioReq r = { 0, pcm, n };
+  if (xQueueSend(gQ, &r, 0) == pdTRUE) return true;
+  gVoiceUntil = antes;  // no entro en la cola: lo de antes, como estaba
+  gVoiceHold = habia;
+  updateAmplifierPower();
+  return false;
 }
 
 void audioSetEnabled(bool on) {

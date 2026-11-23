@@ -73,5 +73,8 @@ extern SdBg bg;
 
 bool sdBegin();                 // monta la SD (SDMMC 1-bit), true si hay tarjeta
 bool sdSerialCommand(const String &line);  // PUT/LS por USB; true si la maneja
+// la grabacion de un amigo para un mensaje (voice.h), en PSRAM (ps_malloc; voicePlay la libera).
+// nullptr si no hay (clip < 0, sin SD, sin fichero o en otro formato)
+int16_t *sdLoadVoice(uint64_t friendPid, int clip, uint32_t &samples);
 extern bool sdReady;
 extern bool sdDirty;  // true tras recibir archivos: recargar sprite

@@ -10,7 +10,7 @@ BUILD    := build
 BIN      := $(BUILD)/tamapoke_tests
 
 SOURCES := main.cpp shim/shim.cpp test_pet.cpp test_dex.cpp test_i18n.cpp test_blit.cpp test_batcurve.cpp test_power.cpp \
-           test_chess.cpp test_shake.cpp test_steps.cpp test_sport.cpp test_gym.cpp test_fun.cpp test_wifipick.cpp test_weather.cpp test_holiday.cpp test_stackchan.cpp test_walltime.cpp test_link.cpp test_friend.cpp test_mail.cpp $(SRC_DIR)/pet.cpp $(SRC_DIR)/i18n.cpp $(SRC_DIR)/chess.cpp \
+           test_chess.cpp test_shake.cpp test_steps.cpp test_sport.cpp test_gym.cpp test_fun.cpp test_wifipick.cpp test_weather.cpp test_holiday.cpp test_stackchan.cpp test_walltime.cpp test_link.cpp test_friend.cpp test_mail.cpp test_voice.cpp $(SRC_DIR)/pet.cpp $(SRC_DIR)/i18n.cpp $(SRC_DIR)/chess.cpp \
            $(SRC_DIR)/weather.cpp $(SRC_DIR)/holiday.cpp $(SRC_DIR)/stackchan.cpp $(SRC_DIR)/walltime.cpp $(SRC_DIR)/linkproto.cpp $(SRC_DIR)/friendmsg.cpp $(SRC_DIR)/mail.cpp
 
 # ArduinoJson (solo cabeceras): la libreria que instala arduino-cli

@@ -34,8 +34,27 @@ static bool readRec(const char *path, PetRec &r) {
 // primero a un fichero aparte (fuera de /farm: farmLoad no lo ve) y luego se cambia por el bueno: si
 // la escritura falla (tarjeta llena, un corte), el que ya habia sigue entero
 #define FARM_TMP "/farm.tmp"
-static bool writeRec(const char *path, const PetRec &r) {
+
+// lo que dejo un writeRec cortado (un corte, o un rename que fallo, entre borrar la ficha y renombrar la
+// nueva). Si su especie se quedo sin fichero, la nueva, que ya estaba entera, pasa a serlo; si no,
+// sobra (la vieja sigue ahi: el cambio no llego a hacerse) y se borra, que mas tarde no reviva a un
+// pokemon que ya se saco de la granja
+static void farmRecoverTmp() {
+  if (!SD_MMC.exists(FARM_TMP)) return;
+  PetRec t;
+  if (readRec(FARM_TMP, t)) {
+    char path[32];
+    farmPath(path, sizeof(path), t.speciesId);
+    if (!SD_MMC.exists(path) && SD_MMC.rename(FARM_TMP, path)) {
+      Serial.println("granja: recuperada una ficha a medio guardar");
+      return;
+    }
+  }
   SD_MMC.remove(FARM_TMP);
+}
+
+static bool writeRec(const char *path, const PetRec &r) {
+  farmRecoverTmp();  // antes de reutilizar /farm.tmp: podria ser la unica copia de alguien
   File f = SD_MMC.open(FARM_TMP, FILE_WRITE);
   if (!f) return false;
   bool ok = f.write((const uint8_t *)&r, sizeof(r)) == sizeof(r);
@@ -93,14 +112,7 @@ bool farmLoad(Pet &p) {
   if (!entries) entries = (FarmEntry *)ps_malloc(PET_DEX_MAX * sizeof(FarmEntry));
   if (!entries) return false;
   SD_MMC.mkdir("/farm");
-  // una ficha que se quedo a medio cambiar (writeRec: un corte entre borrar la vieja y renombrar la
-  // nueva): si su especie se quedo sin fichero, la nueva, que ya estaba entera, pasa a serlo
-  PetRec t;
-  if (SD_MMC.exists(FARM_TMP) && readRec(FARM_TMP, t)) {
-    char path[32];
-    farmPath(path, sizeof(path), t.speciesId);
-    if (!SD_MMC.exists(path) && SD_MMC.rename(FARM_TMP, path)) Serial.println("granja: recuperada una ficha a medio guardar");
-  }
+  farmRecoverTmp();  // antes de leer /farm: una ficha que se quedo a medio cambiar
   File dir = SD_MMC.open("/farm");
   if (!dir) return false;
   for (File f = dir.openNextFile(); f; f = dir.openNextFile()) {

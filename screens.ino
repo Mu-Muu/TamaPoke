@@ -303,10 +303,15 @@ void clockTap(int16_t x, int16_t y) {
       setCur(centerX(T(S_RESTORING), 2), CY - 8);
       printT(T(S_RESTORING));
       gfx->flush();
+      // la tarea de red parada (como con "见面"): que no escriba la NVS del correo mientras se restaura
+      // ni en el medio segundo antes de reiniciar
+      bool radio = !linkActive();
+      if (radio) netRadioTake();
       if (backupRestore()) {
         delay(500);
         ESP.restart();  // sin guardar nada mas: la mascota en RAM es la de antes
       }
+      if (radio) netRadioGive();
       // no se pudo (copia rota, o la NVS fallo a medio escribir): la partida de la RAM vuelve a la NVS
       pet.markDirty();
       pet.flushSave();

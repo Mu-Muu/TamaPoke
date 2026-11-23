@@ -393,6 +393,7 @@ static struct {
   int8_t dir = 1;
   float x = 0, goal = 0;
   uint32_t t0 = 0, until = 0, last = 0, wanderAt = 0;
+  bool voiced = false;  // una visita: su grabacion ya sono (al primer toque)
   MailMsg m;
 } mv;
 static uint32_t mvNextTry = 0;
@@ -437,6 +438,7 @@ void mailVisitTick(uint32_t now) {
     mailPmd.load(m.species, m.shiny);
     mv.on = true;
     mv.m = m;
+    mv.voiced = false;
     mv.phase = MV_IN;
     mv.dir = random(2) ? 1 : -1;
     mv.x = mv.dir > 0 ? -50 : 516;
@@ -606,6 +608,14 @@ void drawMailPanel() {
   }
 }
 
+// la grabacion del amigo para este mensaje, si la hay en la SD (voice.h)
+static void mailVoice(const MailMsg &m) {
+  if (!audioEnabled()) return;
+  uint32_t n;
+  int16_t *pcm = sdLoadVoice(m.from, voiceClip(m.type, m.phrase), n);
+  if (pcm && !voicePlay(pcm, n)) free(pcm);
+}
+
 // un toque en la principal: si es para el mensajero, true
 bool mailVisitorTap(int16_t x, int16_t y) {
   if (!mv.on) return false;
@@ -626,11 +636,17 @@ bool mailVisitorTap(int16_t x, int16_t y) {
     mv.phase = MV_OPEN;
     mv.until = now + 8000;
     sfxPlay(SFX_MEDAL);
+    mailVoice(mv.m);  // y, si grabo una para esto, la voz del amigo (voice.h)
     wakeScreen(now);
     Serial.printf("correo: abierto (tipo %u, objeto %u)%s\n", mv.m.type, mv.m.item, friendTestMode() ? " (prueba)" : "");
     return true;
   }
-  sfxPlay(SFX_TAP);  // de visita o despues: un corazon y nada mas
+  sfxPlay(SFX_TAP);  // de visita o despues: un corazon
   showEmote(EMO_HEART, 1200);
+  // una visita no se "abre" (llega y se queda): su grabacion suena al primer toque del que la mira
+  if (mv.phase == MV_STAY && mv.m.type == MT_VISIT && !mv.voiced) {
+    mv.voiced = true;
+    mailVoice(mv.m);
+  }
   return true;
 }

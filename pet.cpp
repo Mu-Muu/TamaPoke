@@ -1503,6 +1503,9 @@ PetMood Pet::mood() const {
 void Pet::save() {
   ticksSinceSave = 0;
   pendingSave = false;
+  // la partida ya existe: sin esto, una restauracion que fallo a medias (nvs_erase_all ya borro "init")
+  // y luego guardo la de la RAM dejaba la NVS sin "init", y el siguiente arranque empezaba con un huevo
+  prefs.putBool("init", true);
   prefs.putUChar("full", fullness);
   prefs.putUChar("joy", joy);
   prefs.putUChar("ene", energy);

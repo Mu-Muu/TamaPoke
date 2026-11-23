@@ -2620,6 +2620,25 @@ TEST(points, sin_reloj_no_hay_suerte_de_ajedrez) {
   CHECK_EQ((int)p.chessLuck(), (int)LUCK_NONE);
 }
 
+TEST(save, guardar_deja_la_partida_marcada_como_iniciada) {
+  // Una restauracion que falla a medias puede haber borrado "init" (nvs_erase_all) antes de
+  // escribirlo; la partida de la RAM se vuelve a guardar, y al arrancar no tiene que salir un huevo
+  Pet p;
+  makePet(p, 4);
+  p.points = 123;
+  Preferences pr;
+  pr.begin("tamapoke", false);
+  pr.remove("init");
+  pr.end();
+  p.markDirty();
+  p.flushSave();
+  Pet b;
+  b.begin();
+  CHECK_EQ((int)b.points, 123);
+  CHECK(!b.isEgg());
+  CHECK_EQ((int)b.speciesId, (int)p.speciesId);
+}
+
 // ---------------------------------------------------------------- album
 TEST(memoir, cada_final_deja_una_pagina) {
   Pet p;

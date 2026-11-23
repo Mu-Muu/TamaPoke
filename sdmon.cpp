@@ -1,5 +1,6 @@
 #include "sdmon.h"
 #include "pin_config.h"
+#include "voice.h"
 #include <FS.h>
 #include <SD_MMC.h>
 
@@ -240,8 +241,8 @@ void SdMon::unload() {
 
 // ---------------------------------------------------------------------------
 // Protocolo de carga por USB (para llenar la SD sin sacarla de la placa):
-//   PUT <ruta> <bytes>\n  + datos crudos   -> "OK" ... "DONE"
-//   LS\n                                   -> listado de /mons
+//   PUT <ruta> <bytes>\n  + datos crudos   -> "OK" ... "DONE"   (en /mons/ o /voice/)
+//   LS\n                                   -> listado de /mons   (LS /voice/<amigo>: sus grabaciones)
 // Usar con tools/send_sd.py
 // ---------------------------------------------------------------------------
 
@@ -259,10 +260,13 @@ bool sdSerialCommand(const String &line) {
     // sanear, asi que un PUT manipulado podria escribir en cualquier sitio de la
     // tarjeta. Los dos clientes reales (tools/send_sd.py y web/index.html) ya
     // mandan nombres con el prefijo mons/.
-    if (!path.startsWith("/mons/") || path.indexOf("..") >= 0) {
+    // y a /voice/ (las grabaciones de los amigos, voice.h), cuyas carpetas se crean al subir la primera
+    bool voz = path.startsWith("/voice/");
+    if (!(path.startsWith("/mons/") || voz) || path.indexOf("..") >= 0) {
       Serial.println("ERR");
       return true;
     }
+    for (int i = path.indexOf('/', 1); voz && i > 0; i = path.indexOf('/', i + 1)) SD_MMC.mkdir(path.substring(0, i));
     // FILE_WRITE ANADE al final si el fichero ya existe, asi que reintentar uno
     // que quedo a medias lo alargaba en vez de reemplazarlo: quedaba un sprite
     // corrupto y mas grande que el original. Importa mas desde que el instalador
@@ -290,6 +294,8 @@ bool sdSerialCommand(const String &line) {
     }
     f.close();
     Serial.setTimeout(1000);
+    // a medias no sirve: un sprite o una voz cortados se cargarian igual (una voz sonaria a trozos)
+    if (remaining != 0) SD_MMC.remove(path);
     sdDirty = (remaining == 0);
     Serial.println(remaining == 0 ? "DONE" : "ERR");
     return true;
@@ -297,8 +303,9 @@ bool sdSerialCommand(const String &line) {
     Serial.printf("total=%llu used=%llu\n", SD_MMC.totalBytes(), SD_MMC.usedBytes());
     Serial.println("DONE");
     return true;
-  } else if (line == "LS") {
-    File dir = SD_MMC.open("/mons");
+  } else if (line == "LS" || (line.startsWith("LS /voice") && line.indexOf("..") < 0)) {
+    String d = line == "LS" ? String("/mons") : line.substring(3);
+    File dir = SD_MMC.open(d);
     if (dir) {
       File e;
       while ((e = dir.openNextFile())) {
@@ -311,6 +318,32 @@ bool sdSerialCommand(const String &line) {
     return true;
   }
   return false;
+}
+
+int16_t *sdLoadVoice(uint64_t friendPid, int clip, uint32_t &samples) {
+  samples = 0;
+  if (!sdReady || clip < 0) return nullptr;
+  char path[32];
+  voicePath(path, sizeof(path), friendPid, clip);
+  if (!SD_MMC.exists(path)) return nullptr;  // lo normal: ese amigo no grabo nada para esto
+  File f = SD_MMC.open(path, FILE_READ);
+  if (!f) return nullptr;
+  uint8_t h[256];
+  size_t hn = f.read(h, sizeof(h));
+  uint32_t off, len;
+  int16_t *pcm = nullptr;
+  if (voiceWav(h, hn, (uint32_t)f.size(), off, len) && f.seek(off)) {
+    pcm = (int16_t *)ps_malloc(len);
+    if (pcm && f.read((uint8_t *)pcm, len) != len) {
+      free(pcm);
+      pcm = nullptr;
+    }
+  } else {
+    Serial.printf("voz: %s no es WAV PCM 16 kHz mono 16 bits\n", path);
+  }
+  f.close();
+  if (pcm) samples = len / 2;
+  return pcm;
 }
 
 bool SdBg::load(int r, uint8_t luz) {

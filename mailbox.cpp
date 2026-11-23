@@ -38,6 +38,8 @@ void mailTick(uint32_t wall) { wallNow = wall; }
 
 static void lock() { if (mx) xSemaphoreTake(mx, portMAX_DELAY); }
 static void unlock() { if (mx) xSemaphoreGive(mx); }
+void mailLock() { lock(); }
+void mailUnlock() { unlock(); }
 
 static void boxKey(uint64_t pid, char *k) {  // clave NVS (15 como mucho): "b" + 12 hex
   snprintf(k, 15, "b%012llx", (unsigned long long)(pid & 0xFFFFFFFFFFFFull));
@@ -380,7 +382,15 @@ static void sendDue(uint32_t now, uint8_t &fallos) {
     int code = http(true, boxUrl(f.box), f.box.auth, String(b64), nullptr);
     Serial.printf("correo: manda tipo %u a %08lx: http %d\n", o.msg.type, (unsigned long)(o.to >> 32), code);
     if (code != 200) {
-      fallos |= (uint8_t)(code < 0 ? 0xFF : 1u << i);  // < 0: no hubo respuesta (sin red, caido, tiempo)
+      fallos |= (uint8_t)(1u << i);
+      if (WiFi.status() != WL_CONNECTED) {  // sin red: nada mas en esta vuelta
+        fallos = 0xFF;
+      } else if (code < 0) {  // el buzon de ese amigo no contesta: lo demas para el, la proxima vuelta
+        lock();             // (solo lo suyo: un buzon caido no deja sin correo a los otros amigos)
+        for (int j = i + 1; j < MAIL_OUTQ; j++)
+          if (outq[j].on && outq[j].to == o.to) fallos |= (uint8_t)(1u << j);
+        unlock();
+      }
       continue;
     }
     lock();

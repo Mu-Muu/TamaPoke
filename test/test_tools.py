@@ -16,6 +16,61 @@ TOOLS = os.path.join(ROOT, 'tools')
 sys.path.insert(0, TOOLS)
 
 
+@unittest.skipUnless(shutil.which('ffmpeg'), 'sin ffmpeg')
+class TestVoice(unittest.TestCase):
+    """tools/voice.py deja las grabaciones en el unico formato que la placa toca (voice.h)."""
+
+    def test_convierte_a_wav_16k_mono_16_bits(self):
+        import struct
+        with tempfile.TemporaryDirectory() as tmp:
+            src = os.path.join(tmp, 'grab.m4a')  # como las del movil: 44,1 kHz estereo, con silencio delante
+            subprocess.run(['ffmpeg', '-v', 'error', '-f', 'lavfi', '-i', 'anullsrc=r=44100:cl=stereo:d=1',
+                            '-f', 'lavfi', '-i', 'sine=frequency=440:duration=1:sample_rate=44100',
+                            '-filter_complex', '[1]aformat=channel_layouts=stereo[s];[0][s]concat=n=2:v=0:a=1',
+                            src], check=True)
+            out = os.path.join(tmp, 'voces')
+            r = subprocess.run([sys.executable, os.path.join(TOOLS, 'voice.py'), out, '--desde', '13', src],
+                               capture_output=True, text=True)
+            self.assertEqual(r.returncode, 0, r.stderr)
+            with open(os.path.join(out, '13.wav'), 'rb') as fh:
+                h = fh.read()
+            self.assertEqual(h[:4], b'RIFF')
+            fmt, ch, rate = struct.unpack('<HHI', h[20:28])
+            bits = struct.unpack('<H', h[34:36])[0]
+            self.assertEqual((fmt, ch, rate, bits), (1, 1, 16000, 16))
+            self.assertEqual(h[36:40], b'data')  # cabecera minima: sin LIST
+            segundos = (len(h) - 44) / 32000
+            self.assertLess(segundos, 1.4)  # el segundo de silencio de delante se quita
+            self.assertGreater(segundos, 0.7)
+
+    def test_una_grabacion_en_silencio_es_un_error(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            src = os.path.join(tmp, 'mudo.m4a')
+            subprocess.run(['ffmpeg', '-v', 'error', '-f', 'lavfi', '-i', 'anullsrc=r=44100:cl=mono:d=2', src],
+                           check=True)
+            out = os.path.join(tmp, 'voces')
+            r = subprocess.run([sys.executable, os.path.join(TOOLS, 'voice.py'), out, src],
+                               capture_output=True, text=True)
+            self.assertNotEqual(r.returncode, 0)
+            self.assertFalse(os.path.exists(os.path.join(out, '00.wav')))  # ni rota ni vacia
+            self.assertEqual([f for f in os.listdir(out) if f.endswith('.wav')], [])
+
+    def test_no_pasa_de_14(self):
+        r = subprocess.run([sys.executable, os.path.join(TOOLS, 'voice.py'), '/tmp/x', '--desde', '13', 'a', 'b'],
+                           capture_output=True, text=True)
+        self.assertNotEqual(r.returncode, 0)
+
+
+class TestSendSd(unittest.TestCase):
+    def test_dir_sin_ficheros_no_sube_los_sprites(self):
+        # sin *.wav, "--dir voice/<amigo>" subia todos los sprites a esa carpeta: ahora para antes de abrir el puerto
+        r = subprocess.run([sys.executable, os.path.join(TOOLS, 'send_sd.py'), '--port', '/dev/no-existe',
+                            '--dir', 'voice/1a2b3c4d'], capture_output=True, text=True, timeout=30)
+        self.assertNotEqual(r.returncode, 0)
+        self.assertIn('voice/1a2b3c4d', r.stderr)
+        self.assertNotIn('puerto', r.stdout)
+
+
 class TestPrivacyCheck(unittest.TestCase):
     """Es la red de seguridad antes de publicar: un argumento mal puesto no puede acabar en un "limpio"
     sobre otra cosa (antes, --tree sin REV escaneaba en silencio los archivos locales)."""

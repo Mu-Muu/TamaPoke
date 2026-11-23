@@ -46,6 +46,7 @@
 #include "friendmsg.h" // y los juegos con un amigo (friend_play.ino)
 #include "photos.h"
 #include "mailbox.h"  // correo con amigos lejos (mail_ui.ino)
+#include "voice.h"    // la voz de los amigos en el correo
 #include "holiday.h"
 #include "memoir.h"
 #include "backup.h"
@@ -773,7 +774,10 @@ void loop() {
       snprintf(hockeyMsg, sizeof(hockeyMsg), T(S_HOCKEY_FMT), pet.hockeyMin, pts);
     phoneBanner = S_HOCKEY_BANNER;
     hockeyUntil = now + 8000;
-    if (pts) sfxPlay(SFX_MEDAL);
+    if (pts) {
+      sfxPlay(SFX_MEDAL);
+      pet.flushSave();  // ya: con la pantalla encendida no se guardaria en 90 s (un corte los perdia)
+    }
     Serial.printf("hockey: +%u min, hoy %u min, +%u puntos\n", hk, pet.hockeyMin, pts);
   }
   uint8_t premioCasa;
@@ -783,7 +787,10 @@ void loop() {
     phoneBanner = S_REWARD_BANNER;
     hockeyUntil = now + 8000;
     wakeScreen(now);  // que se vea: con USB la pantalla suele estar en el reloj de espera
-    if (pts) sfxPlay(SFX_MEDAL);
+    if (pts) {
+      sfxPlay(SFX_MEDAL);
+      pet.flushSave();  // el movil ya dijo "ok": que no se pierda con un corte en los 90 s siguientes
+    }
     Serial.printf("premio de casa: pide %u, da %u, hoy %u\n", premioCasa, pts, pet.rewardPts);
   }
   if (phoneStepsTake(movil)) {

@@ -553,6 +553,17 @@ void handleSerial() {
       if (pet.isRegistered(i)) Serial.printf(" %d", i);
     Serial.println();
     Serial.println("DONE");
+  } else if (line.startsWith("VOICE ")) {  // VOICE <amigo hex> <n>: toca esa grabacion (voice.h)
+    int sp = line.indexOf(' ', 6);
+    uint64_t pid = (uint64_t)strtoul(line.substring(6, sp > 0 ? sp : line.length()).c_str(), nullptr, 16) << 32;
+    int clip = sp > 0 ? line.substring(sp + 1).toInt() : 0;
+    uint32_t n;
+    int16_t *pcm = sdLoadVoice(pid, clip, n);
+    bool ok = pcm && voicePlay(pcm, n);
+    if (pcm && !ok) free(pcm);
+    Serial.printf("voz: %s (%lu ms)\n", !pcm ? "no hay" : ok ? "suena" : "ahora no puede sonar",
+                  (unsigned long)(n / (VOICE_RATE / 1000)));
+    Serial.println("DONE");
   } else if (line == "POWER") {  // carga y ultimos arranques (por que se apago / reinicio)
     powerReport();
     Serial.println("DONE");

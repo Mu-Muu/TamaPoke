@@ -31,5 +31,10 @@ inline int16_t sfxAmp(uint8_t level) { return level == 1 ? 2000 : level >= 2 ? 7
 // el boton de sonido cicla alto, medio, bajo y apagado: el siguiente (VOL_LEVELS = apagado)
 inline uint8_t volCycle(uint8_t cur) { return cur >= VOL_LEVELS ? 0 : cur + 1; }
 void audioSetSleeping(bool sleeping);  // dormida: amplificador apagado
-bool audioBusy();                      // un efecto pedido en reposo aun puede estar sonando: no dormir la CPU
+bool audioBusy();                      // un efecto pedido en reposo (o una voz) aun puede estar sonando: no dormir la CPU
 void audioSetIdle(bool idle);          // sin uso reciente: amplificador apagado (un efecto lo enciende 4 s)
+// voz de un amigo (voice.h): n muestras PCM mono a 16 kHz en PSRAM (ps_malloc). Suena despues de los
+// efectos pendientes, con el volumen de ajustes, tambien con la mascota dormida (la pide quien abre
+// el correo), y la tarea de audio la libera al acabar. false si ahora no puede sonar (sin sonido,
+// cola llena): entonces la libera quien llama
+bool voicePlay(int16_t *pcm, uint32_t n);

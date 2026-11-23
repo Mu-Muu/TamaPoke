@@ -1,6 +1,7 @@
 #include "backup.h"
 #include "sdmon.h"
 #include "pet.h"
+#include "mailbox.h"  // mailLock: la tarea de red escribe "mail" mientras se copia
 #include <Arduino.h>
 #include <FS.h>
 #include <SD_MMC.h>
@@ -111,8 +112,14 @@ bool backupSave(uint32_t wallEpoch) {
   uint16_t count = 0;
   bool ok = put(f, "TPBK", 4) && put(f, &ver, 1) && put(f, &wallEpoch, 4) && put(f, &count, 2);
   for (uint8_t ns = 0; ns < NS_COUNT && ok; ns++) {
+    // el correo lo escribe la tarea de red (in, inN y seen van juntos): con su cerrojo, una copia coherente
+    bool correo = !strcmp(NS[ns], "mail");
+    if (correo) mailLock();
     nvs_handle_t h;
-    if (nvs_open(NS[ns], NVS_READONLY, &h) != ESP_OK) continue;  // espacio aun sin crear
+    if (nvs_open(NS[ns], NVS_READONLY, &h) != ESP_OK) {  // espacio aun sin crear
+      if (correo) mailUnlock();
+      continue;
+    }
     nvs_iterator_t it = nullptr;
     esp_err_t e = nvs_entry_find(NVS_DEFAULT_PART_NAME, NS[ns], NVS_TYPE_ANY, &it);
     while (e == ESP_OK && ok) {
@@ -130,6 +137,7 @@ bool backupSave(uint32_t wallEpoch) {
     }
     nvs_release_iterator(it);
     nvs_close(h);
+    if (correo) mailUnlock();
   }
   if (ok) ok = f.seek(9) && put(f, &count, 2);  // el numero de entradas, ya sabido
   f.close();

@@ -44,3 +44,8 @@ bool mailSyncWanted();                           // tarea de red con bateria: al
 void mailNetSync();                              // tarea de red, con el Wi-Fi conectado
 uint64_t mailSelf();
 void mailInfo();                                 // consola MAIL INFO
+
+// el cerrojo del correo, para leer su NVS ("mail") sin que la tarea de red la cambie a medias
+// (la copia de seguridad, backup.cpp)
+void mailLock();
+void mailUnlock();

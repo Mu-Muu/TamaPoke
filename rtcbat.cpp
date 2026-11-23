@@ -177,12 +177,11 @@ void powerReport() {
                                      "VBUS alta", "DCDC baja", "DCDC alta", "temperatura" };
   static const char *const CHG[] = { "goteo", "precarga", "corriente", "tension", "cargada", "parada" };
   static const uint16_t LIM[] = { 100, 500, 900, 1000, 1500, 2000 };
-  if (!pmuOk) {
-    Serial.println("POWER: sin PMU");
-    return;
-  }
-  uint8_t st = (uint8_t)pmu.getChargerStatus(), icc = pmu.getChargerConstantCurr(), lim = pmu.getVbusCurrentLimit();
-  Serial.printf("ahora: usb %d (%u mV), bateria %u mV %d%%, cargando %d (%s), corriente de carga %u mA, "
+  if (!pmuOk) Serial.println("ahora: sin PMU");  // los arranques apuntados se ensenan igual
+  uint8_t st = pmuOk ? (uint8_t)pmu.getChargerStatus() : 0, icc = pmuOk ? pmu.getChargerConstantCurr() : 0,
+          lim = pmuOk ? pmu.getVbusCurrentLimit() : 0;
+  if (pmuOk)
+    Serial.printf("ahora: usb %d (%u mV), bateria %u mV %d%%, cargando %d (%s), corriente de carga %u mA, "
                 "limite USB %u mA\n",
                 pmu.isVbusIn(), pmu.getVbusVoltage(), pmu.getBattVoltage(), pmu.getBatteryPercent(),
                 pmu.isCharging(), st < 6 ? CHG[st] : "?", icc <= 8 ? icc * 25 : 200 + (icc - 8) * 100,
@@ -193,12 +192,16 @@ void powerReport() {
   p.getBytes("boots", v, sizeof(v));
   p.end();
   Serial.println("arranques (el ultimo primero):");
-  for (int i = 0; i < BOOT_RECS && v[i].epoch; i++) {
+  // un hueco vacio tiene todo a 0; un arranque sin RTC (epoch 0) si cuenta: tiene motivo de reinicio
+  for (int i = 0; i < BOOT_RECS && (v[i].epoch || v[i].rst); i++) {
     time_t t = v[i].epoch;
     struct tm tm;
     gmtime_r(&t, &tm);  // hora de pared (como el RTC)
-    Serial.printf("  %02d-%02d %02d:%02d reset %s | PMU encendido ", tm.tm_mon + 1, tm.tm_mday, tm.tm_hour,
-                  tm.tm_min, v[i].rst < 16 ? RST[v[i].rst] : "?");
+    if (v[i].epoch)
+      Serial.printf("  %02d-%02d %02d:%02d", tm.tm_mon + 1, tm.tm_mday, tm.tm_hour, tm.tm_min);
+    else
+      Serial.print("  sin hora   ");
+    Serial.printf(" reset %s | PMU encendido ", v[i].rst < 16 ? RST[v[i].rst] : "?");
     bits(v[i].pwrOn, ON, 5);
     Serial.print(", apagado antes ");
     bits(v[i].pwrOff, OFF, 8);
