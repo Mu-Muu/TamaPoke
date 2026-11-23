@@ -32,20 +32,25 @@ export default {
     if (req.method === 'GET' && parts.length === 2 && parts[1] === 'json') {
       const s = url.searchParams.get('since') || 'all';
       const since = s === 'all' ? 0 : parseInt(s, 10) || 0;
-      let out = '';
+      // The keys first, then all the messages at once. Read one by one, a box with ~80 messages
+      // took 9.5 s, longer than a board waits (8 s), so its cursor never moved and the box only grew.
+      const keys = [];
       let cursor;
       do {
         const page = await env.MAIL.list({ prefix: `${box}/`, cursor });
         for (const k of page.keys) {
           const id = k.name.slice(box.length + 1);
           const time = (k.metadata && k.metadata.time) || parseInt(id, 10) || 0;
-          if (time < since) continue;
-          const message = await env.MAIL.get(k.name);
-          if (message === null) continue;  // expired between list and get
-          out += JSON.stringify({ id, time, event: 'message', topic: box, message }) + '\n';
+          if (time >= since) keys.push({ name: k.name, id, time });
         }
         cursor = page.list_complete ? undefined : page.cursor;
       } while (cursor);
+      const bodies = await Promise.all(keys.map((k) => env.MAIL.get(k.name)));
+      let out = '';
+      keys.forEach((k, i) => {
+        if (bodies[i] === null) return;  // expired between list and get
+        out += JSON.stringify({ id: k.id, time: k.time, event: 'message', topic: box, message: bodies[i] }) + '\n';
+      });
       return new Response(out, { headers: { 'content-type': 'application/x-ndjson' } });
     }
 

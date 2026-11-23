@@ -6,6 +6,8 @@
 #include <time.h>
 #include <SensorPCF85063.hpp>
 #include <XPowersLib.h>
+#include <Preferences.h>
+#include <esp_system.h>
 
 static SensorPCF85063 rtc;
 static XPowersPMU pmu;
@@ -46,6 +48,7 @@ bool batBegin() {
   pmuOk = pmu.begin(Wire, AXP2101_SLAVE_ADDRESS, IIC_SDA, IIC_SCL);
   if (!pmuOk) { Serial.println("AXP2101 no detectado"); return false; }
   pmu.enableBattVoltageMeasure();
+  pmu.enableVbusVoltageMeasure();  // POWER: un cargador flojo se ve en la tension de VBUS
   pmu.setSysPowerDownVoltage(BAT_HW_CUTOFF_MV);  // respaldo: el PMU corta solo si el firmware no llega a tiempo
   return true;
 }
@@ -120,4 +123,85 @@ bool pwrShortPressed() {
   bool hit = pwrShortFromIrq(pmu.readRegister(XPOWERS_AXP2101_INTSTS2), XPOWERS_AXP2101_PKEY_SHORT_IRQ >> 8);
   if (hit) pmu.clearIrqStatus();
   return hit;
+}
+
+// ---------- diagnostico: apagones y carga ----------
+// Por que arranco el ESP32 (esp_reset_reason) y por que se encendio y se apago el PMU la ultima vez
+// (registros 20h y 21h del AXP2101: guardan la causa hasta el siguiente encendido/apagado). Los
+// ultimos arranques se apuntan en la NVS ("diag"/"boots") para verlos con POWER cuando la placa
+// vuelve a casa; no cambian nada del juego.
+struct BootRec {
+  uint32_t epoch;
+  uint16_t mv;
+  uint8_t rst, pwrOn, pwrOff, usb;
+};
+#define BOOT_RECS 8
+
+void powerBootLog(uint32_t epoch) {
+  BootRec r = { epoch, (uint16_t)batMillivolts(), (uint8_t)esp_reset_reason(), 0, 0, 0 };
+  if (pmuOk) {
+    r.pwrOn = (uint8_t)pmu.getPowerOnSource();
+    r.pwrOff = (uint8_t)pmu.getPowerOffSource();
+    r.usb = pmu.isVbusIn();
+  }
+  BootRec v[BOOT_RECS] = {};
+  Preferences p;
+  p.begin("diag", false);
+  p.getBytes("boots", v, sizeof(v));
+  memmove(&v[1], &v[0], sizeof(BootRec) * (BOOT_RECS - 1));  // el mas reciente, el primero
+  v[0] = r;
+  p.putBytes("boots", v, sizeof(v));
+  p.end();
+  Serial.printf("arranque: reset %u, PMU encendido 0x%02x apagado 0x%02x, bateria %u mV, usb %u\n", r.rst,
+                r.pwrOn, r.pwrOff, r.mv, r.usb);
+}
+
+// bits del registro, con nombre
+static void bits(uint8_t v, const char *const *nom, int n) {
+  bool alguno = false;
+  for (int i = 0; i < n; i++)
+    if (v & (1 << i)) {
+      Serial.printf("%s%s", alguno ? "+" : "", nom[i]);
+      alguno = true;
+    }
+  if (!alguno) Serial.print("-");
+}
+
+void powerReport() {
+  static const char *const RST[] = { "?",       "encendido", "externo", "software", "panico",
+                                     "wdt int", "wdt tarea", "wdt",     "sueño",    "caida de tension",
+                                     "sdio",    "usb",       "jtag",    "efuse",    "glitch",
+                                     "cpu" };
+  static const char *const ON[] = { "PWR", "IRQ", "USB", "bat>3.3V", "bateria" };
+  static const char *const OFF[] = { "PWR largo", "software", "PWR fijo", "Vsys baja",
+                                     "VBUS alta", "DCDC baja", "DCDC alta", "temperatura" };
+  static const char *const CHG[] = { "goteo", "precarga", "corriente", "tension", "cargada", "parada" };
+  static const uint16_t LIM[] = { 100, 500, 900, 1000, 1500, 2000 };
+  if (!pmuOk) {
+    Serial.println("POWER: sin PMU");
+    return;
+  }
+  uint8_t st = (uint8_t)pmu.getChargerStatus(), icc = pmu.getChargerConstantCurr(), lim = pmu.getVbusCurrentLimit();
+  Serial.printf("ahora: usb %d (%u mV), bateria %u mV %d%%, cargando %d (%s), corriente de carga %u mA, "
+                "limite USB %u mA\n",
+                pmu.isVbusIn(), pmu.getVbusVoltage(), pmu.getBattVoltage(), pmu.getBatteryPercent(),
+                pmu.isCharging(), st < 6 ? CHG[st] : "?", icc <= 8 ? icc * 25 : 200 + (icc - 8) * 100,
+                lim < 6 ? LIM[lim] : 0);
+  BootRec v[BOOT_RECS] = {};
+  Preferences p;
+  p.begin("diag", true);
+  p.getBytes("boots", v, sizeof(v));
+  p.end();
+  Serial.println("arranques (el ultimo primero):");
+  for (int i = 0; i < BOOT_RECS && v[i].epoch; i++) {
+    time_t t = v[i].epoch;
+    struct tm tm;
+    gmtime_r(&t, &tm);  // hora de pared (como el RTC)
+    Serial.printf("  %02d-%02d %02d:%02d reset %s | PMU encendido ", tm.tm_mon + 1, tm.tm_mday, tm.tm_hour,
+                  tm.tm_min, v[i].rst < 16 ? RST[v[i].rst] : "?");
+    bits(v[i].pwrOn, ON, 5);
+    Serial.print(", apagado antes ");
+    bits(v[i].pwrOff, OFF, 8);
+    Serial.printf(" | bateria %u mV, usb %u\n", v[i].mv, v[i].usb);
+  }
 }

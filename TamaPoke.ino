@@ -482,6 +482,7 @@ void setup() {
                   seen > 1767225600UL ? " (desde la ultima hora guardada)" : "");
   }
   pet.syncClock(e);
+  powerBootLog(e);  // por que arranco (diagnostico de apagones: consola POWER)
   // arranca con la pantalla encendida: si dormia por tenerla apagada, despierta
   // (de noche sigue dormido hasta la mañana)
   pet.screenNap(false);

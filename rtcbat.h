@@ -22,3 +22,7 @@ bool usbPresentNow();             // sin cache (una lectura I2C): para decidir s
 // la pulsacion corta la captura el firmware (pantalla on/off)
 void pwrSetup();
 bool pwrShortPressed();  // sondear en el loop
+
+// diagnostico (consola POWER): por que arranco y se apago la placa, y como va la carga
+void powerBootLog(uint32_t epoch);  // al arrancar: apunta este arranque (los ultimos 8, en la NVS)
+void powerReport();                 // estado de la carga ahora y los ultimos arranques

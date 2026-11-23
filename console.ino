@@ -553,6 +553,9 @@ void handleSerial() {
       if (pet.isRegistered(i)) Serial.printf(" %d", i);
     Serial.println();
     Serial.println("DONE");
+  } else if (line == "POWER") {  // carga y ultimos arranques (por que se apago / reinicio)
+    powerReport();
+    Serial.println("DONE");
   } else if (line == "HEALTH") {
     Serial.printf("up=%lus heap=%u min=%u sd=%d mon=%d",
                   (unsigned long)(millis() / 1000), ESP.getFreeHeap(),
