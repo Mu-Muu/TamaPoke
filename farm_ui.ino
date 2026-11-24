@@ -172,6 +172,13 @@ void closeFarm() {
 #define FARM_Y0 70
 static int farmPages() { return farmCount() > 0 ? (farmCount() + FARM_PER_PAGE - 1) / FARM_PER_PAGE : 1; }
 
+// ya ha entrado: a la principal, a verlo (issue #14: la granja se abre desde las actividades, y al
+// cerrarla sola se volvia a ellas; parecia que no habia funcionado y se repetia)
+static void swappedIn() {
+  closeFarm();
+  hubOpen = false;
+}
+
 // sacar al elegido: el compañero actual entra en la granja en su lugar. Sin compañero
 // (hueco) sale sin mas: antes el hueco contaba como huevo y no dejaba sacar a nadie
 void farmSwapIn(int idx) {
@@ -185,7 +192,7 @@ void farmSwapIn(int idx) {
   if (pet.vacant) {
     pet.importRec(sale);
     farmTake(pet, dex, sale);
-    closeFarm();
+    swappedIn();
     return;
   }
   pet.exportRec(cur);
@@ -195,7 +202,7 @@ void farmSwapIn(int idx) {
   }
   pet.importRec(sale);
   if (cur.speciesId != dex) farmTake(pet, dex, sale);  // misma especie: su fichero ya es el del que entro
-  closeFarm();
+  swappedIn();
 }
 
 void farmSwipe(int dir) {
