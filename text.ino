@@ -152,6 +152,7 @@ static uint32_t screenKey() {
     h = mixKey(h, audioVolume());  // alto/medio/bajo: sin esto el boton no cambiaba hasta el minuto siguiente
     h = mixKey(h, userDim);
     h = mixKey(h, tempF);
+    h = mixKey(h, clock12);  // 24 h / 12 h: sin esto no cambiaba hasta el minuto siguiente
     h = mixKey(h, gLang);
     // el menu de la copia y su aviso: sin esto salian (y se iban) solo al cambiar el minuto
     h = mixKey(h, backupAsk);

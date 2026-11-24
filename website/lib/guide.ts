@@ -89,7 +89,7 @@ export const GUIDE: Chapter[] = [
         items: [
           t("**Pick a starter**: Bulbasaur, Charmander or Squirtle. This choice only appears in a brand-new game.", "**选初始宝可梦**：妙蛙种子、小火龙或杰尼龟。只有全新的游戏才会出现这个选择。"),
           t("**Hatch the egg**: tap it three times (or give the board a gentle shake). Left alone it hatches by itself after 3 minutes.", "**孵蛋**：点三下蛋（轻轻摇一下板子也行）。不管它的话，3 分钟后会自己孵出来。"),
-          t("**Language**: the installer's firmware starts in English. Swipe down for settings and tap the language button to switch to 简体中文.", "**语言**：网页安装器刷的固件默认是英文。向下滑打开设置，点语言按钮切成简体中文。"),
+          t("**Language**: the installer's firmware starts in English. Swipe down for settings and tap the language button to switch to 简体中文. The two small buttons under the clock switch between °C and °F and between a 24-hour and a 12-hour (AM/PM) clock.", "**语言**：网页安装器刷的固件默认是英文。向下滑打开设置，点语言按钮切成简体中文。时钟下面的两个小按钮，可以切换 °C/°F，以及 24 小时制和 12 小时制（AM/PM）。"),
           t("**Wi-Fi**: in settings tap Wi-Fi. The board opens a hotspot called **TamaPoke**; join it with a phone and open **192.168.4.1**. Enter up to three networks (2.4 GHz only) and, if you play, your **chess.com username**. The clock takes your phone's time zone, and once online the board finds where it is from the connection for the weather; if the place is wrong, enter your **city** there too (add the state or country after a comma if the name is shared, like Springfield, IL).", "**Wi-Fi**：在设置里点 Wi-Fi，板子会开一个叫 **TamaPoke** 的热点。用手机连上，打开 **192.168.4.1**，最多填三个 Wi-Fi（只支持 2.4 GHz），下棋的话再填上 **chess.com 用户名**。时钟按手机的时区走，联网后板子按网络自动定位，用来取天气；地点不对的话，在这一页填上**城市**（有重名的城市，在逗号后面加上省、州或国家，比如 Springfield, IL）。"),
         ],
       },

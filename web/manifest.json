@@ -1,6 +1,6 @@
 {
   "name": "TamaPoke (Mu-Muu fork)",
-  "version": "2026.11.24-fork fbf7bbd",
+  "version": "2026.11.24-fork 5bf7d94",
   "new_install_prompt_erase": true,
   "builds": [
     {

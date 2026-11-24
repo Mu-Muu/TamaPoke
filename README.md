@@ -266,7 +266,7 @@ From the main screen:
 | swipe **right** | Pokédex: one cover per region, swipe on to the next region, tap a cover to open its grid (up/down for pages, tap a Pokémon for details) |
 | swipe **left** | activities: the farm (album button at the bottom), the tournament, the gyms and fun |
 | swipe **up** | the pet's card: profile, abilities, medals (swipe left/right for pages) |
-| swipe **down** | settings: clock, temperature unit (°C/°F), sound (high, medium, low or off), Wi-Fi, language, backup (save one now or restore it), stats, screen brightness (three levels), sync chess now |
+| swipe **down** | settings: clock (24-hour, or 12-hour with AM/PM), temperature unit (°C/°F), sound (high, medium, low or off), Wi-Fi, language, backup (save one now or restore it), stats, screen brightness (three levels), sync chess now |
 | tap the **points** at the top | shop (items, eggs, accessories) |
 | **long press** the pet | send it to the farm, or release it |
 

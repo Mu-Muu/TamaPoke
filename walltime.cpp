@@ -1,6 +1,7 @@
 #include "walltime.h"
 #include "config.h"
 #include "holiday.h"  // holWeekday
+#include <stdio.h>
 #include <time.h>
 
 // dias desde 1970-01-01 (H. Hinnant, days_from_civil)
@@ -44,4 +45,14 @@ uint32_t wallFromUtc(uint32_t utc) {
   int32_t ciudad = gCiudad;
   if (ciudad != SIN_CIUDAD) return utc + (uint32_t)ciudad;
   return utc + (uint32_t)((TZ_STD_OFFSET_H + (localIsDst(utc) ? 1 : 0)) * 3600);
+}
+
+const char *clockHHMM(uint32_t wall, bool h12, char *out, size_t n) {
+  unsigned h = (unsigned)((wall / 3600) % 24), m = (unsigned)((wall / 60) % 60);
+  if (!h12) {
+    snprintf(out, n, "%02u:%02u", h, m);
+    return "";
+  }
+  snprintf(out, n, "%u:%02u", h % 12 ? h % 12 : 12, m);
+  return h < 12 ? "AM" : "PM";
 }

@@ -261,8 +261,18 @@ void renderStandby() {
   printT(linea);
   // la hora
   char t[8];
-  snprintf(t, sizeof(t), "%02lu:%02lu", (unsigned long)((e / 3600) % 24), (unsigned long)((e / 60) % 60));
-  drawBigText(t, CX - bigTextW(t, 13) / 2 + dx, 100 + dy, 13, C565(0xdc, 0xe4, 0xf0));
+  const char *ap = clockHHMM(e, clock12, t, sizeof(t));
+  if (*ap) {  // 12 h: las cifras algo menores y AM/PM al lado, abajo (en letra normal)
+    const int b = 12;
+    int tw = bigTextW(t, b), x = CX - (tw + 12 + textW(ap, 3)) / 2 + dx;
+    drawBigText(t, x, 104 + dy, b, C565(0xdc, 0xe4, 0xf0));
+    gfx->setTextColor(gris);
+    setSize(3);
+    setCur(x + tw + 12, 104 + dy + 7 * b - 21);
+    printT(ap);
+  } else {
+    drawBigText(t, CX - bigTextW(t, 13) / 2 + dx, 100 + dy, 13, C565(0xdc, 0xe4, 0xf0));
+  }
   // el tiempo: icono y temperatura (con las mismas cifras), centrados juntos
   Weather w = weatherNow();
   if (gWxForce >= 0) {  // consola WXSET

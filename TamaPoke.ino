@@ -121,6 +121,7 @@ bool galleryShowAll = false;
 bool screenOff = false;       // pulsacion corta del boton PWR
 uint8_t userDim = 0;          // nivel de brillo elegido en ajustes (power.h): 0 alto, 1 medio, 2 bajo
 bool tempF = false;           // temperatura en grados F (ajustes; solo lo que se enseña)
+bool clock12 = false;         // relojes en 12 h con AM/PM (ajustes, issue #15; por defecto 24 h)
 bool cardOpen = false;        // ficha del bicho (deslizar vertical)
 bool kbOpen = false;          // teclado para renombrar al bicho
 char nameBuf[12] = "";
@@ -411,6 +412,7 @@ void setup() {
     p.begin("tamapoke", true);
     userDim = p.getUChar("bri", 0) % BRIGHT_LEVELS;
     tempF = p.getBool("tempf", false);
+    clock12 = p.getBool("h12", false);
     p.end();
   }
   panel->setBrightness((uint8_t)(180 * userBrightPct(userDim) / 100));

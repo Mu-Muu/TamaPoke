@@ -59,7 +59,8 @@ void openClock() { clockOpen = true; }
 #define BRI_BTN_X 198
 #define BRI_BTN_W 70
 // unidad de la temperatura: una pildora pequeña entre el reloj y los botones
-#define TEMP_PILL_X 193
+#define TEMP_PILL_X 148  // dos pildoras bajo la hora: grados (C/F) y reloj (24 h / 12 h)
+#define H12_PILL_X 238
 #define TEMP_PILL_W 80
 #define TEMP_PILL_Y 155
 #define TEMP_PILL_H 28
@@ -113,10 +114,19 @@ void renderClock() {
   // la hora de ahora, en grande (se corrige sola por Wi-Fi)
   uint32_t ahora = shownClock(pet.lastSeenEpoch ? pet.lastSeenEpoch : rtcEpoch());
   char t[8];
-  snprintf(t, sizeof(t), "%02lu:%02lu", (unsigned long)((ahora / 3600) % 24), (unsigned long)((ahora / 60) % 60));
-  setSize(10);
-  setCur(centerX(t, 10), 78);  // algo subido: debajo va la pildora de la temperatura
+  const char *ap = clockHHMM(ahora, clock12, t, sizeof(t));
+  // con AM/PM detras, mas pequeño si no cabe (12:59 PM) en lo alto del circulo
+  int cs = 10, aw = *ap ? 8 + textW(ap, 3) : 0;
+  if (textW(t, cs) + aw > 320) cs = 9;
+  int cx0 = CX - (textW(t, cs) + aw) / 2;
+  setSize(cs);
+  setCur(cx0, 78);  // algo subido: debajo van las pildoras de la temperatura y del reloj
   printT(t);
+  if (*ap) {
+    setSize(3);
+    setCur(cx0 + textW(t, cs) + 8, 78 + 7 * cs - 21);  // abajo, a la altura del pie de las cifras
+    printT(ap);
+  }
 
   // unidad de la temperatura: "°C >" o "°F >", cicla al tocar
   gfx->fillRoundRect(TEMP_PILL_X, TEMP_PILL_Y, TEMP_PILL_W, TEMP_PILL_H, 10, UI_WHITE);
@@ -128,6 +138,16 @@ void renderClock() {
     gfx->drawCircle(x0 + 2, y0 + 2, 2, UI_INK);  // el grado, como en la cabecera
     gfx->setTextColor(UI_INK);
     setCur(x0 + 8, y0);
+    printT(u);
+  }
+  // reloj: "24H >" o "12H >", cicla al tocar
+  gfx->fillRoundRect(H12_PILL_X, TEMP_PILL_Y, TEMP_PILL_W, TEMP_PILL_H, 10, UI_WHITE);
+  gfx->drawRoundRect(H12_PILL_X, TEMP_PILL_Y, TEMP_PILL_W, TEMP_PILL_H, 10, UI_INK);
+  {
+    const char *u = clock12 ? "12H >" : "24H >";
+    setSize(2);
+    gfx->setTextColor(UI_INK);
+    setCur(H12_PILL_X + (TEMP_PILL_W - textW(u, 2)) / 2, TEMP_PILL_Y + (TEMP_PILL_H - 14) / 2);
     printT(u);
   }
 
@@ -329,6 +349,16 @@ void clockTap(int16_t x, int16_t y) {
     Preferences p;
     p.begin("tamapoke", false);
     p.putBool("tempf", tempF);
+    p.end();
+    sfxPlay(SFX_TAP);
+    return;
+  }
+  if (x >= H12_PILL_X && x < H12_PILL_X + TEMP_PILL_W && y >= TEMP_PILL_Y - 4 &&
+      y < TEMP_PILL_Y + TEMP_PILL_H + 4) {  // reloj de 24 h <-> 12 h (issue #15)
+    clock12 = !clock12;
+    Preferences p;
+    p.begin("tamapoke", false);
+    p.putBool("h12", clock12);
     p.end();
     sfxPlay(SFX_TAP);
     return;

@@ -77,3 +77,21 @@ TEST(walltime, el_desfase_de_la_ciudad_manda_y_se_quita) {
   wallClearCityOffset();
   CHECK_EQ(wallFromUtc(julio), cfg);
 }
+
+// el reloj en 24 h o en 12 h con AM/PM (issue #15)
+TEST(walltime, reloj_de_24_y_de_12_horas) {
+  char t[8];
+  const uint32_t dia = 20000u * 86400u;  // cualquier dia: solo cuenta la hora
+  struct { unsigned h, m; const char *h24, *h12, *ap; } C[] = {
+    { 0, 0, "00:00", "12:00", "AM" },  { 0, 5, "00:05", "12:05", "AM" },  { 7, 5, "07:05", "7:05", "AM" },
+    { 11, 59, "11:59", "11:59", "AM" }, { 12, 0, "12:00", "12:00", "PM" }, { 12, 30, "12:30", "12:30", "PM" },
+    { 15, 30, "15:30", "3:30", "PM" },  { 23, 59, "23:59", "11:59", "PM" },
+  };
+  for (auto &c : C) {
+    uint32_t e = dia + c.h * 3600 + c.m * 60 + 59;  // los segundos no cuentan
+    CHECK_STREQ(clockHHMM(e, false, t, sizeof(t)), "");
+    CHECK_STREQ(t, c.h24);
+    CHECK_STREQ(clockHHMM(e, true, t, sizeof(t)), c.ap);
+    CHECK_STREQ(t, c.h12);
+  }
+}
