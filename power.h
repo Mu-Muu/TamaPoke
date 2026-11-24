@@ -104,6 +104,11 @@ inline bool lightSleepAllowed(const PowerCtx &c) {
 }
 #define POWER_SLEEP_MS 200  // duracion de cada sueno; el toque despierta antes
 
+// la red se queda conectada (el movil da puntos y pasos, Stack-chan habla con ella): con USB siempre;
+// con bateria mientras la placa este despierta, es decir, justo cuando no puede hacer light sleep.
+// En cuanto puede dormir (casi apagada o apagada con PWR) la radio se apaga: nunca las dos cosas
+inline bool netStayOnline(const PowerCtx &c) { return !lightSleepAllowed(c); }
+
 // el tactil despierta la CPU y enciende la pantalla, salvo si se apago con el boton PWR (o boca
 // abajo): en el bolsillo se encendia sola y gastaba bateria. Entonces solo el boton la enciende
 inline bool touchWakes(const PowerCtx &c) { return !c.screenOff; }

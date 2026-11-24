@@ -57,7 +57,7 @@
 // Version del firmware. Subir este numero en cada release (y manifest.json para
 // el instalador web). Se muestra en la pantalla de ajustes y por serie al arrancar.
 // version de esta fork: la fecha en que se publica (la base es la v1.18 de socquique)
-#define FW_VERSION "2026.11.23"
+#define FW_VERSION "2026.11.24"
 
 Arduino_DataBus *bus = new Arduino_ESP32QSPI(
   LCD_CS, LCD_SCLK, LCD_SDIO0, LCD_SDIO1, LCD_SDIO2, LCD_SDIO3);
@@ -878,6 +878,7 @@ void loop() {
   // entera, asi que no queda nada a medias; y al quedarse lastRender congelado, el primer
   // frame tras despertar sale en el acto.
   PowerCtx pc = powerCtx(millis());
+  netSetAwake(netStayOnline(pc));  // con bateria, la red mientras este despierta (el movil, Stack-chan)
   audioSetIdle(!amplifierWanted(pc));  // el amplificador consume en reposo
   batSetPollMs(powerCacheMs(pc));
   uint32_t interval = frameIntervalMs(pc);
@@ -946,7 +947,9 @@ void updateBrightness(uint32_t now) {
 void idleWait(PowerCtx c) {
   // no se duerme justo tras dibujar (el volcado DMA del frame sigue en marcha) ni con un aviso sonando
   // con "见面" abierto tampoco: la radio tiene que oir a la otra placa
-  if (lightSleepAllowed(c) && !linkActive() && millis() - lastRender >= 100 && !audioBusy()) {
+  // ni con la radio aun encendida: la tarea de red la apaga en cuanto la placa puede dormir, y un
+  // light sleep en medio cortaria la conexion (tambien la sincronizacion de cada 3 h con bateria)
+  if (lightSleepAllowed(c) && !linkActive() && millis() - lastRender >= 100 && !audioBusy() && !netRadioOn()) {
     c.usb = usbPresentNow();
     if (!lightSleepAllowed(c)) { delay(idleDelayMs(c)); return; }
     // apagada con PWR el toque no cuenta: ni impide dormir (un dedo apoyado en el bolsillo) ni despierta

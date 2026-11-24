@@ -280,3 +280,26 @@ TEST(power, el_boton_de_sonido_cicla_alto_medio_bajo_apagado) {
   CHECK_EQ((int)volCycle(2), VOL_LEVELS);
   CHECK_EQ((int)volCycle(VOL_LEVELS), 0);  // de apagado, al alto
 }
+
+TEST(power, con_bateria_la_red_sigue_mientras_la_placa_esta_despierta) {
+  PowerCtx c = ctx(0);
+  CHECK(netStayOnline(c));   // en uso: el movil (puntos, pasos) y Stack-chan llegan
+  c.idleMs = 100000;
+  CHECK(netStayOnline(c));   // atenuada: aun despierta
+  c.idleMs = 400000;
+  CHECK(!netStayOnline(c));  // casi apagada: va a dormir, la radio se apaga
+  c = ctx(0);
+  c.screenOff = true;
+  CHECK(!netStayOnline(c));  // apagada con PWR
+  c.usb = true;
+  CHECK(netStayOnline(c));   // con USB, siempre
+  // nunca a la vez: con la radio encendida la CPU no se duerme (y al reves)
+  for (uint32_t idle : { 0u, 100000u, 400000u })
+    for (int off = 0; off < 2; off++)
+      for (int usb = 0; usb < 2; usb++) {
+        PowerCtx k = ctx(idle);
+        k.screenOff = off;
+        k.usb = usb;
+        CHECK(netStayOnline(k) != lightSleepAllowed(k));
+      }
+}

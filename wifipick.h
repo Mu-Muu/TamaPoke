@@ -47,3 +47,22 @@ inline uint8_t wifiOrder(const char *const saved[WIFI_SLOTS], const char *const 
   }
   return 0;
 }
+
+// lo escaneado, para la lista del portal: un indice por nombre (el de su mejor senal), sin las
+// ocultas (sin nombre), de mas a menos senal, como mucho max. Devuelve cuantos
+inline uint8_t wifiNearby(const char *const *seen, const int16_t *rssi, int nSeen, uint8_t *out, uint8_t max) {
+  if (nSeen > 255) nSeen = 255;
+  uint8_t n = 0;
+  while (n < max) {
+    int m = -1;
+    for (int j = 0; j < nSeen; j++) {
+      if (!seen[j] || !seen[j][0]) continue;
+      bool ya = false;
+      for (uint8_t k = 0; k < n && !ya; k++) ya = strcmp(seen[out[k]], seen[j]) == 0;
+      if (!ya && (m < 0 || rssi[j] > rssi[m])) m = j;
+    }
+    if (m < 0) break;
+    out[n++] = (uint8_t)m;
+  }
+  return n;
+}

@@ -63,3 +63,16 @@ TEST(wifipick, los_nombres_distinguen_mayusculas) {
   CHECK_EQ(wifiOrder(saved, seen, rssi, 1, -1, out), (uint8_t)1);  // no se ve: a ciegas
   CHECK_EQ(out[0], (uint8_t)0);
 }
+
+TEST(wifipick, la_lista_del_portal_sin_repetidos_ni_ocultas_de_mas_a_menos_senal) {
+  const char *seen[] = { "Casa", "", "Vecino", "Casa", "Cole", nullptr };
+  int16_t rssi[] = { -70, -40, -80, -50, -60, -30 };
+  uint8_t out[8];
+  uint8_t n = wifiNearby(seen, rssi, 6, out, 8);
+  CHECK_EQ(n, (uint8_t)3);  // la oculta ("" o sin nombre) no sale; "Casa" una vez
+  CHECK_EQ(out[0], (uint8_t)3);  // "Casa" con su mejor senal (-50)
+  CHECK_STREQ(seen[out[1]], "Cole");
+  CHECK_STREQ(seen[out[2]], "Vecino");
+  CHECK_EQ(wifiNearby(seen, rssi, 6, out, 2), (uint8_t)2);  // con tope
+  CHECK_EQ(wifiNearby(seen, rssi, 0, out, 8), (uint8_t)0);  // nada escaneado
+}

@@ -92,15 +92,17 @@ input[type=checkbox]{width:auto;margin:0 8px 0 0}
 button{width:100%;padding:12px;font-size:17px}small{color:#666}</style></head><body>
 <h2>TamaPoke Wi-Fi</h2><p>Your Wi-Fi: the board uses it to sync chess.com points every night and to
 get the weather.</p>
-<form method="post" action="/save"><p><b>Wi-Fi 1</b>{1}</p>
-<label>Name</label><input name="ssid"><label>Password</label><input name="pass" type="password">
+<form method="post" action="/save"><datalist id="redes">{L}</datalist><p><b>Wi-Fi 1</b>{1}</p>
+<label>Name</label><input name="ssid" list="redes" autocapitalize="none" autocorrect="off"><label>Password</label><input name="pass" type="password">
 <p><b>Wi-Fi 2</b> (optional){2}</p>
-<label>Name</label><input name="ssid2"><label>Password</label><input name="pass2" type="password">
+<label>Name</label><input name="ssid2" list="redes" autocapitalize="none" autocorrect="off"><label>Password</label><input name="pass2" type="password">
 <p><b>Wi-Fi 3</b> (optional){3}</p>
-<label>Name</label><input name="ssid3"><label>Password</label><input name="pass3" type="password">
-<small>Up to three networks, e.g. home, school and a phone hotspot: the board joins the
+<label>Name</label><input name="ssid3" list="redes" autocapitalize="none" autocorrect="off"><label>Password</label><input name="pass3" type="password">
+<small>Tap a name box to pick one of the networks the board found nearby (or type it, for a hidden
+one). Up to three networks, e.g. home, school and a phone hotspot: the board joins the
 strongest one it can see. 2.4 GHz only: on an iPhone hotspot, turn on Maximize
-Compatibility.</small><br><br>
+Compatibility. Public Wi-Fi with a sign-in page (airports, hotels) won't work: the board can't
+accept it. Use a phone hotspot there.</small><br><br>
 <label>City (optional)</label>
 <input name="city" maxlength="60" placeholder="e.g. Lyon, France">
 <small>Sets the clock's time zone and where the weather comes from. If several places share the
@@ -130,13 +132,13 @@ input{width:100%;padding:10px;margin:6px 0 14px;font-size:16px;box-sizing:border
 input[type=checkbox]{width:auto;margin:0 8px 0 0}
 button{width:100%;padding:12px;font-size:17px}small{color:#666}</style></head><body>
 <h2>TamaPoke Wi-Fi</h2><p>填 Wi-Fi，用来每晚同步 chess.com 的积分和更新天气。</p>
-<form method="post" action="/save"><p><b>Wi-Fi 1</b>{1}</p>
-<label>名称</label><input name="ssid"><label>密码</label><input name="pass" type="password">
+<form method="post" action="/save"><datalist id="redes">{L}</datalist><p><b>Wi-Fi 1</b>{1}</p>
+<label>名称</label><input name="ssid" list="redes" autocapitalize="none" autocorrect="off"><label>密码</label><input name="pass" type="password">
 <p><b>Wi-Fi 2</b>（可不填）{2}</p>
-<label>名称</label><input name="ssid2"><label>密码</label><input name="pass2" type="password">
+<label>名称</label><input name="ssid2" list="redes" autocapitalize="none" autocorrect="off"><label>密码</label><input name="pass2" type="password">
 <p><b>Wi-Fi 3</b>（可不填）{3}</p>
-<label>名称</label><input name="ssid3"><label>密码</label><input name="pass3" type="password">
-<small>最多三个，比如家里、学校和手机热点：板子会连能看到的、信号最强的那个。只支持 2.4 GHz：iPhone 热点要打开"最大兼容性"。</small><br><br>
+<label>名称</label><input name="ssid3" list="redes" autocapitalize="none" autocorrect="off"><label>密码</label><input name="pass3" type="password">
+<small>点名称框，可以从板子在附近找到的网络里选（隐藏的网络就手动输入）。最多三个，比如家里、学校和手机热点：板子会连能看到的、信号最强的那个。只支持 2.4 GHz：iPhone 热点要打开"最大兼容性"。要在网页上点"同意"才能上网的公共 Wi-Fi（机场、酒店）连不了，板子点不了同意，这时请用手机热点。</small><br><br>
 <label>城市（可不填）</label>
 <input name="city" maxlength="60" placeholder="例如：上海，或 Lyon, France">
 <small>用来设定时钟的时区和天气的地点。有重名的城市，可以在逗号后面加上省、州或国家（Springfield, IL）。现在：{P}</small><br><br>
@@ -172,6 +174,10 @@ static const char *const MSG_SAVED[LANG_COUNT] = {
 static bool easyPortal = false;
 
 // la pagina con cada red marcada si ya hay una guardada (sin decir cual)
+// las redes que se ven, para la lista del portal: <option> ya escapadas (un nombre de red lo pone
+// cualquiera); las llena escanearCerca() al abrir el portal
+static String redesCerca;
+
 static void paginaPortal() {
   String page(gLang == LANG_ZH ? PAGINA_ZH : PAGINA_EN);
   for (uint8_t i = 0; i < WIFI_SLOTS; i++) {
@@ -196,6 +202,7 @@ static void paginaPortal() {
   }
   page.replace("{P}", lugar);
   page.replace("{E}", easyPortal ? " checked" : "");
+  page.replace("{L}", redesCerca);
   server->send(200, "text/html; charset=utf-8", page);
 }
 
@@ -269,6 +276,30 @@ static void paginaGuardado() {
   guardado = true;
 }
 
+// Se escanea antes de abrir el punto de acceso: despues, un barrido cortaria al movil
+static void escanearCerca() {
+  redesCerca = "";
+  WiFi.mode(WIFI_STA);
+  int16_t n = WiFi.scanNetworks();  // 2-3 s
+  if (n > 40) n = 40;
+  if (n > 0) {
+    String nombre[40];
+    const char *vistas[40];
+    int16_t rssi[40];
+    for (int16_t i = 0; i < n; i++) {
+      nombre[i] = WiFi.SSID(i);
+      vistas[i] = nombre[i].c_str();
+      rssi[i] = (int16_t)WiFi.RSSI(i);
+    }
+    uint8_t orden[20];
+    uint8_t m = wifiNearby(vistas, rssi, n, orden, sizeof(orden));
+    for (uint8_t k = 0; k < m; k++) redesCerca += "<option value=\"" + htmlEsc(nombre[orden[k]]) + "\">";
+    Serial.printf("portal: %u redes cerca\n", m);
+  }
+  WiFi.scanDelete();
+  WiFi.mode(WIFI_OFF);
+}
+
 static void portalCleanup() {
   if (server) { server->stop(); delete server; server = nullptr; }
   if (dns) { dns->stop(); delete dns; dns = nullptr; }
@@ -287,6 +318,7 @@ void wifiPortalStart(bool easyRegions) {
   WiFi.disconnect(true);
   netUnlock();
   portalCleanup();
+  escanearCerca();
   WiFi.mode(WIFI_AP);
   WiFi.softAP(WIFI_AP_NAME);
   dns = new DNSServer();
@@ -350,9 +382,13 @@ void netSleepGive() { netUnlock(); }
 
 static volatile bool usbPower = false;
 void netSetUsb(bool usb) { usbPower = usb; }
+static volatile bool awakeOnline = false;  // con bateria: la placa esta despierta (power.h netStayOnline)
+void netSetAwake(bool awake) { awakeOnline = awake; }
+bool netRadioOn() { return WiFi.getMode() != WIFI_OFF; }
 // con USB la radio se queda encendida: Stack-chan (si hay punto MCP) puede hablar en
 // cualquier momento y el movil puede mandar los pasos; con bateria solo se conecta un momento
-static bool keepOnline() { return usbPower; }
+// conectada y escuchando (el movil, Stack-chan): con USB, o con bateria mientras la placa esta despierta
+static bool keepOnline() { return usbPower || awakeOnline; }
 
 static int8_t redBuena = -1;  // hueco de la ultima red con la que se conecto (en RAM)
 

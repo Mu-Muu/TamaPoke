@@ -97,7 +97,7 @@ export const GUIDE: Chapter[] = [
       {
         k: "list",
         items: [
-          t("With three networks saved (say home, school and a phone hotspot) the board joins the strongest one it can see. On an iPhone hotspot turn on Maximize Compatibility.", "存了三个 Wi-Fi（比如家里、学校、手机热点）时，板子会连能看到的信号最强的那个。iPhone 热点要打开“最大兼容性”。"),
+          t("With three networks saved (say home, school and a phone hotspot) the board joins the strongest one it can see. On an iPhone hotspot turn on Maximize Compatibility. Public Wi-Fi with a sign-in page (airports, hotels) won't work, because the board can't accept it: use a phone hotspot there.", "存了三个 Wi-Fi（比如家里、学校、手机热点）时，板子会连能看到的信号最强的那个。iPhone 热点要打开“最大兼容性”。要在网页上点“同意”才能上网的公共 Wi-Fi（机场、酒店）连不了，板子点不了同意，这时请用手机热点。"),
           t("The Wi-Fi details stay on the board and are never shown again. Leave a field empty to keep what was saved; enter **-** to delete it.", "Wi-Fi 信息只存在板子上，之后不会再显示。某一栏留空表示不改，填一个减号 **-** 表示删除。"),
           t("Wi-Fi also sets the clock and brings the weather. Without it the pet still works; you just get no chess points.", "连上 Wi-Fi 后还会自动校时、更新天气。不连也能养，只是没有下棋的积分。"),
         ],
@@ -519,7 +519,7 @@ export const GUIDE: Chapter[] = [
         ],
       },
       { k: "h", t: t("Steps from an iPhone", "从 iPhone 同步步数") },
-      { k: "p", t: t("Handy when the board stays at home. The board must be plugged in and on the home Wi-Fi, the phone on the same network. Your code is on the stats page (settings, then stats).", "板子留在家里时很有用。板子要插着电、连着家里的 Wi-Fi，手机在同一个网络。配对码在统计页（设置 → 统计）。") },
+      { k: "p", t: t("Handy when the board stays at home. The board must be on the home Wi-Fi and plugged in, or awake on battery (screen on: press PWR first; it goes offline when the screen turns itself off), the phone on the same network. Your code is on the stats page (settings, then stats).", "板子留在家里时很有用。板子要连着家里的 Wi-Fi，并且插着电，或者用电池时醒着（屏幕亮着：先按一下电源键；屏幕自己关掉后会断网省电），手机在同一个网络。配对码在统计页（设置 → 统计）。") },
       {
         k: "steps",
         items: [
@@ -547,7 +547,7 @@ export const GUIDE: Chapter[] = [
           t("Add **Get Contents of URL**: http://tamapoke.local/reward?pts= + Provided Input + &k= + your code (the same one as for steps).", "添加**获取 URL 内容**：http://tamapoke.local/reward?pts= + 提供的输入 + &k= + 你的配对码（和步数用同一个）。"),
         ],
       },
-      { k: "p", t: t("0 to 100 points at a time, for chores, reading or a good day, with no daily limit. The board wakes up and shows the reward; the points book has a line for it. Same conditions: board plugged in, phone on the same Wi-Fi.", "每次 0 到 100 分，做家务、读书、表现好都可以奖励，每天不设上限。板子会亮屏显示加分，积分本里也有一项。条件一样：板子插着电，手机和板子连着同一个 Wi-Fi。") },
+      { k: "p", t: t("0 to 100 points at a time, for chores, reading or a good day, with no daily limit. The board wakes up and shows the reward; the points book has a line for it. Same conditions: board plugged in or awake, phone on the same Wi-Fi.", "每次 0 到 100 分，做家务、读书、表现好都可以奖励，每天不设上限。板子会亮屏显示加分，积分本里也有一项。条件一样：板子插着电或者醒着，手机和板子连着同一个 Wi-Fi。") },
       { k: "h", t: t("Voice control", "语音控制") },
       { k: "p", t: t("With a Stack-chan or another xiaozhi voice assistant, the board can be asked how the pet is and told to feed it, play, bathe it or put it to bed. The setup is in the README.", "有 Stack-chan 或其他小智语音设备时，可以用语音问宠物的状态，让它吃饭、玩耍、洗澡或睡觉。设置方法见说明文档。") },
       {
@@ -583,7 +583,7 @@ export const GUIDE: Chapter[] = [
           },
           {
             q: t("It won't connect to Wi-Fi.", "连不上 Wi-Fi。"),
-            a: t("The board only uses 2.4 GHz networks. On an iPhone hotspot turn on Maximize Compatibility. To change a network, open the Wi-Fi page again and fill in only the field you want to change.", "板子只支持 2.4 GHz 的网络。iPhone 热点要打开“最大兼容性”。要改某个 Wi-Fi，重新打开 Wi-Fi 设置页，只填要改的那一栏。"),
+            a: t("The board only uses 2.4 GHz networks. On an iPhone hotspot turn on Maximize Compatibility. Public Wi-Fi that asks you to accept on a web page won't work: use a phone hotspot. To change a network, open the Wi-Fi page again and fill in only the field you want to change.", "板子只支持 2.4 GHz 的网络。iPhone 热点要打开“最大兼容性”。要在网页上点“同意”的公共 Wi-Fi 连不了，请用手机热点。要改某个 Wi-Fi，重新打开 Wi-Fi 设置页，只填要改的那一栏。"),
           },
           {
             q: t("I bought an egg but can't open it.", "买了蛋，但是打不开。"),

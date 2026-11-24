@@ -227,7 +227,9 @@ On the settings page tap **Wi-Fi**. The board opens an access point called
 `TamaPoke`; join it with a phone and open `192.168.4.1` (the page is in the
 board's language). Enter up to three networks (for example home, school and a
 phone hotspot: the board joins the strongest one it can see; 2.4 GHz only, so
-on an iPhone hotspot turn on Maximize Compatibility), and optionally
+on an iPhone hotspot turn on Maximize Compatibility; public Wi-Fi with a sign-in page,
+as in airports and hotels, won't work because the board can't accept it, so use a phone
+hotspot there), and optionally
 your city and your chess.com username. The city sets the clock's time zone
 (with daylight saving) and the weather; if several places share the name, add
 the state or country after a comma (`Springfield, IL`, `Lyon, France`). The
@@ -564,8 +566,9 @@ no Mega form. The sprites are `mons/mNNN.bin` on the SD (`tools/pack_pmd.py mega
 ### Steps from an iPhone
 
 The board can take the day's steps from the iPhone's Health app (handy when the
-board stays at home). It has to be plugged in and on the home Wi-Fi; the phone on
-the same network. The code is on the stats page (settings → stats → "Phone
+board stays at home). It has to be on the home Wi-Fi, plugged in or awake on battery
+(screen on: press PWR first; once the screen turns itself off it goes offline to save the
+battery); the phone on the same network. The code is on the stats page (settings → stats → "Phone
 steps code").
 
 In the **Shortcuts** app: Automation → New Automation → **Time of Day** (for
@@ -593,7 +596,7 @@ In the **Shortcuts** app, a new shortcut with:
 2. **Get Contents of URL**: `http://tamapoke.local/hockey?min=` + Provided Input + `&k=` + your code (the same one as for steps).
 3. **Show Result** (optional): the board answers `{"ok":true,"min":15}`.
 
-Same conditions as the steps: board plugged in, phone on the home Wi-Fi.
+Same conditions as the steps: board plugged in or awake, phone on the home Wi-Fi.
 
 ### Rewards from a parent's iPhone
 
@@ -608,7 +611,7 @@ In the **Shortcuts** app, a new shortcut with:
 2. **Get Contents of URL**: `http://tamapoke.local/reward?pts=` + Provided Input + `&k=` + your code (the same one as for steps).
 3. **Show Result** (optional): the board answers `{"ok":true,"pts":5}`.
 
-Same conditions as the steps: board plugged in, phone on the same Wi-Fi as the board.
+Same conditions as the steps: board plugged in or awake, phone on the same Wi-Fi as the board.
 
 ### World and power
 
