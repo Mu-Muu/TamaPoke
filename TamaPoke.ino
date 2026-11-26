@@ -57,7 +57,11 @@
 // Version del firmware. Subir este numero en cada release (y manifest.json para
 // el instalador web). Se muestra en la pantalla de ajustes y por serie al arrancar.
 // version de esta fork: la fecha en que se publica (la base es la v1.18 de socquique)
-#define FW_VERSION "2026.11.24"
+#define FW_VERSION "2026.11.26"
+// commit de la build del instalador web: lo pasa tools/build_web.sh con -DFW_BUILD; vacio al compilar a mano
+#ifndef FW_BUILD
+#define FW_BUILD ""
+#endif
 
 Arduino_DataBus *bus = new Arduino_ESP32QSPI(
   LCD_CS, LCD_SCLK, LCD_SDIO0, LCD_SDIO1, LCD_SDIO2, LCD_SDIO3);
@@ -390,7 +394,8 @@ void setup() {
   // monitor serie abierto en el host (el bufer TX del USB CDC se llena
   // y nadie lo vacia) -> con timeout 0 los mensajes se descartan
   Serial.setTxTimeoutMs(0);
-  Serial.printf("TamaPoke fw v%s\n", FW_VERSION);
+  if (FW_BUILD[0]) Serial.printf("TamaPoke fw v%s (%s)\n", FW_VERSION, FW_BUILD);
+  else Serial.printf("TamaPoke fw v%s\n", FW_VERSION);
   loadLang();  // idioma guardado (ES por defecto)
   Wire.begin(IIC_SDA, IIC_SCL);
   // CST9217 (tactil), AXP2101 (PMU) y PCF85063 (RTC) comparten este bus I2C.

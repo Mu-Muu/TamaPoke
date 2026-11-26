@@ -199,8 +199,9 @@ void renderClock() {
   printT(T(S_CLOCK_CANCEL));
 
   // version del firmware (discreta, abajo del todo)
-  char ver[32];  // "TamaPoke v2026.11.15": con 20 se cortaba la ultima cifra
-  snprintf(ver, sizeof(ver), "TamaPoke v%s", FW_VERSION);
+  char ver[48];  // "TamaPoke v2026.11.15 (5bf7d94)": con 20 se cortaba la ultima cifra
+  if (FW_BUILD[0]) snprintf(ver, sizeof(ver), "TamaPoke v%s (%s)", FW_VERSION, FW_BUILD);
+  else snprintf(ver, sizeof(ver), "TamaPoke v%s", FW_VERSION);
   setSize(1);
   setCur(centerX(ver, 1), 422);
   printT(ver);

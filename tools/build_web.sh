@@ -22,7 +22,7 @@ echo "Compilando $REV (v$VER) sin ajustes personales..."
 # rutas sin el nombre de usuario: __FILE__ de asserts y bibliotecas acaban en el firmware
 MAP="-ffile-prefix-map=$HOME=/home/builder -ffile-prefix-map=/$HOME=/home/builder -ffile-prefix-map=$TMP=/src"
 arduino-cli compile --fqbn "$FQBN" --build-path "$TMP/build" \
-  --build-property "compiler.c.extra_flags=$MAP" --build-property "compiler.cpp.extra_flags=$MAP" \
+  --build-property "compiler.c.extra_flags=$MAP" --build-property "compiler.cpp.extra_flags=$MAP -DFW_BUILD=\"$REV\"" \
   --build-property "compiler.S.extra_flags=$MAP" "$TMP/TamaPoke" | grep -E 'Sketch uses'
 if LC_ALL=C grep -q -a -e "$HOME" -e "$TMP" "$TMP/build/TamaPoke.ino.bin"; then
   echo "ERROR: el firmware aun lleva rutas locales"; exit 1
