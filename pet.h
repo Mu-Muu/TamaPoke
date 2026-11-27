@@ -262,6 +262,9 @@ public:
   // granja: especies guardadas en ella (las rellena el sketch al leer la SD).
   // Ni salen de un huevo ni son destino de evolucion mientras esten ahi.
   uint8_t farmReg[PET_DEX_BYTES] = { 0 };
+  // favoritos (issue #17, el corazon de la ficha de la granja): por especie y del jugador, asi
+  // siguen aunque entre y salga de la granja. Salen primero al elegir (gimnasios, ocio)
+  uint8_t favReg[PET_DEX_BYTES] = { 0 };
   bool fromFarm = false;  // el compañero actual es uno de la granja (sacado)
   // sin compañero: tras un final no sale huevo solo; hay que abrir uno de la
   // mochila (o sacar uno de la granja). speciesId sigue en -1, asi que isEgg()
@@ -453,6 +456,10 @@ public:
   bool inFarm(int16_t dex) const {
     return dex >= 1 && dex <= PET_DEX_MAX && (farmReg[(dex - 1) >> 3] & (1 << ((dex - 1) & 7)));
   }
+  bool isFav(int16_t dex) const {
+    return dex >= 1 && dex <= PET_DEX_MAX && (favReg[(dex - 1) >> 3] & (1 << ((dex - 1) & 7)));
+  }
+  void setFav(int16_t dex, bool on);  // pone o quita el corazon (se guarda cuando toque)
 
   bool isEgg() const { return speciesId < 0; }
   // ¿se puede sacar a uno de la granja? Con un huevo no; sin compañero (hueco, tras una
@@ -594,3 +601,8 @@ private:
   void load();
   static uint8_t clamp100(int v) { return v < 0 ? 0 : (v > 100 ? 100 : v); }
 };
+
+// listas de elegir (gimnasios, ocio): el candidato i es de la especie dex[i]. Deja en
+// order[0..n-1] los indices de los candidatos, los favoritos primero y cada grupo en su
+// orden; devuelve n
+int favFirst(const Pet &p, const int16_t *dex, int n, int *order);

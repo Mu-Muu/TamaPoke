@@ -369,6 +369,13 @@ void handleSerial() {
   } else if (line == "FARMUNDO") {  // deshace la ultima fruta dada a uno de la granja (pruebas)
     Serial.printf("granja deshecha=%d\n", farmUndoFruit());
     Serial.println("DONE");
+  } else if (line.startsWith("FAV ")) {  // FAV n: pone o quita el corazon de la especie n (pruebas)
+    int n = line.substring(4).toInt();
+    bool ok = n >= 1 && n <= PET_DEX_MAX;  // antes de pasarlo a int16_t
+    if (ok) pet.setFav(n, !pet.isFav(n));
+    farmDirty = true;  // la rejilla de la granja lo pinta ya
+    Serial.printf("fav %d=%d\n", n, ok && pet.isFav(n));
+    Serial.println("DONE");
   } else if (line.startsWith("GRASSFX ")) {  // GRASSFX s: la mata de la hierba se ve s segundos (solo se ve)
     grassFxUntil = millis() + line.substring(8).toInt() * 1000UL;
     Serial.println("DONE");

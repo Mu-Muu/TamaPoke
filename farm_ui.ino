@@ -35,6 +35,37 @@ void drawAskBox(const char *l1, const char *l2) {
 }
 int askTap(int16_t x, int16_t y) { return (x >= 118 && x <= 218 && y >= 252 && y <= 304) ? 1 : 0; }
 
+// ---------- favoritos (issue #17) ----------
+
+// corazon de medio ancho r en (cx, cy): dos lobulos y un triangulo; in > 0, el mismo in px
+// mas adentro (para dejar solo el contorno)
+static void heartFill(int cx, int cy, int r, int in, uint16_t c) {
+  int a = (r * 5 + 4) / 9, d = r * 4 / 9, ly = cy - r * 7 / 18;  // lobulos: radio, separacion y altura
+  int w = d + a - in, by = ly + a / 3 - in;                        // base del triangulo
+  gfx->fillCircle(cx - d, ly, a - in, c);
+  gfx->fillCircle(cx + d, ly, a - in, c);
+  gfx->fillTriangle(cx - w, by, cx + w, by, cx, cy + r * 17 / 18 - in * 3 / 2, c);
+}
+
+// el corazon de los favoritos: grande en la ficha de la granja (lleno o solo el contorno, sobre
+// el fondo de dia) y chico (r 6) arriba a la izquierda de las casillas de elegir (a la derecha
+// ya van el shiny y la estrella del gimnasio). El rosa de los corazones de los gestos
+void drawFavHeart(int cx, int cy, int r, bool on) {
+  heartFill(cx, cy, r, 0, C565(0xe8, 0x40, 0x68));
+  if (!on) heartFill(cx, cy, r, 3, UI_BG_DAY);
+}
+
+// las listas de elegir de la granja (gimnasios, ocio): en order (sitio para PET_DEX_MAX) sus
+// indices en la granja, los favoritos primero; devuelve cuantos (0: sin memoria)
+int farmFavOrder(int *order) {
+  static int16_t *dex = nullptr;  // en PSRAM, como la granja
+  if (!dex) dex = (int16_t *)ps_malloc(PET_DEX_MAX * sizeof(int16_t));
+  if (!dex) return 0;
+  int n = farmCount();
+  for (int i = 0; i < n; i++) dex[i] = farmAt(i).speciesId;
+  return favFirst(pet, dex, n, order);
+}
+
 // despedida (al final de su ciclo): se va a vivir a la granja, no desaparece. Antes se iba del
 // todo y un toque sin querer a "despedirse" lo perdia. Si no se puede guardar, no se despide
 void farewellToFarm() {
@@ -238,6 +269,8 @@ void farmSwipe(int dir) {
 // frutas para los de la granja: la misma regla que el compañero (FRUITS_PER_DAY al dia,
 // en su ficha); alli no pasan hambre, asi que pasado el tope no se gasta
 #define FF_Y 128
+#define FAV_X (CX + 150)  // el corazon de favorito, a la derecha (entre las frutas y el boton)
+#define FAV_Y 200
 static PetRec farmRec;        // la ficha (SD) del que se esta viendo: tipo y capacidades
 static bool farmRecOk = false;
 static PetRec farmUndo;       // la ficha de antes de la ultima fruta (consola FARMUNDO, pruebas)
@@ -289,6 +322,13 @@ void farmTap(int16_t x, int16_t y) {
           feedFarmFruit(farmDetail, ITEM_FRUIT_STA + k);
           return;
         }
+    }
+    int dx = x - FAV_X, dy = y - FAV_Y;
+    if (dx * dx + dy * dy <= 28 * 28 && farmDetail < farmCount()) {  // el corazon: favorito o no
+      int16_t d = farmAt(farmDetail).speciesId;
+      pet.setFav(d, !pet.isFav(d));
+      sfxPlay(SFX_TAP);
+      return;
     }
     farmDetail = -1;  // fuera del boton: volver a la rejilla
     galleryPmd.unload();
@@ -354,6 +394,7 @@ void renderFarm() {
       printT(tr);
     }
     if (galleryPmd.loaded) drawPmdActM(galleryPmd, PMD_IDLE, CX, 320, millis(), true, false, 5);
+    drawFavHeart(FAV_X, FAV_Y, 16, pet.isFav(e.speciesId));  // encima del bicho: siempre se ve
     if (hasStatFruit())  // las frutas de la mochila: tocar una se la da
       for (int k = 0; k < 4; k++) {
         uint8_t it = ITEM_FRUIT_STA + k;
@@ -406,6 +447,7 @@ void renderFarm() {
       setCur(x + FARM_CELL - 22, y + 6);
       printT("*");
     }
+    if (pet.isFav(e.speciesId)) drawFavHeart(x + 12, y + 12, 6, true);
   }
   if (farmPages() > 1) {  // pagina, a la izquierda del boton del album
     char pg[8];

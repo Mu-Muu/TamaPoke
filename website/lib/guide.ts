@@ -349,6 +349,7 @@ export const GUIDE: Chapter[] = [
           t("**Long press** your companion to send it to the farm. Swipe left for activities and tap **Farm** to visit.", "**长按**伙伴可以把它送去农场。向左滑打开活动，点**农场**去看它们。"),
           t("Farm Pokémon keep growing at a tenth of the speed (without evolving), come back healthy, and sometimes walk across the main screen.", "农场里的宝可梦以十分之一的速度继续长大（不会进化），接回来时是健康的，偶尔还会走到主屏幕上串门。"),
           t("You can take one back at any time. You need **two** in the farm to enter the gyms, and different types open more of Fun.", "随时可以把它换回来。道馆要求农场里至少有**两只**；属性越多，趣玩能玩的也越多。"),
+          t("Tap the heart on a farm Pokémon's page to make it a favourite: favourites come first when you pick Pokémon for the gyms and Fun.", "在农场里点开一只宝可梦，点右边的爱心可以收藏它；在道馆和趣玩里挑宝可梦时，收藏的排在最前面。"),
         ],
       },
       { k: "h", t: t("Album and backup", "相册和备份") },

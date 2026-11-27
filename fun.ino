@@ -58,10 +58,13 @@ static float fuRand() { return random(10000) / 10000.0f; }
 static bool petFits(uint8_t act) { return !pet.vacant && !pet.isEgg() && funOf(typeOf(pet.speciesId)) == act; }
 static bool outOnQuest(int16_t dex) { return pet.questEnd && pet.questDex == dex && fnNow() < pet.questEnd; }
 static void listCands(uint8_t act) {
+  static int *ord = nullptr;  // la granja con los favoritos primero (PSRAM): asi caben en los 64
+  if (!ord) ord = (int *)ps_malloc(PET_DEX_MAX * sizeof(int));
+  int n = ord ? farmFavOrder(ord) : 0;
   fnCandN = 0;
-  for (int i = 0; i < farmCount() && fnCandN < 64; i++) {
-    int16_t d = farmAt(i).speciesId;
-    if (funOf(typeOf(d)) == act && !outOnQuest(d)) fnCand[fnCandN++] = i;
+  for (int k = 0; k < n && fnCandN < 64; k++) {
+    int16_t d = farmAt(ord[k]).speciesId;
+    if (funOf(typeOf(d)) == act && !outOnQuest(d)) fnCand[fnCandN++] = ord[k];
   }
 }
 static void countWho() {
@@ -358,6 +361,7 @@ static void renderFunPick() {
     gfx->drawRoundRect(x, y, FP_CELL - 6, FP_CELL - 6, 12, UI_TRACK);
     const uint8_t *th = thumbs.get(farmAt(fnCand[k]).speciesId);
     if (th) drawThumbIn(th, x, y, 2, false, FP_CELL - 6);
+    if (pet.isFav(farmAt(fnCand[k]).speciesId)) drawFavHeart(x + 12, y + 12, 6, true);
   }
   gfx->setTextColor(UI_HINT);
   setSize(2);

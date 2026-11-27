@@ -57,7 +57,7 @@
 // Version del firmware. Subir este numero en cada release (y manifest.json para
 // el instalador web). Se muestra en la pantalla de ajustes y por serie al arrancar.
 // version de esta fork: la fecha en que se publica (la base es la v1.18 de socquique)
-#define FW_VERSION "2026.11.26"
+#define FW_VERSION "2026.11.27"
 // commit de la build del instalador web: lo pasa tools/build_web.sh con -DFW_BUILD; vacio al compilar a mano
 #ifndef FW_BUILD
 #define FW_BUILD ""

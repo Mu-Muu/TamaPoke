@@ -11,8 +11,10 @@ static bool gyLeague = false;
 static uint8_t lgMember = 0;             // liga: 0..3 alto mando, 4 campeon
 static int16_t teamDex[3];               // 0 = el compañero, 1 y 2 de la granja
 static Athlete teamA[3];
-static int8_t farmPick[2] = { -1, -1 };  // indices en la granja
+static int16_t farmPick[2] = { -1, -1 };  // indices en la granja (pasan de 127)
 static uint8_t gyPage = 0;
+static int *gyOrder = nullptr;           // la granja al elegir: indices, los favoritos primero (PSRAM)
+static int gyOrderN = 0;
 static uint8_t gyEv[3], gyPerm[3], foePerm[3];  // pruebas; quien de cada equipo hace cada una
 static uint8_t gyRound = 0, gyWins = 0, gyLost = 0;
 static bool gyWon = false;
@@ -238,6 +240,15 @@ static void renderGymDetail() {
   drawToast();
 }
 
+// a elegir de la granja: en el orden de la lista (los favoritos primero), fijo mientras se elige
+static void openTeam() {
+  if (!gyOrder) gyOrder = (int *)ps_malloc(PET_DEX_MAX * sizeof(int));
+  gyOrderN = gyOrder ? farmFavOrder(gyOrder) : 0;
+  farmPick[0] = farmPick[1] = -1;
+  gyPage = 0;
+  gyStage = GY_TEAM;
+}
+
 static void gymDetailTap(int16_t x, int16_t y) {
   if (y < 300 || y > 346 || abs(x - CX) > 100) {  // fuera del boton: a la lista
     gyStage = GY_LIST;
@@ -256,9 +267,7 @@ static void gymDetailTap(int16_t x, int16_t y) {
     gyWaitAt = millis();
     return;
   }
-  farmPick[0] = farmPick[1] = -1;
-  gyPage = 0;
-  gyStage = GY_TEAM;
+  openTeam();
 }
 
 // ---------- equipo: el compañero y dos de la granja ----------
@@ -267,6 +276,8 @@ static void gymDetailTap(int16_t x, int16_t y) {
 #define FT_Y0 150
 #define FT_CELL 92
 static int farmPages9() { return (farmCount() + 5) / 6; }  // 6 por pagina (3 x 2)
+// la casilla k (contando las paginas de antes) -> su indice en la granja (-1: ninguno)
+static int teamAt(int k) { return k < gyOrderN && gyOrder[k] < farmCount() ? gyOrder[k] : -1; }
 
 // en una casilla de lado w: su tipo (punto, abajo a la izquierda) y una estrella (arriba a la
 // derecha) si su tipo tiene ventaja en alguna de las pruebas de este gimnasio
@@ -301,8 +312,8 @@ static void renderGymTeam() {
     drawFitMarks(gyFriendAth.dex, CX, 74, 80);
   }
   for (int i = 0; i < 6; i++) {
-    int idx = gyPage * 6 + i;
-    if (idx >= farmCount()) break;
+    int idx = teamAt(gyPage * 6 + i);
+    if (idx < 0) continue;
     int x = FT_X0 + (i % 3) * FT_CELL, y = FT_Y0 + (i / 3) * FT_CELL;
     bool sel = farmPick[0] == idx || farmPick[1] == idx;
     if (sel) gfx->fillRoundRect(x, y, FT_CELL - 6, FT_CELL - 6, 12, 0xB6F2);
@@ -310,6 +321,7 @@ static void renderGymTeam() {
     const uint8_t *th = thumbs.get(farmAt(idx).speciesId);
     if (th) drawThumbIn(th, x, y, 2, false, FT_CELL - 6);
     drawFitMarks(farmAt(idx).speciesId, x, y, FT_CELL - 6);
+    if (pet.isFav(farmAt(idx).speciesId)) drawFavHeart(x + 12, y + 12, 6, true);
   }
   bool listo = farmPick[0] >= 0 && (juntos || farmPick[1] >= 0);
   gfx->fillRoundRect(CX - 90, 340, 180, 42, 14, listo ? UI_BAR_OK : UI_TRACK);
@@ -365,8 +377,8 @@ static void gymTeamTap(int16_t x, int16_t y) {
   if (x < FT_X0 || y < FT_Y0) return;
   int c = (x - FT_X0) / FT_CELL, r = (y - FT_Y0) / FT_CELL;
   if (c > 2 || r > 1) return;
-  int idx = gyPage * 6 + r * 3 + c;
-  if (idx >= farmCount()) return;
+  int idx = teamAt(gyPage * 6 + r * 3 + c);
+  if (idx < 0) return;
   sfxPlay(SFX_TAP);
   if (gyFriend >= 0) {  // con un amigo solo se elige uno
     farmPick[0] = farmPick[0] == idx ? -1 : idx;
@@ -686,9 +698,7 @@ void gymsFriendAnswer(uint8_t fi, const FInviteAns &a) {
     return;
   }
   gyFriendAth = a.ath;
-  farmPick[0] = farmPick[1] = -1;
-  gyPage = 0;
-  gyStage = GY_TEAM;
+  openTeam();
 }
 
 // como sportsLeaveForFriend: en la lista, la ficha o el final con ese amigo se deja; si los dos

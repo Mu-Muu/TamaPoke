@@ -406,7 +406,8 @@ never give points.
 - The **farm** keeps companions you send there on the SD card. They keep
   growing at a tenth of the speed (without evolving), come back healthy, and
   sometimes walk across the main screen. Species in the farm don't come out of
-  eggs or evolutions.
+  eggs or evolutions. Tap the heart on a farm Pokémon's page to make it a
+  favourite: favourites come first when you pick Pokémon for the gyms and Fun.
 - The **album** keeps one page per companion that has left, with dates, level,
   medals and how it ended.
 - A **backup** of the game is written to the SD once a day (Wi-Fi details are

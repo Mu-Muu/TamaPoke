@@ -1150,6 +1150,83 @@ TEST(farm, con_un_huevo_no_se_saca_de_la_granja) {
   CHECK(q.canTakeFromFarm());  // con compañero: se cambia por el
 }
 
+// ---------------------------------------------------------------- favoritos (issue #17)
+TEST(farm, el_corazon_se_pone_y_se_quita_por_especie) {
+  Pet p;
+  makePet(p, 4);
+  p.flushSave();
+  CHECK(!p.isFav(25));
+  p.setFav(25, true);
+  CHECK(p.isFav(25));
+  CHECK(!p.isFav(24));
+  CHECK(!p.isFav(26));
+  CHECK(!p.inFarm(25));  // no es lo mismo que estar en la granja
+  CHECK_MSG(p.savePending(), "se guarda cuando toque");
+  p.setFav(PET_DEX_MAX, true);
+  p.setFav(25, false);
+  CHECK(!p.isFav(25));
+  CHECK(p.isFav(PET_DEX_MAX));
+  p.flushSave();
+  p.setFav(0, true);  // fuera de 1..PET_DEX_MAX: no hace nada
+  p.setFav(-1, true);
+  p.setFav(PET_DEX_MAX + 1, true);
+  CHECK(!p.isFav(0));
+  CHECK(!p.isFav(-1));
+  CHECK(!p.isFav(PET_DEX_MAX + 1));
+  CHECK(!p.savePending());
+  int n = 0;
+  for (int d = 1; d <= PET_DEX_MAX; d++) n += p.isFav(d);
+  CHECK_EQ(n, 1);
+}
+
+TEST(save, los_favoritos_sobreviven_a_un_reinicio) {
+  Pet g;
+  makePet(g, 25);
+  PetRec r;
+  g.exportRec(r);
+  Pet a;
+  makePet(a, 4);
+  a.setFav(25, true);
+  a.setFav(PET_DEX_MAX, true);
+  a.importRec(r);  // sacar uno de la granja (y guardar) no los toca: son por especie
+  CHECK(a.isFav(25));
+  a.setFav(1, true);
+  a.flushSave();
+  Pet b;
+  b.begin();  // mismo "NVS": simula un reinicio
+  CHECK(b.isFav(1));
+  CHECK(b.isFav(25));
+  CHECK(b.isFav(PET_DEX_MAX));
+  CHECK(!b.isFav(4));
+}
+
+TEST(farm, al_elegir_los_favoritos_van_primero_cada_uno_en_su_orden) {
+  Pet p;
+  makePet(p, 4);
+  const int16_t dex[6] = { 150, 4, 7, 25, 1, 133 };  // el orden de la lista, no el de la pokedex
+  p.setFav(7, true);
+  p.setFav(150, true);
+  p.setFav(1, true);
+  p.setFav(9, true);  // favorito que no esta en la lista: no cuenta
+  int order[6];
+  CHECK_EQ(favFirst(p, dex, 6, order), 6);
+  const int want[6] = { 0, 2, 4, 1, 3, 5 };
+  for (int i = 0; i < 6; i++) CHECK_EQ(order[i], want[i]);
+}
+
+TEST(farm, sin_favoritos_el_orden_no_cambia) {
+  Pet p;
+  makePet(p, 4);
+  const int16_t dex[5] = { 1, 4, 7, 25, 133 };
+  int order[5];
+  CHECK_EQ(favFirst(p, dex, 5, order), 5);
+  for (int i = 0; i < 5; i++) CHECK_EQ(order[i], i);
+  for (int i = 0; i < 5; i++) p.setFav(dex[i], true);  // todos favoritos: tampoco
+  CHECK_EQ(favFirst(p, dex, 5, order), 5);
+  for (int i = 0; i < 5; i++) CHECK_EQ(order[i], i);
+  CHECK_EQ(favFirst(p, dex, 0, order), 0);
+}
+
 TEST(egg, con_compañero_no_se_abren_huevos) {
   Pet p;
   makePet(p, 4);

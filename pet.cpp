@@ -922,6 +922,22 @@ void Pet::importRec(const PetRec &r) {
   save();
 }
 
+void Pet::setFav(int16_t dex, bool on) {
+  if (dex < 1 || dex > PET_DEX_MAX) return;
+  uint8_t &b = favReg[(dex - 1) >> 3];
+  uint8_t m = (uint8_t)(1 << ((dex - 1) & 7));
+  b = on ? (b | m) : (b & ~m);
+  pendingSave = true;
+}
+
+int favFirst(const Pet &p, const int16_t *dex, int n, int *order) {
+  int k = 0;
+  for (int pasada = 0; pasada < 2; pasada++)  // primero los favoritos, luego los demas
+    for (int i = 0; i < n; i++)
+      if (p.isFav(dex[i]) == (pasada == 0)) order[k++] = i;
+  return k;
+}
+
 void Pet::release() {
   if (isEgg() || ceremony != CER_NONE) return;
   lastEnd = CER_RELEASE;
@@ -1578,6 +1594,7 @@ void Pet::save() {
   prefs.putBool("stpk", starterPick);
   prefs.putBytes("dexsh", dexShinyReg, sizeof(dexShinyReg));
   prefs.putBytes("dexfr", dexFriend, sizeof(dexFriend));
+  prefs.putBytes("fav", favReg, sizeof(favReg));
   prefs.putUInt("age", ageMinutes);
   prefs.putShort("dexn", speciesId);
   prefs.putShort("eggT2", eggTarget);
@@ -1677,6 +1694,7 @@ void Pet::load() {
   starterPick = prefs.getBool("stpk", false);
   prefs.getBytes("dexsh", dexShinyReg, sizeof(dexShinyReg));
   prefs.getBytes("dexfr", dexFriend, sizeof(dexFriend));
+  prefs.getBytes("fav", favReg, sizeof(favReg));
   ageMinutes = prefs.getUInt("age", 0);
   if (prefs.isKey("dexn")) {
     speciesId = prefs.getShort("dexn", -1);
