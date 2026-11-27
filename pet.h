@@ -367,6 +367,7 @@ public:
   bool takeStepBonus();        // acaba de llegar a los diez mil: true una vez, para enseñarlo
   // megaevolucion: gasta una piedra (MEGA_OK) o dice por que no (MEGA_*, sin gastarla)
   uint8_t useMegaStone();
+  bool canMega() const;  // el compañero tiene megaevolucion (si no, la piedra sale apagada)
   bool isMega() const { return megaUntil && lastSeenEpoch < megaUntil; }
   bool takeMegaChange(bool &on);  // empezo (on) o acabo la megaevolucion: una vez, para enseñarlo
   bool grantSportsStone();        // premio de una prueba ganada: una piedra, como mucho una al dia

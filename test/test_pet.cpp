@@ -2205,6 +2205,23 @@ TEST(mega, sin_megaevolucion_o_ya_mega_o_sin_piedra_no_gasta_nada) {
   CHECK_EQ(q.bag[ITEM_MEGA_STONE], (uint16_t)1);
 }
 
+TEST(mega, la_piedra_solo_se_puede_tocar_si_tiene_megaevolucion) {
+  Pet p;
+  makePet(p, 6);  // Charizard: si
+  CHECK(p.canMega());
+  p.vacant = true;  // sin compañero: no
+  CHECK(!p.canMega());
+  Pet q;
+  makePet(q, 4);  // Charmander: no
+  CHECK(!q.canMega());
+  mockNvsReset();
+  Pet h;
+  h.begin();
+  h.chooseStarter(6);  // aun es huevo: no
+  CHECK(h.isEgg());
+  CHECK(!h.canMega());
+}
+
 TEST(mega, se_acaba_si_cambia_de_compañero) {
   Pet p;
   makePet(p, 6);

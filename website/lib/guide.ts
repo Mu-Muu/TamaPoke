@@ -309,7 +309,7 @@ export const GUIDE: Chapter[] = [
       },
       { k: "p", t: t("These are the base chances; good care of the companion before it improves them. Eggs only bring species from regions you have opened, and never one that is already in your farm. About 1 egg in 48 is **shiny** (1 in 24 after a proper farewell); a shiny charm in the bag is used on the next egg and makes it four times as likely.", "这是基础几率，上一位伙伴照顾得好会提高。蛋里只会孵出已开放地区的宝可梦，而且不会和农场里已有的重复。大约每 48 颗蛋出一只**异色**（好好告别之后是 24 颗）；背包里有异色符时，下一颗蛋会用掉它，机会变成四倍。") },
       { k: "h", t: t("Mega Evolution", "超级进化") },
-      { k: "p", t: t(`Use a **Mega Stone** from the bag: ${MEGAS.length} species (Charizard X, Mewtwo Y, Gengar, Lucario, Rayquaza...) Mega Evolve for 24 hours and then change back. It adds 15% in the tournament and the gyms. If your companion has no Mega form the stone is not used up.`, `在背包里用一颗 **Mega石**：${MEGAS.length} 种宝可梦（喷火龙 X、超梦 Y、耿鬼、路卡利欧、烈空坐……）会超级进化 24 小时，然后变回来。超级进化在锦标赛和道馆里有 15% 的加成。伙伴没有超级进化形态时，石头不会被用掉。`) },
+      { k: "p", t: t(`Use a **Mega Stone** from the bag: ${MEGAS.length} species (Charizard X, Mewtwo Y, Gengar, Lucario, Rayquaza...) Mega Evolve for 24 hours and then change back. It adds 15% in the tournament and the gyms. If your companion has no Mega form, the stone is greyed out in the bag and can't be tapped.`, `在背包里用一颗 **Mega石**：${MEGAS.length} 种宝可梦（喷火龙 X、超梦 Y、耿鬼、路卡利欧、烈空坐……）会超级进化 24 小时，然后变回来。超级进化在锦标赛和道馆里有 15% 的加成。伙伴没有超级进化形态时，背包里的 Mega石是灰的，点不了。`) },
       {
         k: "p",
         t: t(

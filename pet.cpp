@@ -676,6 +676,8 @@ uint8_t Pet::useMegaStone() {
   return MEGA_OK;
 }
 
+bool Pet::canMega() const { return !isEgg() && !vacant && megaFor(speciesId); }
+
 bool Pet::takeMegaChange(bool &on) {
   if (!megaEvent) return false;
   on = megaEvent == 1;

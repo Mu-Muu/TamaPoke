@@ -249,6 +249,7 @@ void shopTap(int16_t x, int16_t y) {
       toast(T(S_NO_POINTS));
     }
   } else {
+    if (item == ITEM_MEGA_STONE && !pet.canMega()) return;  // apagada: tocarla no hace nada
     useItem(item);
   }
   shopDirty = true;
@@ -348,7 +349,8 @@ void renderShop() {
   for (int k = 0; k < nItems; k++) {
     int i = shopPage == 2 ? FUN_ITEM0 + k : k;  // la cosecha: los del ocio
     int x = SHOP_X0 + (k % 2) * SHOP_W, y = SHOP_Y0 + (k / 2) * SHOP_H;
-    bool apagado = (shopPage == 0) ? pet.points < ITEM_PRICE[i] : pet.bag[i] == 0;
+    bool apagado = (shopPage == 0) ? pet.points < ITEM_PRICE[i]
+                   : pet.bag[i] == 0 || (i == ITEM_MEGA_STONE && !pet.canMega());  // sin mega: no se puede
     gfx->fillRoundRect(x + 2, y + 2, SHOP_W - 4, SHOP_H - 4, 10, apagado ? UI_TRACK : UI_WHITE);
     gfx->drawRoundRect(x + 2, y + 2, SHOP_W - 4, SHOP_H - 4, 10, UI_INK);
     drawItemIcon(i, x + 3, y + 9);
