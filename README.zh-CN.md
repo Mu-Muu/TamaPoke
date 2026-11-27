@@ -447,6 +447,8 @@ Cloudflare Worker，再在 `config_private.h` 里设置 `MAILBOX_URL` 和 `MAILB
 在背包里用一颗**Mega石**：PMD SpriteCollab 里有超级进化素材的 41 种宝可梦（喷火龙 X、
 超梦 Y、耿鬼、路卡利欧、烈空坐……）会超级进化 24 小时，然后变回来。伙伴没有超级进化时，
 石头不会被用掉。素材是 SD 卡里的 `mons/mNNN.bin`（`tools/pack_pmd.py mega` 生成）。
+正作里的一些超级进化（比如水箭龟、喷火龙 Y）因为还没有像素图，暂时没有；
+网站的指南里列出了所有能超级进化的宝可梦。
 
 ### 从 iPhone 同步步数
 

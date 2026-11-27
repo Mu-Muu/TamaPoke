@@ -230,9 +230,28 @@ class TestGeneratedFiles(unittest.TestCase):
         finally:
             shutil.rmtree(tmp, ignore_errors=True)
 
+    def test_gen_mega_list_reproduce_megas_ts(self):
+        archivo = 'website/lib/megas.ts'
+        with tempfile.TemporaryDirectory(prefix='tamapoke-gen-') as tmp:
+            shutil.copytree(TOOLS, os.path.join(tmp, 'tools'))
+            mega_h = shutil.copy(os.path.join(ROOT, 'mega.h'), tmp)
+            r = subprocess.run([sys.executable, os.path.join(tmp, 'tools', 'gen_mega_list.py')],
+                               capture_output=True, text=True)
+            self.assertEqual(r.returncode, 0, f'gen_mega_list.py fallo:\n{r.stderr}')
+            with open(os.path.join(tmp, archivo), 'rb') as a, open(os.path.join(ROOT, archivo), 'rb') as b:
+                generado = a.read()
+                self.assertEqual(generado, b.read(), f'{archivo} no coincide con tools/gen_mega_list.py '
+                                 '(vuelve a generarlo en vez de editarlo a mano)')
+            with open(mega_h, encoding='utf-8') as fh:
+                tabla = re.search(r'\bMEGA_FORMS\[\]\s*=\s*\{(.*?)\};', fh.read(), re.S)
+            self.assertIsNotNone(tabla, 'no se encontro MEGA_FORMS en mega.h')
+            formas = sum(linea.lstrip().startswith('{') for linea in tabla.group(1).splitlines())
+            entradas = sum(linea.lstrip().startswith(b'{ dex:') for linea in generado.splitlines())
+            self.assertEqual(entradas, formas, f'{archivo} debe incluir una entrada por forma de MEGA_FORMS')
+
     def test_los_ficheros_generados_avisan_de_que_lo_son(self):
-        for name in ('dex.h', 'species.h', 'zhfont.h'):
-            with open(os.path.join(ROOT, name)) as fh:
+        for name in ('dex.h', 'species.h', 'zhfont.h', 'website/lib/megas.ts'):
+            with open(os.path.join(ROOT, name), encoding='utf-8') as fh:
                 head = fh.read(400)
             self.assertIn('GENERADO', head, f'{name} deberia decir que esta generado')
 
