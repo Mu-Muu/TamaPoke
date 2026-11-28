@@ -263,7 +263,7 @@ export const GUIDE: Chapter[] = [
           [t("Common / rare / legendary egg", "普通蛋 / 稀有蛋 / 传说蛋"), t("10 / 30 / 100", "10 / 30 / 100"), t("Your next companion", "下一位伙伴")],
           [t("Shiny charm", "异色符"), t("50", "50"), t("Makes the next egg four times as likely to be shiny", "让下一颗蛋出异色的机会变成四倍")],
           [t("Evolution potion", "进化药水"), t("100", "100"), t("Skips the wait in days (needs still 40+)", "省掉要等的天数（四项仍要 40 以上）")],
-          [t("Mega Stone", "Mega石"), t("150", "150"), t("Mega Evolution for 24 hours", "超级进化 24 小时")],
+          [t("Mega Stone", "Mega石"), t("150", "150"), t("Mega Evolution for 24 hours, including on the farm and on your gym team", "超级进化 24 小时，在农场和道馆队伍里也有效")],
           [t("Accessories", "饰品"), t("15-80", "15-80"), t("Bow, flower, cap, witch hat, top hat, crown", "蝴蝶结、小花、棒球帽、巫师帽、礼帽、皇冠")],
         ],
       },
@@ -309,7 +309,7 @@ export const GUIDE: Chapter[] = [
       },
       { k: "p", t: t("These are the base chances; good care of the companion before it improves them. Eggs only bring species from regions you have opened, and never one that is already in your farm. About 1 egg in 48 is **shiny** (1 in 24 after a proper farewell); a shiny charm in the bag is used on the next egg and makes it four times as likely.", "这是基础几率，上一位伙伴照顾得好会提高。蛋里只会孵出已开放地区的宝可梦，而且不会和农场里已有的重复。大约每 48 颗蛋出一只**异色**（好好告别之后是 24 颗）；背包里有异色符时，下一颗蛋会用掉它，机会变成四倍。") },
       { k: "h", t: t("Mega Evolution", "超级进化") },
-      { k: "p", t: t(`Use a **Mega Stone** from the bag: ${MEGAS.length} species (Charizard X, Mewtwo Y, Gengar, Lucario, Rayquaza...) Mega Evolve for 24 hours and then change back. It adds 15% in the tournament and the gyms. If your companion has no Mega form, the stone is greyed out in the bag and can't be tapped.`, `在背包里用一颗 **Mega石**：${MEGAS.length} 种宝可梦（喷火龙 X、超梦 Y、耿鬼、路卡利欧、烈空坐……）会超级进化 24 小时，然后变回来。超级进化在锦标赛和道馆里有 15% 的加成。伙伴没有超级进化形态时，背包里的 Mega石是灰的，点不了。`) },
+      { k: "p", t: t(`Use a **Mega Stone** from the bag: ${MEGAS.length} species (Charizard X, Mewtwo Y, Gengar, Lucario, Rayquaza...) Mega Evolve for 24 hours and then change back. They stay Mega on the farm and when you pick them from there for your gym team. It adds 15% in the tournament and the gyms. If your companion has no Mega form, the stone is greyed out in the bag and can't be tapped.`, `在背包里用一颗 **Mega石**：${MEGAS.length} 种宝可梦（喷火龙 X、超梦 Y、耿鬼、路卡利欧、烈空坐……）会超级进化 24 小时，然后变回来。这期间，送去农场的宝可梦会保持超级进化形态，选进道馆队伍时也一样。超级进化在锦标赛和道馆里有 15% 的加成。伙伴没有超级进化形态时，背包里的 Mega石是灰的，点不了。`) },
       {
         k: "p",
         t: t(

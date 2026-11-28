@@ -856,6 +856,10 @@ void Pet::startCollect() {
   save();
 }
 
+bool recIsMega(const PetRec &r, uint32_t now) {
+  return r.ver >= 5 && r.megaUntil && now < r.megaUntil && megaFor(r.speciesId);
+}
+
 void Pet::exportRec(PetRec &r) const {
   memset(&r, 0, sizeof(r));
   r.ver = PET_REC_VER;
@@ -875,12 +879,13 @@ void Pet::exportRec(PetRec &r) const {
   r.farmEpoch = lastSeenEpoch;  // se exporta para guardarlo en la granja: desde ahora crece alli
   r.evoCount = evoCount;
   r.evoBoost = evoBoost;
+  r.megaUntil = isMega() ? megaUntil : 0;
 }
 
 // vuelve como lo dejaste, pero crecido (despacio) y sano: ver farmAge
 void Pet::importRec(const PetRec &r) {
   speciesId = r.speciesId;
-  megaUntil = 0;
+  megaUntil = recIsMega(r, lastSeenEpoch) ? r.megaUntil : 0;
   prevSpeciesId = -1;
   shiny = r.shiny;
   fullness = r.fullness; joy = r.joy; energy = r.energy; hygiene = r.hygiene;

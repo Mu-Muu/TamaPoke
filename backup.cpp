@@ -193,6 +193,7 @@ bool backupPetRec(PetRec &r, uint32_t now) {
     else if (!strcmp(key, "medal")) r.medals = u16 & ~MED_RETIRED;
     else if (!strcmp(key, "age")) r.ageMinutes = u32;
     else if (!strcmp(key, "born")) r.bornEpoch = u32;
+    else if (!strcmp(key, "mega")) r.megaUntil = u32;
     else if (!strcmp(key, "nick")) strncpy(r.nick, (const char *)buf, sizeof(r.nick) - 1);
   }
   f.close();

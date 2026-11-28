@@ -169,7 +169,7 @@ static const uint16_t ACC_PRICE[ACC_COUNT] = { 15, 15, 25, 30, 40, 80 };
 // estado, edad...). Lo del jugador (racha, pokedex, records) no va aqui.
 // Se escribe tal cual en la SD (/farm/fNNNN.bin); PET_REC_VER cambia si cambia
 // la estructura.
-#define PET_REC_VER 4  // 2: + bornEpoch; 3: + farmEpoch; 4: + evoluciones (la granja lee todas)
+#define PET_REC_VER 5  // 2: + bornEpoch, 3: + farmEpoch, 4: + evoluciones, 5: + megaUntil
 struct PetRec {
   uint8_t ver;
   uint8_t shiny, fullness, joy, energy, hygiene, poops, weight;
@@ -183,10 +183,14 @@ struct PetRec {
   uint32_t farmEpoch;  // v3: hora local a la que entro en la granja (0 = no se sabe)
   uint8_t evoCount, evoBoost;  // v4: veces que ha evolucionado; pocion tomada
   uint8_t fruitCnt, fruitDay8;  // frutas de hoy en la granja (dia % 256); antes relleno a 0
+  uint32_t megaUntil;  // v5: hora local en que termina la forma mega
 };
 #define PET_REC_V1_SIZE offsetof(PetRec, bornEpoch)
 #define PET_REC_V2_SIZE offsetof(PetRec, farmEpoch)
 #define PET_REC_V3_SIZE offsetof(PetRec, evoCount)
+#define PET_REC_V4_SIZE offsetof(PetRec, megaUntil)
+
+bool recIsMega(const PetRec &r, uint32_t now);
 
 // En la granja tambien crece, sano, pero FARM_GROWTH_DIV veces mas despacio que
 // criado por el jugador (y sin evolucionar: eso lo ve el jugador al sacarlo).

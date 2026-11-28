@@ -2222,18 +2222,67 @@ TEST(mega, la_piedra_solo_se_puede_tocar_si_tiene_megaevolucion) {
   CHECK(!h.canMega());
 }
 
-TEST(mega, se_acaba_si_cambia_de_compañero) {
+TEST(mega, la_megaevolucion_vuelve_con_el_mismo_individuo) {
   Pet p;
-  makePet(p, 6);
+  makePet(p, 94);
+  p.lastSeenEpoch = 1000u * 86400;
+  p.bag[ITEM_MEGA_STONE] = 1;
+  CHECK_EQ((int)p.useMegaStone(), (int)MEGA_OK);
+  uint32_t hasta = p.megaUntil;
+  bool on;
+  CHECK(p.takeMegaChange(on));
+  PetRec gengar;
+  p.exportRec(gengar);
+  CHECK_EQ(gengar.ver, (uint8_t)5);
+  CHECK_EQ(gengar.megaUntil, hasta);
+
+  Pet otro;
+  makePet(otro, 7);
+  PetRec r;
+  otro.exportRec(r);
+  CHECK_EQ(r.megaUntil, (uint32_t)0);
+  p.importRec(r);  // sale otro de la granja
+  CHECK(!p.isMega());
+  p.lastSeenEpoch += 5 * 60;
+  p.importRec(gengar);
+  CHECK(p.isMega());
+  CHECK_EQ(p.megaUntil, hasta);
+  CHECK(!p.takeMegaChange(on));
+}
+
+TEST(mega, caduca_en_la_granja_al_cumplirse_el_dia) {
+  Pet p;
+  makePet(p, 94);
   p.lastSeenEpoch = 1000u * 86400;
   p.bag[ITEM_MEGA_STONE] = 1;
   CHECK_EQ((int)p.useMegaStone(), (int)MEGA_OK);
   PetRec r;
-  Pet otro;
-  makePet(otro, 7);
-  otro.exportRec(r);
-  p.importRec(r);  // sale otro de la granja
+  p.exportRec(r);
+  p.lastSeenEpoch += MEGA_SECONDS;
+  PetRec caducado;
+  p.exportRec(caducado);
+  CHECK_EQ(caducado.megaUntil, (uint32_t)0);
+  p.importRec(r);
   CHECK(!p.isMega());
+  CHECK_EQ(p.megaUntil, (uint32_t)0);
+}
+
+TEST(mega, la_ficha_requiere_version_plazo_y_especie_con_mega) {
+  PetRec r = {};
+  r.ver = 5;
+  r.speciesId = 94;
+  r.megaUntil = 1000;
+  CHECK(recIsMega(r, 999));
+  CHECK(!recIsMega(r, 1000));
+  CHECK(!recIsMega(r, 1001));
+  r.ver = 4;
+  CHECK(!recIsMega(r, 999));
+  r.ver = 5;
+  r.speciesId = 7;
+  CHECK(!recIsMega(r, 999));
+  r.speciesId = 94;
+  r.megaUntil = 0;
+  CHECK(!recIsMega(r, 999));
 }
 
 TEST(mega, la_piedra_de_las_pruebas_es_una_al_dia_y_se_guarda) {

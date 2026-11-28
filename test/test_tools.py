@@ -377,6 +377,7 @@ class TestBuffersDeTexto(unittest.TestCase):
         'S_ML_FROM_CARD_FMT': ('dueño',),
         'S_ML_FROM_GIFT_FMT': ('dueño',),
         'S_ML_VISITED_FMT': ('dueño', 'nombre'),
+        'S_MEGA_NAME_FMT': ('nombre_o_apodo', 'mega_tag'),  # la ficha de la granja (farm_ui.ino)
     }
     CIFRAS = {'u': 5, 'd': 5, 'lu': 10}
     ESPEC = re.compile(r'%0?\d*(lu|u|d|s)')
@@ -467,6 +468,8 @@ class TestBuffersDeTexto(unittest.TestCase):
                 total += max(self.bytes_literal(v[li]) for k, v in self.LIT.items() if k.startswith('S_EV_'))
             elif arg == 'objeto':
                 total += max(self.bytes_literal(self.LIT[s][li]) for s in self.ITEMS)
+            elif arg == 'mega_tag':  # " X" / " Y" (tag[4])
+                total += 3
         return total
 
     def test_cada_texto_formateado_cabe_en_su_buffer_en_todos_los_idiomas(self):

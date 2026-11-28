@@ -275,6 +275,8 @@ static PetRec farmRec;        // la ficha (SD) del que se esta viendo: tipo y ca
 static bool farmRecOk = false;
 static PetRec farmUndo;       // la ficha de antes de la ultima fruta (consola FARMUNDO, pruebas)
 static bool farmUndoOk = false;
+// sigue megaevolucionado en la granja (issue #18: sus 24 h no se paran al entrar)
+static bool farmRecMega() { return farmRecOk && recIsMega(farmRec, pet.lastSeenEpoch); }
 static int fruitRowX(int k) { return CX - 96 + k * 64; }
 static bool hasStatFruit() {
   for (int k = 0; k < 4; k++)
@@ -342,8 +344,11 @@ void farmTap(int16_t x, int16_t y) {
   int idx = farmPage * FARM_PER_PAGE + r * FARM_COLS + c;
   if (idx >= farmCount()) return;
   farmDetail = idx;
-  galleryPmd.load(farmAt(idx).speciesId, farmAt(idx).shiny);
-  farmRecOk = farmPeek(farmAt(idx).speciesId, farmRec);
+  const FarmEntry &e = farmAt(idx);
+  farmRecOk = farmPeek(e.speciesId, farmRec);  // antes que el sprite: dice si sigue Mega
+  bool mega = farmRecMega();
+  galleryPmd.load(e.speciesId, e.shiny, mega);
+  if (mega && !galleryPmd.loaded) galleryPmd.load(e.speciesId, e.shiny);  // sin sprite Mega en la SD: el normal
 }
 
 // consola FARMUNDO: deja como estaba al ultimo de la granja al que se le dio una fruta
@@ -365,8 +370,16 @@ void renderFarm() {
     const DexEntry &d = DEX_TBL[e.speciesId];
     gfx->fillScreen(RGB565_BLACK);
     gfx->fillCircle(CX, CY, 231, UI_BG_DAY);
-    char head[40];
-    snprintf(head, sizeof(head), "%s%s", e.shiny ? "*" : "", e.nick[0] ? e.nick : dexName(e.speciesId));
+    char head[48], nb[40];
+    const char *nm = e.nick[0] ? e.nick : dexName(e.speciesId);
+    const MegaForm *m = farmRecMega() ? megaFor(e.speciesId) : nullptr;
+    if (m) {  // megaevolucionado: "MEGA ... X", como petName (render.ino)
+      char tag[4] = "";
+      if (m->tag[0]) snprintf(tag, sizeof(tag), " %s", m->tag);
+      snprintf(nb, sizeof(nb), T(S_MEGA_NAME_FMT), nm, tag);
+      nm = nb;
+    }
+    snprintf(head, sizeof(head), "%s%s", e.shiny ? "*" : "", nm);
     gfx->setTextColor(d.accent);
     setSize(3);
     int ts = (textW(head, 3) <= 260) ? 3 : 2;

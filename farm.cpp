@@ -17,15 +17,14 @@ static void setBit(Pet &p, int16_t dex, bool on) {
   b = on ? (b | m) : (b & ~m);
 }
 
-// v3 (actual), v2 (sin farmEpoch) o v1 (tampoco bornEpoch): las viejas son mas
-// cortas y lo que falta queda en 0
+// De v1 a v5, el largo identifica la version. Lo que falta queda en 0.
 static bool readRec(const char *path, PetRec &r) {
   File f = SD_MMC.open(path, FILE_READ);
   if (!f) return false;
   memset(&r, 0, sizeof(r));
   size_t n = f.size();
-  uint8_t ver = n == sizeof(PetRec) ? PET_REC_VER : n == PET_REC_V3_SIZE ? 3 : n == PET_REC_V2_SIZE ? 2
-              : n == PET_REC_V1_SIZE ? 1 : 0;
+  uint8_t ver = n == sizeof(PetRec) ? PET_REC_VER : n == PET_REC_V4_SIZE ? 4 : n == PET_REC_V3_SIZE ? 3
+              : n == PET_REC_V2_SIZE ? 2 : n == PET_REC_V1_SIZE ? 1 : 0;
   bool ok = ver && f.read((uint8_t *)&r, n) == n && r.ver == ver && r.speciesId >= 1 && r.speciesId <= PET_DEX_MAX;
   f.close();
   return ok;

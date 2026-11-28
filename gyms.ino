@@ -343,6 +343,7 @@ static Athlete farmAthlete(int idx) {
     a.trAtk = r.trAtk;
     a.trDef = r.trDef;
     a.trSpe = r.trSpe;
+    a.mega = recIsMega(r, pet.lastSeenEpoch);
   }
   return a;
 }
@@ -469,7 +470,8 @@ static void startRound() {
   uint8_t ev = gyEv[gyRound], mine = gyPerm[gyRound], his = foePerm[gyRound];
   PmdMon *pm = &pmd;
   if (mine != 0) {  // uno de la granja (o el compañero del amigo)
-    rivalPmd[0].load(teamDex[mine], mine == 2 && gyFriend >= 0 && gyFriendAth.shiny);
+    if (mine == 2 && gyFriend >= 0) rivalPmd[0].load(teamDex[mine], gyFriendAth.shiny);
+    else rivalPmd[0].load(teamDex[mine], false, teamA[mine].mega);
     pm = &rivalPmd[0];
   }
   rivalPmd[1].load(foe().team[his], false);

@@ -561,7 +561,8 @@ save to another board and your friends still know it.
 
 Use a **Mega Stone** from the bag: the 41 species that have Mega sprites in PMD
 SpriteCollab (Charizard X, Mewtwo Y, Gengar, Lucario, Rayquaza...) Mega Evolve
-for 24 hours, then change back. If your companion has no Mega form, the stone
+for 24 hours, then change back. They stay Mega on the farm and when you pick
+them from there for your gym team. If your companion has no Mega form, the stone
 is greyed out in the bag and can't be tapped. The sprites are `mons/mNNN.bin` on the SD (`tools/pack_pmd.py mega`).
 Some Megas from the games, like Blastoise or Charizard Y, aren't in yet because
 there are no sprites for them; the guide on the website lists the ones that are.
